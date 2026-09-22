@@ -10,4 +10,6 @@ Use `make test` no ciclo normal e `make check` antes de concluir. `make test-int
 
 Ao alterar comportamento, teste a regra no nível mais baixo que forneça confiança e acrescente widget/integração apenas quando a conexão entre camadas for relevante. Evite testes que apenas repetem implementação ou inflacionam cobertura.
 
+A persistência local é validada sem depender do filesystem ou de estado global da plataforma: testes do codec cobrem serialização, round trip, JSON inválido, valores inválidos e schema desconhecido; testes do repositório cobrem primeira execução, recuperação segura, restauração e propagação de falhas reais do armazenamento. Um teste de aplicação conclui um exercício e recria ViewModel e repositório sobre o mesmo documento para representar o fechamento e a reabertura do app. O teste de integração repete o fluxo usando `SharedPreferencesAsync` no dispositivo, preservando e restaurando qualquer documento que existia antes do teste. A implementação em memória continua sendo usada quando o objetivo do teste não é verificar durabilidade.
+
 Para regressões de acessibilidade, verifique rótulos/estados semânticos quando útil e complemente com VoiceOver/TalkBack em fluxos afetados. Consulte `docs/accessibility.md`.

@@ -31,11 +31,11 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _courses = List.unmodifiable(await courseCatalog.loadCourses());
       _progress = await progressRepository.load();
+      _courses = List.unmodifiable(await courseCatalog.loadCourses());
       _status = CourseCatalogStatus.ready;
     } on Object {
-      _errorMessage = 'Não foi possível carregar o conteúdo de demonstração.';
+      _errorMessage = 'Não foi possível iniciar o aplicativo.';
       _status = CourseCatalogStatus.failure;
     }
     notifyListeners();
@@ -58,6 +58,13 @@ final class CourseCatalogViewModel extends ChangeNotifier {
   }) async {
     if (_status != CourseCatalogStatus.ready) {
       throw StateError('O catálogo ainda não está pronto.');
+    }
+    if (isExerciseCompleted(
+      courseId: courseId,
+      lessonId: lessonId,
+      exerciseId: exerciseId,
+    )) {
+      return;
     }
 
     _progress = _progress.completeExercise(

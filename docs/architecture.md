@@ -22,7 +22,8 @@ presentation → application → domain
 
 - `ChangeNotifier` do SDK sustenta o primeiro ViewModel; não há necessidade concreta de gerenciador de estado externo.
 - O catálogo implementa `CourseCatalog`, pois carregamento por asset e um futuro pacote externo são uma fronteira real.
-- A persistência implementa `ProgressRepository`; hoje é volátil e poderá ser trocada sem mudar domínio ou widgets.
+- A persistência implementa `ProgressRepository`. A composição principal usa `LocalProgressRepository`, com um documento JSON versionado salvo por `SharedPreferencesAsync`; a implementação em memória permanece disponível para testes.
+- `StudentProgressCodec` valida explicitamente cursos, lições, exercícios concluídos, estrelas e configurações. Documento ausente, corrompido ou com schema desconhecido resulta em progresso vazio; falhas do armazenamento não são silenciadas.
 - Modelos de progresso são imutáveis para tornar transições previsíveis e testáveis.
 - O catálogo possui `schemaVersion`, versão do curso e validação na entrada.
 - Eventos de teclado físico são filtrados na infraestrutura, avaliados por uma regra de domínio e coordenados por `ExerciseSessionViewModel`; widgets apenas encaminham a entrada e apresentam o estado.
@@ -32,7 +33,7 @@ presentation → application → domain
 
 ## Pontos de extensão
 
-- Persistência durável: adicionar implementação em `data/persistence` e trocar a composição.
+- Evolução do progresso: incrementar o schema, definir migração ou fallback e cobrir compatibilidade antes de alterar o formato persistido.
 - Pacotes de escola: implementar outro `CourseCatalog`, incluindo segurança, migração e origem do pacote quando os requisitos existirem.
 - Exercícios: estender o schema e o domínio, depois criar apresentação especializada por tipo.
 - Feedback falado: criar integração de infraestrutura quando tecnologia, interrupção e políticas de áudio estiverem definidas.
