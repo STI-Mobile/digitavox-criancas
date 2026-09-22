@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "courses": [
+    {
+      "id": "demo-space-explorers",
+      "title": "Exploradores Espaciais — demonstração",
+      "version": "0.1.0-demo",
+      "isDemo": true,
+      "modules": [
+        {
+          "id": "demo-launch",
+          "title": "Módulo demo: preparação para o lançamento",
+          "lessons": [
+            {
+              "id": "demo-home-row",
+              "title": "Lição demo: conhecendo uma tecla",
+              "exercises": [
+                {
+                  "id": "demo-key-f",
+                  "title": "Localizar a tecla F",
+                  "type": "key",
+                  "prompt": "Encontre a tecla F e perceba a marca tátil.",
+                  "minimumRepetitions": 1
+                },
+                {
+                  "id": "demo-word-star",
+                  "title": "Digitar uma palavra curta",
+                  "type": "word",
+                  "prompt": "Digite a palavra sol.",
+                  "minimumRepetitions": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

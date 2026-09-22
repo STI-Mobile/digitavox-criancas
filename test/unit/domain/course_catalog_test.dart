@@ -1,0 +1,97 @@
+import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('CourseCatalogDocument', () {
+    test('parses a valid data-driven course hierarchy', () {
+      final document = CourseCatalogDocument.fromJson(_validCatalog());
+
+      expect(document.schemaVersion, 1);
+      expect(document.courses.single.id, 'course-1');
+      expect(
+        document
+            .courses
+            .single
+            .modules
+            .single
+            .lessons
+            .single
+            .exercises
+            .single
+            .type,
+        ExerciseType.key,
+      );
+    });
+
+    test('rejects duplicate exercise ids', () {
+      final catalog = _validCatalog();
+      final courses = catalog['courses']! as List<Object?>;
+      final course = courses.single! as Map<String, Object?>;
+      final modules = course['modules']! as List<Object?>;
+      final module = modules.single! as Map<String, Object?>;
+      final lessons = module['lessons']! as List<Object?>;
+      final lesson = lessons.single! as Map<String, Object?>;
+      final exercises = lesson['exercises']! as List<Object?>;
+      exercises.add(
+        Map<String, Object?>.from(exercises.single! as Map<String, Object?>),
+      );
+
+      expect(
+        () => CourseCatalogDocument.fromJson(catalog),
+        throwsA(isA<CourseContentFormatException>()),
+      );
+    });
+
+    test('rejects unknown exercise types', () {
+      final catalog = _validCatalog();
+      final courses = catalog['courses']! as List<Object?>;
+      final course = courses.single! as Map<String, Object?>;
+      final modules = course['modules']! as List<Object?>;
+      final module = modules.single! as Map<String, Object?>;
+      final lessons = module['lessons']! as List<Object?>;
+      final lesson = lessons.single! as Map<String, Object?>;
+      final exercises = lesson['exercises']! as List<Object?>;
+      final exercise = exercises.single! as Map<String, Object?>;
+      exercise['type'] = 'telepathy';
+
+      expect(
+        () => CourseCatalogDocument.fromJson(catalog),
+        throwsA(isA<CourseContentFormatException>()),
+      );
+    });
+  });
+}
+
+Map<String, Object?> _validCatalog() {
+  return <String, Object?>{
+    'schemaVersion': 1,
+    'courses': <Object?>[
+      <String, Object?>{
+        'id': 'course-1',
+        'title': 'Curso demo',
+        'version': '0.1.0',
+        'isDemo': true,
+        'modules': <Object?>[
+          <String, Object?>{
+            'id': 'module-1',
+            'title': 'Módulo demo',
+            'lessons': <Object?>[
+              <String, Object?>{
+                'id': 'lesson-1',
+                'title': 'Lição demo',
+                'exercises': <Object?>[
+                  <String, Object?>{
+                    'id': 'exercise-1',
+                    'title': 'Tecla F',
+                    'type': 'key',
+                    'prompt': 'Encontre a tecla F.',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
