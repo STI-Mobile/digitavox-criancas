@@ -1,8 +1,13 @@
 import 'package:digitavox_criancas/src/app.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
+import 'package:digitavox_criancas/src/data/persistence/local_progress_repository.dart';
+import 'package:digitavox_criancas/src/data/persistence/shared_preferences_progress_store.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +24,54 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Exploradores Espaciais'), findsOneWidget);
-    expect(find.textContaining('CONTEÚDO DEMO'), findsOneWidget);
+    expect(find.text('DEMO'), findsOneWidget);
   });
+
+  testWidgets('restores progress after recreating the app', (tester) async {
+    final preferences = SharedPreferencesAsync();
+    final previousDocument = await preferences.getString(
+      SharedPreferencesProgressStore.storageKey,
+    );
+    await preferences.remove(SharedPreferencesProgressStore.storageKey);
+    addTearDown(() async {
+      if (previousDocument == null) {
+        await preferences.remove(SharedPreferencesProgressStore.storageKey);
+      } else {
+        await preferences.setString(
+          SharedPreferencesProgressStore.storageKey,
+          previousDocument,
+        );
+      }
+    });
+
+    await tester.pumpWidget(_persistentApp(preferences));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Começar'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyA, character: 'a');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('1 estrelas conquistadas'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(_persistentApp(SharedPreferencesAsync()));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('1 estrelas conquistadas'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Refazer'), findsOneWidget);
+  });
+}
+
+DigitavoxApp _persistentApp(SharedPreferencesAsync preferences) {
+  return DigitavoxApp(
+    courseCatalog: const AssetCourseCatalog(
+      assetPath: 'assets/content/demo_course.json',
+    ),
+    progressRepository: LocalProgressRepository(
+      store: SharedPreferencesProgressStore(preferences: preferences),
+    ),
+  );
 }
