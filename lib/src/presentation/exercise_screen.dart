@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../application/exercise_session_view_model.dart';
 import '../domain/content/course_catalog.dart';
+import '../infrastructure/feedback/system_exercise_sound_feedback.dart';
 import '../infrastructure/input/physical_keyboard_input_interpreter.dart';
 
 final class ExerciseScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
     _viewModel = ExerciseSessionViewModel(
       exercise: widget.exercise,
       onCompleted: widget.onCompleted,
+      soundFeedback: const SystemExerciseSoundFeedback(),
     );
     _keyboardFocusNode = FocusNode(debugLabel: 'entrada do exercício');
   }
@@ -57,7 +59,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
     final expectedInput = widget.exercise.expectedInput!.toUpperCase();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Exercício de tecla')),
+      appBar: AppBar(title: Text('Tecla $expectedInput')),
       body: SafeArea(
         child: Focus(
           autofocus: true,
@@ -68,32 +70,23 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
             builder: (context, _) => ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                const SizedBox(height: 24),
                 Semantics(
                   header: true,
-                  child: Text(
-                    widget.exercise.title,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Semantics(
                   label:
                       '${widget.exercise.prompt} '
                       'A tecla esperada é $expectedInput.',
                   child: ExcludeSemantics(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text('Pressione', style: TextStyle(fontSize: 22)),
+                        const SizedBox(height: 8),
                         Text(
-                          widget.exercise.prompt,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Tecla esperada: $expectedInput',
+                          expectedInput,
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 112,
                             fontWeight: FontWeight.bold,
+                            height: 1,
                           ),
                         ),
                       ],
@@ -108,16 +101,23 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (_viewModel.status != ExerciseSessionStatus.completed)
-                  OutlinedButton.icon(
-                    onPressed: _keyboardFocusNode.requestFocus,
-                    icon: const Icon(Icons.keyboard),
-                    label: const Text('Ativar entrada pelo teclado físico'),
+                  Center(
+                    child: Semantics(
+                      button: true,
+                      label: 'Ativar entrada pelo teclado físico',
+                      child: ExcludeSemantics(
+                        child: IconButton.outlined(
+                          onPressed: _keyboardFocusNode.requestFocus,
+                          tooltip: 'Ativar teclado',
+                          icon: const Icon(Icons.keyboard),
+                        ),
+                      ),
+                    ),
                   ),
                 if (_viewModel.status == ExerciseSessionStatus.completed)
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Voltar à lição'),
+                    child: const Text('Continuar'),
                   ),
               ],
             ),
@@ -141,29 +141,34 @@ final class _ExerciseFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, message) = switch (status) {
+    final (icon, message, semanticMessage) = switch (status) {
       ExerciseSessionStatus.waitingForInput => (
         Icons.keyboard,
-        'Aguardando. Pressione a tecla $expectedInput.',
+        'Aguardando',
+        'Aguardando entrada. Pressione a tecla $expectedInput.',
       ),
       ExerciseSessionStatus.incorrectAnswer => (
-        Icons.cancel_outlined,
-        'Tecla ${lastInput?.toUpperCase()} incorreta. Tente novamente.',
+        Icons.replay,
+        'Tente novamente',
+        'Tecla ${lastInput?.toUpperCase()} incorreta. Tente novamente. '
+            'A tecla esperada é $expectedInput.',
       ),
       ExerciseSessionStatus.correctAnswer => (
         Icons.check_circle_outline,
-        'Correto!',
+        'Certo',
+        'Resposta correta.',
       ),
       ExerciseSessionStatus.completed => (
         Icons.celebration_outlined,
-        'Correto. Exercício concluído.',
+        'Concluído',
+        'Resposta correta. Exercício concluído.',
       ),
     };
 
     return Semantics(
       container: true,
       liveRegion: true,
-      label: message,
+      label: semanticMessage,
       child: ExcludeSemantics(
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -171,15 +176,14 @@ final class _ExerciseFeedback extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
+          child: Column(
             children: [
               Icon(icon, size: 36),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ],
           ),

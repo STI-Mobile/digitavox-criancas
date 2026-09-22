@@ -44,7 +44,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Digitavox Crianças')),
+      appBar: AppBar(title: const Text('Digitavox')),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _viewModel,
@@ -132,18 +132,24 @@ final class _ReadyContent extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (course.isDemo)
-            Semantics(
-              sortKey: const OrdinalSortKey(2),
-              label: 'Aviso: conteúdo de demonstração, não é conteúdo pedagógico definitivo.',
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'CONTEÚDO DEMO — não representa o curso pedagógico final.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Semantics(
+                sortKey: const OrdinalSortKey(2),
+                label: 'Aviso: conteúdo de demonstração, não é conteúdo pedagógico definitivo.',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 2),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'DEMO',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
@@ -152,9 +158,17 @@ final class _ReadyContent extends StatelessWidget {
             sortKey: const OrdinalSortKey(3),
             liveRegion: true,
             label: '${viewModel.progress.totalStars} estrelas conquistadas',
-            child: Text(
-              'Estrelas: ${viewModel.progress.totalStars}',
-              style: Theme.of(context).textTheme.titleLarge,
+            child: ExcludeSemantics(
+              child: Row(
+                children: [
+                  const Icon(Icons.star),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${viewModel.progress.totalStars}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -167,16 +181,6 @@ final class _ReadyContent extends StatelessWidget {
   Iterable<Widget> _courseSections(BuildContext context, Course course) sync* {
     var sortOrder = 4.0;
     for (final module in course.modules) {
-      yield Semantics(
-        header: true,
-        sortKey: OrdinalSortKey(sortOrder++),
-        child: Text(
-          module.title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-      );
-      yield const SizedBox(height: 12);
-
       for (final lesson in module.lessons) {
         yield Semantics(
           header: true,
@@ -223,11 +227,7 @@ final class _ReadyContent extends StatelessWidget {
                         )
                       : null,
                   icon: Icon(completed ? Icons.check_circle : Icons.play_arrow),
-                  label: Text(
-                    completed
-                        ? 'Refazer ${exercise.title} — concluído'
-                        : 'Iniciar ${exercise.title}',
-                  ),
+                  label: Text(completed ? 'Refazer' : 'Começar'),
                 ),
               ),
             ),

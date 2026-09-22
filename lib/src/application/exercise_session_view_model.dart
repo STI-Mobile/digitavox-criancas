@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../domain/content/course_catalog.dart';
 import '../domain/exercise/key_exercise_evaluator.dart';
+import 'exercise_sound_feedback.dart';
 
 enum ExerciseSessionStatus {
   waitingForInput,
@@ -14,11 +17,13 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   ExerciseSessionViewModel({
     required this.exercise,
     required this.onCompleted,
+    required this.soundFeedback,
     this.evaluator = const KeyExerciseEvaluator(),
   });
 
   final Exercise exercise;
   final Future<void> Function() onCompleted;
+  final ExerciseSoundFeedback soundFeedback;
   final KeyExerciseEvaluator evaluator;
 
   ExerciseSessionStatus _status = ExerciseSessionStatus.waitingForInput;
@@ -43,11 +48,13 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     if (evaluation == KeyExerciseEvaluation.incorrect) {
       _status = ExerciseSessionStatus.incorrectAnswer;
       notifyListeners();
+      unawaited(soundFeedback.playIncorrect());
       return;
     }
 
     _status = ExerciseSessionStatus.correctAnswer;
     notifyListeners();
+    unawaited(soundFeedback.playCorrect());
     await onCompleted();
 
     if (_isDisposed) {

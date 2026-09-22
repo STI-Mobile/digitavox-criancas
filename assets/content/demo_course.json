@@ -3,17 +3,17 @@
   "courses": [
     {
       "id": "demo-space-explorers",
-      "title": "Exploradores Espaciais — demonstração",
+      "title": "Exploradores Espaciais",
       "version": "0.2.0-demo",
       "isDemo": true,
       "modules": [
         {
           "id": "demo-launch",
-          "title": "Módulo demo: preparação para o lançamento",
+          "title": "Preparação",
           "lessons": [
             {
               "id": "demo-home-row",
-              "title": "Lição demo: conhecendo uma tecla",
+              "title": "Tecla A",
               "exercises": [
                 {
                   "id": "demo-key-a",
@@ -21,13 +21,6 @@
                   "type": "key",
                   "prompt": "Pressione a tecla A no teclado físico.",
                   "expectedInput": "a",
-                  "minimumRepetitions": 1
-                },
-                {
-                  "id": "demo-word-star",
-                  "title": "Digitar uma palavra curta",
-                  "type": "word",
-                  "prompt": "Digite a palavra sol.",
                   "minimumRepetitions": 1
                 }
               ]
