@@ -23,13 +23,16 @@ final class Exercise {
     required this.title,
     required this.type,
     required this.prompt,
+    this.expectedInput,
     this.minimumRepetitions,
     this.timeLimitSeconds,
-  });
+  }) : assert(type != ExerciseType.key || expectedInput != null);
 
   factory Exercise.fromJson(Map<String, Object?> json) {
+    final type = ExerciseType.parse(_requiredString(json, 'type'));
     final minimumRepetitions = json['minimumRepetitions'];
     final timeLimitSeconds = json['timeLimitSeconds'];
+    final expectedInput = json['expectedInput'];
 
     if (minimumRepetitions != null &&
         (minimumRepetitions is! int || minimumRepetitions < 1)) {
@@ -43,12 +46,25 @@ final class Exercise {
         'timeLimitSeconds deve ser um inteiro positivo.',
       );
     }
+    if (expectedInput != null &&
+        (expectedInput is! String ||
+            !_isSinglePrintableCharacter(expectedInput))) {
+      throw const CourseContentFormatException(
+        'expectedInput deve representar exatamente uma tecla.',
+      );
+    }
+    if (type == ExerciseType.key && expectedInput == null) {
+      throw const CourseContentFormatException(
+        'Exercícios de tecla exigem o campo expectedInput.',
+      );
+    }
 
     return Exercise(
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
-      type: ExerciseType.parse(_requiredString(json, 'type')),
+      type: type,
       prompt: _requiredString(json, 'prompt'),
+      expectedInput: expectedInput as String?,
       minimumRepetitions: minimumRepetitions as int?,
       timeLimitSeconds: timeLimitSeconds as int?,
     );
@@ -58,6 +74,7 @@ final class Exercise {
   final String title;
   final ExerciseType type;
   final String prompt;
+  final String? expectedInput;
   final int? minimumRepetitions;
   final int? timeLimitSeconds;
 }
@@ -164,7 +181,7 @@ final class CourseCatalogDocument {
 
   factory CourseCatalogDocument.fromJson(Map<String, Object?> json) {
     final schemaVersion = json['schemaVersion'];
-    if (schemaVersion != 1) {
+    if (schemaVersion != 2) {
       throw CourseContentFormatException(
         'Versão de schema não suportada: $schemaVersion.',
       );
@@ -246,4 +263,12 @@ void _requireUniqueIds(Iterable<String> ids, String entityName) {
       throw CourseContentFormatException('ID de $entityName duplicado: $id.');
     }
   }
+}
+
+bool _isSinglePrintableCharacter(String value) {
+  if (value.runes.length != 1) {
+    return false;
+  }
+  final codePoint = value.runes.single;
+  return codePoint >= 0x20 && codePoint != 0x7f;
 }

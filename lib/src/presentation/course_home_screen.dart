@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import '../application/course_catalog_view_model.dart';
 import '../domain/content/course_catalog.dart';
 import '../domain/progress/progress_repository.dart';
+import 'exercise_screen.dart';
 
 final class CourseHomeScreen extends StatefulWidget {
   const CourseHomeScreen({
@@ -157,13 +158,13 @@ final class _ReadyContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          ..._courseSections(course),
+          ..._courseSections(context, course),
         ],
       ),
     );
   }
 
-  Iterable<Widget> _courseSections(Course course) sync* {
+  Iterable<Widget> _courseSections(BuildContext context, Course course) sync* {
     var sortOrder = 4.0;
     for (final module in course.modules) {
       yield Semantics(
@@ -185,6 +186,9 @@ final class _ReadyContent extends StatelessWidget {
         yield const SizedBox(height: 8);
 
         for (final exercise in lesson.exercises) {
+          final isSupported =
+              exercise.type == ExerciseType.key &&
+              exercise.expectedInput != null;
           final completed = viewModel.isExerciseCompleted(
             courseId: course.id,
             lessonId: lesson.id,
@@ -195,21 +199,34 @@ final class _ReadyContent extends StatelessWidget {
             child: Semantics(
               sortKey: OrdinalSortKey(sortOrder++),
               button: true,
+              enabled: isSupported,
               label:
                   '${exercise.title}. ${exercise.prompt} '
-                  '${completed ? 'Concluído' : 'Não concluído'}',
+                  '${completed ? 'Concluído' : 'Não concluído'}. '
+                  '${isSupported ? 'Iniciar exercício' : 'Ainda não disponível'}',
               child: ExcludeSemantics(
                 child: ElevatedButton.icon(
-                  onPressed: () => viewModel.completeExercise(
-                    courseId: course.id,
-                    lessonId: lesson.id,
-                    exerciseId: exercise.id,
-                  ),
+                  onPressed: isSupported
+                      ? () => unawaited(
+                          Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder: (context) => ExerciseScreen(
+                                exercise: exercise,
+                                onCompleted: () => viewModel.completeExercise(
+                                  courseId: course.id,
+                                  lessonId: lesson.id,
+                                  exerciseId: exercise.id,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
                   icon: Icon(completed ? Icons.check_circle : Icons.play_arrow),
                   label: Text(
                     completed
-                        ? '${exercise.title} — concluído'
-                        : exercise.title,
+                        ? 'Refazer ${exercise.title} — concluído'
+                        : 'Iniciar ${exercise.title}',
                   ),
                 ),
               ),
