@@ -2,8 +2,8 @@
 
 Os testes são organizados por intenção:
 
-- `test/unit`: parsing/validação, progressão, persistência e ViewModels;
-- `test/widget`: inicialização, renderização, interação e semântica da interface;
+- `test/unit`: parsing/validação, avaliação da tecla, interpretação de eventos físicos, progressão, persistência e ViewModels;
+- `test/widget`: inicialização, eventos de teclado, feedback, conclusão, interação e semântica da interface;
 - `integration_test`: smoke tests do app empacotado em dispositivo.
 
 Use `make test` no ciclo normal e `make check` antes de concluir. `make test-integration` requer simulador/emulador ou dispositivo configurado e não faz parte do job Linux inicial de CI. `make coverage` gera `coverage/lcov.info`; não existe meta artificial de cobertura nesta fase.
