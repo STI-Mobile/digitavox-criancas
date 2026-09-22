@@ -67,4 +67,4 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 
 ## Estado atual
 
-O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução, recebe teclado físico, informa erro ou acerto e registra a conclusão em memória. Ainda não há jogo, síntese de voz, conteúdo pedagógico definitivo, persistência durável, backend ou importação de pacotes externos.
+O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução, recebe teclado físico, informa erro ou acerto com feedback visual, semântico e sonoro, e registra a conclusão em memória. Ainda não há jogo, síntese de voz, conteúdo pedagógico definitivo, persistência durável, backend ou importação de pacotes externos.

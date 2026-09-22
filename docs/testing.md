@@ -2,7 +2,7 @@
 
 Os testes são organizados por intenção:
 
-- `test/unit`: parsing/validação, avaliação da tecla, interpretação de eventos físicos, progressão, persistência e ViewModels;
+- `test/unit`: parsing/validação, avaliação da tecla, interpretação de eventos físicos, padrões sonoros, progressão, persistência e ViewModels;
 - `test/widget`: inicialização, eventos de teclado, feedback, conclusão, interação e semântica da interface;
 - `integration_test`: smoke tests do app empacotado em dispositivo.
 
