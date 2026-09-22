@@ -84,6 +84,14 @@ Detalhes e checklist estão em `docs/accessibility.md`.
 - Uma mudança pedagógica deve ser explícita, revisável e separada sempre que possível.
 - Preserve a possibilidade de pacotes externos futuros, sem implementar importação prematuramente.
 
+## Persistência de progresso
+
+- Preserve `ProgressRepository` como fronteira entre aplicação e persistência.
+- Use `InMemoryProgressRepository` em testes que não exercitam durabilidade; a composição de produção deve usar a implementação local durável.
+- Trate o documento persistido como contrato versionado. Mudanças de formato exigem incremento ou migração explícita, testes de compatibilidade e atualização do ADR correspondente.
+- Diferencie ausência ou documento conhecido como inválido de falhas reais de I/O/plataforma; não capture erros indiscriminadamente.
+- Não grave novamente quando a ação não mudar o progresso, como a repetição de um exercício já concluído.
+
 ## Práticas proibidas
 
 - Não introduza dependências sem necessidade concreta e justificativa.
@@ -94,3 +102,16 @@ Detalhes e checklist estão em `docs/accessibility.md`.
 - Não remova nem reduza requisitos de acessibilidade.
 
 Ao mudar comportamento, atualize ou adicione testes. Antes de concluir, execute `make check`; se o ambiente impedir alguma etapa, execute o restante e informe exatamente o que ficou pendente.
+
+## Dependências nativas Apple
+
+O projeto utiliza Swift Package Manager (SwiftPM) como gerenciador
+de dependências nativas para iOS.
+
+- Novos plugins Flutter com código nativo devem suportar SwiftPM.
+- Não introduzir CocoaPods, Podfile ou Pods sem necessidade técnica
+  explícita e documentada.
+- Antes de adicionar um plugin nativo, verificar sua compatibilidade
+  com SwiftPM.
+- Alterações em dependências nativas devem ser validadas com build iOS.
+- Uma exceção que exija CocoaPods deve ser justificada antes da alteração.
