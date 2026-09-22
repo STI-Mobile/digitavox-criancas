@@ -64,6 +64,7 @@ final class _FakeCourseCatalog implements CourseCatalog {
                   title: 'Tecla F',
                   type: ExerciseType.key,
                   prompt: 'Encontre a tecla F.',
+                  expectedInput: 'f',
                 ),
               ],
             ),

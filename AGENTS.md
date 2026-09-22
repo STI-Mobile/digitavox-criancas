@@ -48,14 +48,19 @@ Uma alteração só está pronta quando:
 
 ## Commits
 
-Ao concluir uma alteração autorizada, o agente deve criar os commits correspondentes. Não deixe alterações próprias sem commit, salvo instrução explícita em contrário ou bloqueio informado ao usuário.
+Não crie commits automaticamente ao concluir uma alteração. Aguarde uma solicitação explícita do usuário para preparar e criar commits.
 
-- Agrupe arquivos por tema coeso e faça um commit por tema; não misture scaffold, funcionalidade, testes, CI, documentação ou refatoração sem necessidade.
-- Use Conventional Commits com mensagem em português do Brasil: `tipo(escopo): resumo no imperativo`.
-- Tipos usuais: `feat`, `fix`, `test`, `docs`, `ci`, `build`, `refactor`, `perf` e `chore`.
-- Exemplos: `feat(progresso): registra conclusão de exercício`; `test(catálogo): valida identificadores duplicados`; `docs(agentes): define convenção de commits`.
+- Quando o usuário solicitar commits, agrupe arquivos por tema coeso e faça um commit por tema; não misture scaffold, funcionalidade, testes, CI, documentação ou refatoração sem necessidade.
+- Use exclusivamente os prefixos abaixo, seguidos de dois-pontos e descrição em português do Brasil: `prefixo: resumo no imperativo`.
+  - `feat:` para funcionalidade nova;
+  - `fix:` para correção de defeito;
+  - `a11y:` para melhoria de acessibilidade;
+  - `chore:` para build, dependências ou configuração;
+  - `docs:` para documentação;
+  - `test:` para testes.
+- Não use escopo entre parênteses nem outros prefixos. Exemplos: `feat: registra conclusão de exercício`; `test: valida identificadores duplicados`; `docs: define convenção de commits`.
 - Antes de cada commit, confira `git status`, revise os arquivos adicionados e execute `git diff --cached --check` quando aplicável. Não inclua artefatos gerados, segredos ou mudanças preexistentes de terceiros.
-- Execute `make check` antes do conjunto de commits quando a mudança afetar código, configuração ou testes. Se não for possível, registre o motivo na entrega.
+- Execute `make check` antes do conjunto de commits solicitado quando a mudança afetar código, configuração ou testes. Se não for possível, registre o motivo na entrega.
 - Não reescreva histórico publicado e não use commits genéricos como `wip`, `ajustes` ou `atualizações`.
 
 ## Acessibilidade

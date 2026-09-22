@@ -13,6 +13,7 @@ Acessibilidade é uma restrição de arquitetura e critério de aceite. A interf
 - Respeite escala de texto; evite alturas fixas que cortem conteúdo.
 - Mantenha contraste mínimo conforme WCAG AA e valide os estados normal, pressionado, focado e desabilitado.
 - Não reproduza instruções apenas por som. Feedback falado deve ter alternativa textual/semântica.
+- Sinais sonoros de acerto e erro devem ser distintos e sempre acompanhados por estado textual e semântico equivalente.
 - Evite mudanças automáticas de foco. Quando necessárias, documente e teste o destino.
 
 ## Checklist de mudança de UI

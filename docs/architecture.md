@@ -25,6 +25,10 @@ presentation → application → domain
 - A persistência implementa `ProgressRepository`; hoje é volátil e poderá ser trocada sem mudar domínio ou widgets.
 - Modelos de progresso são imutáveis para tornar transições previsíveis e testáveis.
 - O catálogo possui `schemaVersion`, versão do curso e validação na entrada.
+- Eventos de teclado físico são filtrados na infraestrutura, avaliados por uma regra de domínio e coordenados por `ExerciseSessionViewModel`; widgets apenas encaminham a entrada e apresentam o estado.
+- A sessão de exercício distingue espera, erro, acerto e conclusão. A conclusão delega a atualização ao ViewModel do catálogo, preservando a infraestrutura existente de progresso.
+- `ExerciseSoundFeedback` mantém o ViewModel testável e desacoplado da plataforma. A implementação atual usa um clique do sistema para acerto e dois para erro, sem pacote externo; som sempre complementa texto e semântica.
+- Cada primeira conclusão ainda concede uma estrela pela regra mínima do harness. Essa regra é provisória e não representa pontuação baseada em desempenho.
 
 ## Pontos de extensão
 
