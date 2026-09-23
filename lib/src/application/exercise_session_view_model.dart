@@ -44,7 +44,8 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   }
 
   Future<void> handleInput(String? input) async {
-    if (_status == ExerciseSessionStatus.correctAnswer ||
+    if (_isDisposed ||
+        _status == ExerciseSessionStatus.correctAnswer ||
         _status == ExerciseSessionStatus.completed) {
       return;
     }

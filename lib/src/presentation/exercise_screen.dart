@@ -3,23 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../application/audio/audio_coordinator.dart';
+import '../application/course_journey_engine.dart';
 import '../application/exercise_session_view_model.dart';
-import '../domain/content/course_catalog.dart';
-import '../infrastructure/feedback/system_exercise_sound_feedback.dart';
 import '../infrastructure/input/physical_keyboard_input_interpreter.dart';
 
 final class ExerciseScreen extends StatefulWidget {
-  const ExerciseScreen({
-    required this.exercise,
-    required this.onCompleted,
-    required this.audioCoordinator,
-    super.key,
-  });
+  const ExerciseScreen({required this.engine, super.key});
 
-  final Exercise exercise;
-  final Future<void> Function() onCompleted;
-  final AudioCoordinator audioCoordinator;
+  final CourseJourneyEngine engine;
 
   @override
   State<ExerciseScreen> createState() => _ExerciseScreenState();
@@ -34,24 +25,20 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = ExerciseSessionViewModel(
-      exercise: widget.exercise,
-      onCompleted: widget.onCompleted,
-      soundFeedback: const SystemExerciseSoundFeedback(),
-      audioCoordinator: widget.audioCoordinator,
-    );
+    _viewModel = widget.engine.session!;
     _keyboardFocusNode = FocusNode(debugLabel: 'entrada do exercício');
-    unawaited(_viewModel.start());
   }
 
   @override
   void dispose() {
     _keyboardFocusNode.dispose();
-    _viewModel.dispose();
     super.dispose();
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (_viewModel.status == ExerciseSessionStatus.completed) {
+      return KeyEventResult.ignored;
+    }
     final input = _inputInterpreter.interpret(event);
     if (event is KeyDownEvent) {
       unawaited(_viewModel.handleInput(input));
@@ -61,73 +48,65 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expectedInput = widget.exercise.expectedInput!.toUpperCase();
+    final expectedInput = _viewModel.exercise.expectedInput!.toUpperCase();
+    final next = widget.engine.nextTarget;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Tecla $expectedInput')),
-      body: SafeArea(
-        child: Focus(
-          autofocus: true,
-          focusNode: _keyboardFocusNode,
-          onKeyEvent: _handleKeyEvent,
-          child: AnimatedBuilder(
-            animation: _viewModel,
-            builder: (context, _) => ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                const SizedBox(height: 24),
-                Semantics(
-                  header: true,
-                  label:
-                      '${widget.exercise.prompt} '
-                      'A tecla esperada é $expectedInput.',
-                  child: ExcludeSemantics(
-                    child: Column(
-                      children: [
-                        const Text('Pressione', style: TextStyle(fontSize: 22)),
-                        const SizedBox(height: 8),
-                        Text(
-                          expectedInput,
-                          style: const TextStyle(
-                            fontSize: 112,
-                            fontWeight: FontWeight.bold,
-                            height: 1,
-                          ),
-                        ),
-                      ],
+    return Focus(
+      autofocus: true,
+      focusNode: _keyboardFocusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          Semantics(
+            header: true,
+            label:
+                '${_viewModel.exercise.prompt} '
+                'A tecla esperada é $expectedInput.',
+            child: ExcludeSemantics(
+              child: Column(
+                children: [
+                  const Text('Pressione', style: TextStyle(fontSize: 22)),
+                  const SizedBox(height: 8),
+                  Text(
+                    expectedInput,
+                    style: const TextStyle(
+                      fontSize: 112,
+                      fontWeight: FontWeight.bold,
+                      height: 1,
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                _ExerciseFeedback(
-                  status: _viewModel.status,
-                  expectedInput: expectedInput,
-                  lastInput: _viewModel.lastInput,
-                ),
-                const SizedBox(height: 24),
-                if (_viewModel.status != ExerciseSessionStatus.completed)
-                  Center(
-                    child: Semantics(
-                      button: true,
-                      label: 'Ativar entrada pelo teclado físico',
-                      child: ExcludeSemantics(
-                        child: IconButton.outlined(
-                          onPressed: _keyboardFocusNode.requestFocus,
-                          tooltip: 'Ativar teclado',
-                          icon: const Icon(Icons.keyboard),
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_viewModel.status == ExerciseSessionStatus.completed)
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Continuar'),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 24),
+          _ExerciseFeedback(
+            status: _viewModel.status,
+            expectedInput: expectedInput,
+            lastInput: _viewModel.lastInput,
+          ),
+          const SizedBox(height: 24),
+          if (_viewModel.status != ExerciseSessionStatus.completed)
+            Center(
+              child: IconButton.outlined(
+                onPressed: _keyboardFocusNode.requestFocus,
+                tooltip: 'Ativar entrada pelo teclado físico',
+                icon: const Icon(Icons.keyboard),
+              ),
+            ),
+          if (_viewModel.status == ExerciseSessionStatus.completed)
+            ElevatedButton(
+              onPressed: widget.engine.continueAfterExercise,
+              child: Text(
+                next == null
+                    ? 'Voltar à lição'
+                    : identical(next.lesson, widget.engine.lesson)
+                    ? 'Próximo exercício: ${next.exercise.title}'
+                    : 'Próxima lição: ${next.lesson.title}',
+              ),
+            ),
+        ],
       ),
     );
   }
