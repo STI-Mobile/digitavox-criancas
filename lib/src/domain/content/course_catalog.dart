@@ -67,16 +67,16 @@ final class Exercise {
         'timeLimitSeconds deve ser um inteiro positivo.',
       );
     }
-    if (expectedInput != null &&
+    if (expectedInput != null && expectedInput is! String) {
+      throw const CourseContentFormatException(
+        'expectedInput deve ser um texto.',
+      );
+    }
+    if (type == ExerciseType.key &&
         (expectedInput is! String ||
             !_isSinglePrintableCharacter(expectedInput))) {
       throw const CourseContentFormatException(
-        'expectedInput deve representar exatamente uma tecla.',
-      );
-    }
-    if (type == ExerciseType.key && expectedInput == null) {
-      throw const CourseContentFormatException(
-        'Exercícios de tecla exigem o campo expectedInput.',
+        'Exercícios de tecla exigem expectedInput com exatamente uma tecla.',
       );
     }
     if (audio != null && audio is! Map<String, Object?>) {
