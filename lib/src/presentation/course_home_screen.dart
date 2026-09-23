@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
+import '../application/audio/audio_coordinator.dart';
 import '../application/course_catalog_view_model.dart';
 import '../domain/content/course_catalog.dart';
 import '../domain/progress/progress_repository.dart';
@@ -12,11 +13,13 @@ final class CourseHomeScreen extends StatefulWidget {
   const CourseHomeScreen({
     required this.courseCatalog,
     required this.progressRepository,
+    required this.audioCoordinator,
     super.key,
   });
 
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
+  final AudioCoordinator audioCoordinator;
 
   @override
   State<CourseHomeScreen> createState() => _CourseHomeScreenState();
@@ -55,7 +58,10 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen> {
               message: _viewModel.errorMessage ?? 'Erro desconhecido.',
               onRetry: _viewModel.initialize,
             ),
-            CourseCatalogStatus.ready => _ReadyContent(viewModel: _viewModel),
+            CourseCatalogStatus.ready => _ReadyContent(
+              viewModel: _viewModel,
+              audioCoordinator: widget.audioCoordinator,
+            ),
           },
         ),
       ),
@@ -106,9 +112,13 @@ final class _FailureContent extends StatelessWidget {
 }
 
 final class _ReadyContent extends StatelessWidget {
-  const _ReadyContent({required this.viewModel});
+  const _ReadyContent({
+    required this.viewModel,
+    required this.audioCoordinator,
+  });
 
   final CourseCatalogViewModel viewModel;
+  final AudioCoordinator audioCoordinator;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +226,7 @@ final class _ReadyContent extends StatelessWidget {
                             MaterialPageRoute<void>(
                               builder: (context) => ExerciseScreen(
                                 exercise: exercise,
+                                audioCoordinator: audioCoordinator,
                                 onCompleted: () => viewModel.completeExercise(
                                   courseId: course.id,
                                   lessonId: lesson.id,

@@ -1,18 +1,34 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import 'application/audio/audio_coordinator.dart';
 import 'domain/content/course_catalog.dart';
 import 'domain/progress/progress_repository.dart';
 import 'presentation/course_home_screen.dart';
 
-final class DigitavoxApp extends StatelessWidget {
+final class DigitavoxApp extends StatefulWidget {
   const DigitavoxApp({
     required this.courseCatalog,
     required this.progressRepository,
+    required this.audioCoordinator,
     super.key,
   });
 
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
+  final AudioCoordinator audioCoordinator;
+
+  @override
+  State<DigitavoxApp> createState() => _DigitavoxAppState();
+}
+
+final class _DigitavoxAppState extends State<DigitavoxApp> {
+  @override
+  void dispose() {
+    unawaited(widget.audioCoordinator.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +61,9 @@ final class DigitavoxApp extends StatelessWidget {
         ),
       ),
       home: CourseHomeScreen(
-        courseCatalog: courseCatalog,
-        progressRepository: progressRepository,
+        courseCatalog: widget.courseCatalog,
+        progressRepository: widget.progressRepository,
+        audioCoordinator: widget.audioCoordinator,
       ),
     );
   }

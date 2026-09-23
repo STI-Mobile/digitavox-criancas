@@ -34,6 +34,20 @@ void main() {
             .expectedInput,
         'a',
       );
+      expect(
+        document
+            .courses
+            .single
+            .modules
+            .single
+            .lessons
+            .single
+            .exercises
+            .single
+            .audio
+            ?.assetPath,
+        'assets/audio/demo/instruction_a_demo.wav',
+      );
     });
 
     test('rejects duplicate exercise ids', () {
@@ -90,6 +104,30 @@ void main() {
         throwsA(isA<CourseContentFormatException>()),
       );
     });
+
+    test('rejects an audio reference outside the audio asset directory', () {
+      final catalog = _validCatalog();
+      final exercise = _firstExercise(catalog);
+      exercise['audio'] = <String, Object?>{
+        'asset': '../private/instruction.wav',
+      };
+
+      expect(
+        () => CourseCatalogDocument.fromJson(catalog),
+        throwsA(isA<CourseContentFormatException>()),
+      );
+    });
+
+    test('rejects an audio object without an asset path', () {
+      final catalog = _validCatalog();
+      final exercise = _firstExercise(catalog);
+      exercise['audio'] = <String, Object?>{};
+
+      expect(
+        () => CourseCatalogDocument.fromJson(catalog),
+        throwsA(isA<CourseContentFormatException>()),
+      );
+    });
   });
 }
 
@@ -117,6 +155,9 @@ Map<String, Object?> _validCatalog() {
                     'type': 'key',
                     'prompt': 'Encontre a tecla F.',
                     'expectedInput': 'a',
+                    'audio': <String, Object?>{
+                      'asset': 'assets/audio/demo/instruction_a_demo.wav',
+                    },
                   },
                 ],
               },
@@ -126,4 +167,15 @@ Map<String, Object?> _validCatalog() {
       },
     ],
   };
+}
+
+Map<String, Object?> _firstExercise(Map<String, Object?> catalog) {
+  final courses = catalog['courses']! as List<Object?>;
+  final course = courses.single! as Map<String, Object?>;
+  final modules = course['modules']! as List<Object?>;
+  final module = modules.single! as Map<String, Object?>;
+  final lessons = module['lessons']! as List<Object?>;
+  final lesson = lessons.single! as Map<String, Object?>;
+  final exercises = lesson['exercises']! as List<Object?>;
+  return exercises.single! as Map<String, Object?>;
 }

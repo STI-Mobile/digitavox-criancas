@@ -16,6 +16,12 @@ Acessibilidade é uma restrição de arquitetura e critério de aceite. A interf
 - Sinais sonoros de acerto e erro devem ser distintos e sempre acompanhados por estado textual e semântico equivalente.
 - Evite mudanças automáticas de foco. Quando necessárias, documente e teste o destino.
 
+## Áudio e leitores de tela
+
+Áudio gravado do curso não substitui acessibilidade. Uma instrução pode e deve existir simultaneamente como texto, `Semantics` e asset narrativo porque esses canais têm finalidades diferentes. VoiceOver e TalkBack tornam a interface operável; não são motores de personagem ou narrativa.
+
+Flutter expõe `accessibleNavigation` quando um serviço como VoiceOver ou TalkBack altera o modelo de interação. O app encapsula esse sinal em `SystemAccessibilityStatus`, mas ainda não o usa para desligar ou alterar áudio. Sobreposição, interrupção, volume e foco serão decididos somente após testes em dispositivos reais.
+
 ## Checklist de mudança de UI
 
 1. Navegar por todas as ações apenas com foco/leitor de tela.
@@ -25,5 +31,7 @@ Acessibilidade é uma restrição de arquitetura e critério de aceite. A interf
 5. Verificar contraste e que nenhuma informação depende apenas de cor.
 6. Executar testes de widget relacionados.
 7. Para fluxos relevantes, registrar verificação manual em VoiceOver e TalkBack.
+
+Em mudanças de áudio, valide adicionalmente a instrução com e sem leitor de tela, teclado físico durante a fala, interrupção ao sair da tela e funcionamento completo quando o asset falhar.
 
 Testes automatizados ajudam a prevenir regressões, mas não substituem a verificação nos dois leitores de tela.

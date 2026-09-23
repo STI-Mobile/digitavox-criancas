@@ -1,7 +1,9 @@
 import 'package:digitavox_criancas/src/app.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
 import 'package:digitavox_criancas/src/data/persistence/local_progress_repository.dart';
 import 'package:digitavox_criancas/src/data/persistence/shared_preferences_progress_store.dart';
+import 'package:digitavox_criancas/src/infrastructure/audio/audioplayers_content_audio_service.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +21,9 @@ void main() {
           assetPath: 'assets/content/demo_course.json',
         ),
         progressRepository: InMemoryProgressRepository(),
+        audioCoordinator: AudioCoordinator(
+          contentAudioService: AudioplayersContentAudioService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -72,6 +77,9 @@ DigitavoxApp _persistentApp(SharedPreferencesAsync preferences) {
     ),
     progressRepository: LocalProgressRepository(
       store: SharedPreferencesProgressStore(preferences: preferences),
+    ),
+    audioCoordinator: AudioCoordinator(
+      contentAudioService: AudioplayersContentAudioService(),
     ),
   );
 }

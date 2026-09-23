@@ -21,6 +21,9 @@
                   "type": "key",
                   "prompt": "Pressione a tecla A no teclado físico.",
                   "expectedInput": "a",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_a_demo.wav"
+                  },
                   "minimumRepetitions": 1
                 }
               ]

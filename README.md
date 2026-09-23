@@ -64,8 +64,9 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 - [Estratégia de testes](docs/testing.md)
 - [ADR 0001: Flutter + MVVM](docs/adr/0001-flutter-mvvm.md)
 - [ADR 0002: persistência local do progresso](docs/adr/0002-persistencia-local-progresso.md)
+- [ADR 0003: arquitetura de áudio](docs/adr/0003-arquitetura-audio.md)
 - [Contrato para agentes](AGENTS.md)
 
 ## Estado atual
 
-O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução, recebe teclado físico, informa erro ou acerto com feedback visual, semântico e sonoro, e persiste localmente conclusões e estrelas entre reinicializações. O progresso usa um documento JSON versionado no armazenamento de preferências do sistema. Ainda não há jogo, síntese de voz, conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.
+O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução visual e semanticamente, reproduz uma fala técnica associada ao conteúdo, recebe teclado físico, informa erro ou acerto e persiste conclusões e estrelas entre reinicializações. A fala gravada do curso, uma futura fala dinâmica por TTS e VoiceOver/TalkBack são canais arquiteturalmente separados. Ainda não há áudio pedagógico definitivo, TTS próprio, música, sincronização em nuvem, backend ou importação de pacotes externos.

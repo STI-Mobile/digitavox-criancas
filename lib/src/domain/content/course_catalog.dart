@@ -17,6 +17,25 @@ enum ExerciseType {
   }
 }
 
+final class ContentAudioReference {
+  const ContentAudioReference({required this.assetPath});
+
+  factory ContentAudioReference.fromJson(Map<String, Object?> json) {
+    final assetPath = _requiredString(json, 'asset');
+    if (!assetPath.startsWith('assets/audio/') ||
+        assetPath.contains('..') ||
+        assetPath.endsWith('/')) {
+      throw const CourseContentFormatException(
+        'O asset de áudio deve apontar para um arquivo em assets/audio/.',
+      );
+    }
+
+    return ContentAudioReference(assetPath: assetPath);
+  }
+
+  final String assetPath;
+}
+
 final class Exercise {
   const Exercise({
     required this.id,
@@ -26,6 +45,7 @@ final class Exercise {
     this.expectedInput,
     this.minimumRepetitions,
     this.timeLimitSeconds,
+    this.audio,
   }) : assert(type != ExerciseType.key || expectedInput != null);
 
   factory Exercise.fromJson(Map<String, Object?> json) {
@@ -33,6 +53,7 @@ final class Exercise {
     final minimumRepetitions = json['minimumRepetitions'];
     final timeLimitSeconds = json['timeLimitSeconds'];
     final expectedInput = json['expectedInput'];
+    final audio = json['audio'];
 
     if (minimumRepetitions != null &&
         (minimumRepetitions is! int || minimumRepetitions < 1)) {
@@ -58,6 +79,11 @@ final class Exercise {
         'Exercícios de tecla exigem o campo expectedInput.',
       );
     }
+    if (audio != null && audio is! Map<String, Object?>) {
+      throw const CourseContentFormatException(
+        'O campo audio deve ser um objeto.',
+      );
+    }
 
     return Exercise(
       id: _requiredString(json, 'id'),
@@ -67,6 +93,9 @@ final class Exercise {
       expectedInput: expectedInput as String?,
       minimumRepetitions: minimumRepetitions as int?,
       timeLimitSeconds: timeLimitSeconds as int?,
+      audio: audio == null
+          ? null
+          : ContentAudioReference.fromJson(audio as Map<String, Object?>),
     );
   }
 
@@ -77,6 +106,7 @@ final class Exercise {
   final String? expectedInput;
   final int? minimumRepetitions;
   final int? timeLimitSeconds;
+  final ContentAudioReference? audio;
 }
 
 final class Lesson {

@@ -8,7 +8,17 @@ Course → Module → Lesson → Exercise
 
 O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, versão, indicação explícita de demo e módulos. IDs devem ser únicos entre irmãos. Listas estruturais não podem ser vazias.
 
-Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; ele deve representar exatamente um caractere imprimível. O harness reconhece tipos conceituais para sequência, palavra, frase, tempo, repetição e desafio, mas somente o exercício de uma tecla possui fluxo funcional. Campos opcionais atuais são `minimumRepetitions` e `timeLimitSeconds`, ambos inteiros positivos.
+Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; ele deve representar exatamente um caractere imprimível. O harness reconhece tipos conceituais para sequência, palavra, frase, tempo, repetição e desafio, mas somente o exercício de uma tecla possui fluxo funcional. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds` e `audio`.
+
+`audio` referencia conteúdo gravado controlado pelo Digitavox sem expor tecnologia de player. Quando presente, deve ser um objeto com `asset` textual, não vazio, sem travessia de diretório e sob `assets/audio/`:
+
+```json
+"audio": {
+  "asset": "assets/audio/demo/instruction_a_demo.wav"
+}
+```
+
+A ausência do campo continua válida. A existência física do asset é verificada pelo bundle/player; uma falha de reprodução não invalida os canais visual, semântico ou de teclado. Assets em `assets/audio/demo/` são técnicos e não constituem conteúdo pedagógico aprovado.
 
 Exemplo reduzido:
 
@@ -35,7 +45,10 @@ Exemplo reduzido:
                   "title": "Pressionar a tecla A",
                   "type": "key",
                   "prompt": "Pressione a tecla A no teclado físico.",
-                  "expectedInput": "a"
+                  "expectedInput": "a",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_a_demo.wav"
+                  }
                 }
               ]
             }

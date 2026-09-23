@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../application/audio/audio_coordinator.dart';
 import '../application/exercise_session_view_model.dart';
 import '../domain/content/course_catalog.dart';
 import '../infrastructure/feedback/system_exercise_sound_feedback.dart';
@@ -12,11 +13,13 @@ final class ExerciseScreen extends StatefulWidget {
   const ExerciseScreen({
     required this.exercise,
     required this.onCompleted,
+    required this.audioCoordinator,
     super.key,
   });
 
   final Exercise exercise;
   final Future<void> Function() onCompleted;
+  final AudioCoordinator audioCoordinator;
 
   @override
   State<ExerciseScreen> createState() => _ExerciseScreenState();
@@ -35,8 +38,10 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       exercise: widget.exercise,
       onCompleted: widget.onCompleted,
       soundFeedback: const SystemExerciseSoundFeedback(),
+      audioCoordinator: widget.audioCoordinator,
     );
     _keyboardFocusNode = FocusNode(debugLabel: 'entrada do exercício');
+    unawaited(_viewModel.start());
   }
 
   @override

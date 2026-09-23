@@ -1,15 +1,19 @@
 import 'package:digitavox_criancas/src/app.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_content_audio_service.dart';
+
 void main() {
   testWidgets('runs a physical-key exercise and records completion', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
+    final audioService = FakeContentAudioService();
 
     await tester.pumpWidget(
       DigitavoxApp(
@@ -17,6 +21,7 @@ void main() {
           assetPath: 'assets/content/demo_course.json',
         ),
         progressRepository: InMemoryProgressRepository(),
+        audioCoordinator: AudioCoordinator(contentAudioService: audioService),
       ),
     );
     await tester.pumpAndSettle();
@@ -39,6 +44,10 @@ void main() {
       find.bySemanticsLabel(RegExp('A tecla esperada é A')),
       findsOneWidget,
     );
+    expect(
+      audioService.events,
+      contains('play:assets/audio/demo/instruction_a_demo.wav'),
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
     await tester.pump();
@@ -55,11 +64,18 @@ void main() {
       findsOneWidget,
     );
 
+    final stopsBeforeLeaving = audioService.events
+        .where((event) => event == 'stop')
+        .length;
     await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('1 estrelas conquistadas'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Refazer'), findsOneWidget);
+    expect(
+      audioService.events.where((event) => event == 'stop').length,
+      greaterThan(stopsBeforeLeaving),
+    );
     semantics.dispose();
   });
 }
