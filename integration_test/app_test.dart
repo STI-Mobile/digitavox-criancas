@@ -51,11 +51,16 @@ void main() {
 
     await tester.pumpWidget(_persistentApp(preferences));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Começar'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Começar curso'));
     await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyA, character: 'a');
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar'));
+    await tester.tap(find.byTooltip('Voltar à lição'));
+    await tester.pumpAndSettle();
+    final backToCourse = find.widgetWithText(TextButton, 'Voltar ao curso');
+    await tester.ensureVisible(backToCourse);
+    await tester.pumpAndSettle();
+    await tester.tap(backToCourse);
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('1 estrelas conquistadas'), findsOneWidget);
@@ -66,7 +71,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('1 estrelas conquistadas'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Refazer'), findsOneWidget);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Continuar curso'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Continuar curso'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tecla J'), findsOneWidget);
   });
 }
 
