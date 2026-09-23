@@ -34,19 +34,19 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Começar'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Começar').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Tecla A'), findsWidgets);
+    expect(find.text('Tecla F'), findsWidgets);
     expect(find.text('Pressione'), findsOneWidget);
-    expect(find.text('A'), findsOneWidget);
+    expect(find.text('F'), findsOneWidget);
     expect(
-      find.bySemanticsLabel(RegExp('A tecla esperada é A')),
+      find.bySemanticsLabel(RegExp('A tecla esperada é F')),
       findsOneWidget,
     );
     expect(
       audioService.events,
-      contains('play:assets/audio/demo/instruction_a_demo.wav'),
+      contains('play:assets/audio/demo/instruction_f_demo.wav'),
     );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
@@ -55,7 +55,7 @@ void main() {
     expect(find.text('Tente novamente'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Tecla X incorreta')), findsOneWidget);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyA, character: 'a');
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
     await tester.pumpAndSettle();
 
     expect(find.text('Concluído'), findsOneWidget);

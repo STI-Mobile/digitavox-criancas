@@ -4,27 +4,128 @@
     {
       "id": "demo-space-explorers",
       "title": "Exploradores Espaciais",
-      "version": "0.2.0-demo",
+      "version": "0.3.0-demo",
       "isDemo": true,
       "modules": [
         {
-          "id": "demo-launch",
-          "title": "Preparação",
+          "id": "demo-awakening",
+          "title": "O Despertar da Aurora",
           "lessons": [
             {
-              "id": "demo-home-row",
-              "title": "Tecla A",
+              "id": "demo-sensors",
+              "title": "Sensores da Aurora",
               "exercises": [
                 {
-                  "id": "demo-key-a",
-                  "title": "Pressionar a tecla A",
+                  "id": "demo-key-f",
+                  "title": "Tecla F",
                   "type": "key",
-                  "prompt": "Pressione a tecla A no teclado físico.",
-                  "expectedInput": "a",
+                  "prompt": "Pressione a tecla F no teclado físico.",
+                  "expectedInput": "f",
                   "audio": {
-                    "asset": "assets/audio/demo/instruction_a_demo.wav"
+                    "asset": "assets/audio/demo/instruction_f_demo.wav"
                   },
-                  "minimumRepetitions": 1
+                  "minimumRepetitions": 3
+                },
+                {
+                  "id": "demo-key-j",
+                  "title": "Tecla J",
+                  "type": "key",
+                  "prompt": "Pressione a tecla J no teclado físico.",
+                  "expectedInput": "j",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_j_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                }
+              ]
+            },
+            {
+              "id": "demo-left-wing",
+              "title": "Asa Esquerda",
+              "exercises": [
+                {
+                  "id": "demo-left-code",
+                  "title": "Código da Asa Esquerda",
+                  "type": "keySequence",
+                  "prompt": "Digite A, S, D, F, G.",
+                  "expectedInput": "asdfg",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_asdfg_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                },
+                {
+                  "id": "demo-left-code-return",
+                  "title": "Código de Retorno",
+                  "type": "keySequence",
+                  "prompt": "Agora digite G, F, D, S, A.",
+                  "expectedInput": "gfdsa",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_gfdsa_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "demo-navigation",
+          "title": "Navegação",
+          "lessons": [
+            {
+              "id": "demo-right-wing",
+              "title": "Asa Direita",
+              "exercises": [
+                {
+                  "id": "demo-right-code",
+                  "title": "Código da Asa Direita",
+                  "type": "keySequence",
+                  "prompt": "Digite H, J, K, L, cê-cedilha.",
+                  "expectedInput": "hjklç",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_hjklc_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                },
+                {
+                  "id": "demo-right-code-return",
+                  "title": "Código de Retorno",
+                  "type": "keySequence",
+                  "prompt": "Agora digite cê-cedilha, L, K, J, H.",
+                  "expectedInput": "çlkjh",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_clkjh_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                }
+              ]
+            },
+            {
+              "id": "demo-first-words",
+              "title": "Primeiras Palavras",
+              "exercises": [
+                {
+                  "id": "demo-word-fala",
+                  "title": "Palavra Fala",
+                  "type": "word",
+                  "prompt": "Digite a palavra fala.",
+                  "expectedInput": "fala",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_fala_demo.wav"
+                  },
+                  "minimumRepetitions": 3
+                },
+                {
+                  "id": "demo-word-sala",
+                  "title": "Palavra Sala",
+                  "type": "word",
+                  "prompt": "Digite a palavra sala.",
+                  "expectedInput": "sala",
+                  "audio": {
+                    "asset": "assets/audio/demo/instruction_sala_demo.wav"
+                  },
+                  "minimumRepetitions": 3
                 }
               ]
             }
