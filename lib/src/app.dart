@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'application/audio/audio_coordinator.dart';
+import 'application/audio/audio_guidance_coordinator.dart';
 import 'domain/content/course_catalog.dart';
 import 'domain/progress/progress_repository.dart';
 import 'domain/progress/student_progress.dart';
@@ -14,12 +15,14 @@ final class DigitavoxApp extends StatefulWidget {
     required this.courseCatalog,
     required this.progressRepository,
     required this.audioCoordinator,
+    this.audioGuidanceCoordinator,
     super.key,
   });
 
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
   final AudioCoordinator audioCoordinator;
+  final AudioGuidanceCoordinator? audioGuidanceCoordinator;
 
   @override
   State<DigitavoxApp> createState() => _DigitavoxAppState();
@@ -31,6 +34,10 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
   @override
   void dispose() {
     unawaited(widget.audioCoordinator.dispose());
+    final audioGuidanceCoordinator = widget.audioGuidanceCoordinator;
+    if (audioGuidanceCoordinator != null) {
+      unawaited(audioGuidanceCoordinator.dispose());
+    }
     super.dispose();
   }
 
