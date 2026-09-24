@@ -8,6 +8,7 @@ void main() {
 
       expect(document.schemaVersion, 2);
       expect(document.courses.single.id, 'course-1');
+      expect(document.courses.single.themeId, 'space');
       expect(
         document
             .courses
@@ -176,6 +177,7 @@ Map<String, Object?> _validCatalog() {
         'title': 'Curso demo',
         'version': '0.1.0',
         'isDemo': true,
+        'theme': 'space',
         'modules': <Object?>[
           <String, Object?>{
             'id': 'module-1',

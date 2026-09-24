@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/content/course_catalog.dart';
+import 'design_system/tokens/dvx_tokens.dart';
 
 final class CourseScene extends StatelessWidget {
   const CourseScene({required this.scene, required this.character, super.key});
@@ -31,12 +32,13 @@ final class CourseScene extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DvxSpacing.sm),
           Text(character.name, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: DvxSpacing.sm),
         ],
         if (scene != null) Text(scene!.text),
-        if (scene != null || character != null) const SizedBox(height: 20),
+        if (scene != null || character != null)
+          const SizedBox(height: DvxSpacing.lg),
       ],
     );
   }

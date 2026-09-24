@@ -6,6 +6,7 @@
       "title": "Jornada de demonstração",
       "version": "1.0.0-demo",
       "isDemo": true,
+      "theme": "space",
       "characters": [
         {
           "id": "aurora",

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'design_system/tokens/dvx_tokens.dart';
+
 /// A native button whose visible title and status also name its semantic action.
 final class CourseNavigationTile extends StatelessWidget {
   const CourseNavigationTile({
@@ -17,13 +19,15 @@ final class CourseNavigationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
     child: OutlinedButton(
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(DvxSpacing.md),
         minimumSize: const Size.fromHeight(64),
         alignment: Alignment.centerLeft,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DvxRadius.md),
+        ),
       ),
       onPressed: onPressed,
       child: Row(
@@ -33,13 +37,13 @@ final class CourseNavigationTile extends StatelessWidget {
               completed ? Icons.check_circle_outline : Icons.menu_book_outlined,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: DvxSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 6),
+                const SizedBox(height: DvxSpacing.xs),
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -48,7 +52,7 @@ final class CourseNavigationTile extends StatelessWidget {
             ),
           ),
           if (onPressed != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: DvxSpacing.sm),
             const ExcludeSemantics(child: Icon(Icons.chevron_right)),
           ],
         ],

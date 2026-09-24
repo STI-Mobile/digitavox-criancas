@@ -25,6 +25,17 @@ flutter:
 
   uses-material-design: true
 
+  fonts:
+    - family: Open Sans
+      fonts:
+        - asset: assets/fonts/open_sans/OpenSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/open_sans/OpenSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/open_sans/OpenSans-Bold.ttf
+          weight: 700
+
   assets:
     - assets/content/demo_course.json
     - assets/audio/demo/instruction_a_demo.wav
+    - assets/images/demo/

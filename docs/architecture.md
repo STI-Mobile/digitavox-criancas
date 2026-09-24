@@ -26,6 +26,7 @@ presentation → application → domain
 - `StudentProgressCodec` valida explicitamente cursos, lições, exercícios concluídos, estrelas e configurações. Documento ausente, corrompido ou com schema desconhecido resulta em progresso vazio; falhas do armazenamento não são silenciadas.
 - Modelos de progresso são imutáveis para tornar transições previsíveis e testáveis.
 - O catálogo possui `schemaVersion`, versão do curso e validação na entrada.
+- O Design System reside na apresentação e combina tokens institucionais, um dos três temas acessíveis do aplicativo e uma identidade de curso resolvida por identificador semântico. O domínio conhece somente `themeId` e a preferência persistida, nunca cores ou tipos Flutter. Consulte `docs/design-system.md`.
 - `CourseJourneyEngine` interpreta a hierarquia e a ordem do catálogo, mantém a etapa atual e coordena retomada, avanço, retorno, sessão de exercício, cena e personagem. As telas enviam comandos ao engine; o conteúdo não é convertido em regras de widgets. Consulte o ADR 0004 e `docs/course.schema.json`.
 - Eventos de teclado físico são filtrados na infraestrutura, avaliados por uma regra de domínio e coordenados por `ExerciseSessionViewModel`; widgets apenas encaminham a entrada e apresentam o estado.
 - A sessão de exercício distingue espera, erro, acerto e conclusão. A conclusão delega a atualização ao ViewModel do catálogo, preservando a infraestrutura existente de progresso.

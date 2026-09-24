@@ -6,6 +6,7 @@
       "title": "Exploradores Espaciais",
       "version": "0.3.0-demo",
       "isDemo": true,
+      "theme": "space",
       "modules": [
         {
           "id": "demo-awakening",

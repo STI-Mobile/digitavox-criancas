@@ -1,11 +1,43 @@
+enum AppThemePreference {
+  standard,
+  dark,
+  highContrast;
+
+  static AppThemePreference parse(String value) => values.firstWhere(
+    (preference) => preference.name == value,
+    orElse: () => throw ArgumentError.value(
+      value,
+      'value',
+      'preferência de tema desconhecida',
+    ),
+  );
+
+  String get label => switch (this) {
+    standard => 'Padrão',
+    dark => 'Escuro',
+    highContrast => 'Alto contraste',
+  };
+}
+
 final class AppSettings {
   const AppSettings({
     this.spokenFeedbackEnabled = true,
-    this.highContrastEnabled = true,
+    this.themePreference = AppThemePreference.standard,
   });
 
   final bool spokenFeedbackEnabled;
-  final bool highContrastEnabled;
+  final AppThemePreference themePreference;
+
+  bool get highContrastEnabled =>
+      themePreference == AppThemePreference.highContrast;
+
+  AppSettings copyWith({
+    bool? spokenFeedbackEnabled,
+    AppThemePreference? themePreference,
+  }) => AppSettings(
+    spokenFeedbackEnabled: spokenFeedbackEnabled ?? this.spokenFeedbackEnabled,
+    themePreference: themePreference ?? this.themePreference,
+  );
 }
 
 final class LessonProgress {
@@ -77,6 +109,14 @@ final class StudentProgress {
 
   int get totalStars =>
       courses.values.fold(0, (total, course) => total + course.stars);
+
+  StudentProgress copyWith({
+    Map<String, CourseProgress>? courses,
+    AppSettings? settings,
+  }) => StudentProgress(
+    courses: courses ?? this.courses,
+    settings: settings ?? this.settings,
+  );
 
   StudentProgress completeExercise({
     required String courseId,

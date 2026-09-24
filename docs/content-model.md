@@ -6,7 +6,7 @@ O conteúdo segue a hierarquia:
 Course → Module → Lesson → Exercise
 ```
 
-O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, versão, indicação explícita de demo e módulos. IDs devem ser únicos entre irmãos. Listas estruturais não podem ser vazias.
+O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, versão, indicação explícita de demo e módulos. IDs devem ser únicos entre irmãos. Listas estruturais não podem ser vazias. O campo opcional `theme` seleciona uma identidade visual conhecida pelo aplicativo, como `space`; o catálogo não contém cores nem detalhes de Flutter. Sem tema conhecido, a apresentação usa uma identidade neutra.
 
 Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; nesse tipo ele deve representar exatamente um caractere imprimível. Outros tipos podem carregar entradas textuais maiores. Os identificadores reconhecidos são `key`, `keySequence`, `word`, `phrase`, `timed`, `repetition` e `challenge`. `key`, `keySequence`, `word` e `phrase` possuem fluxo funcional quando `expectedInput` não está vazio; os demais permanecem desabilitados. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds`, `audio` e `scene`.
 

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'application/audio/audio_coordinator.dart';
 import 'domain/content/course_catalog.dart';
 import 'domain/progress/progress_repository.dart';
+import 'domain/progress/student_progress.dart';
 import 'presentation/course_home_screen.dart';
+import 'presentation/design_system/app_theme/dvx_app_theme.dart';
 
 final class DigitavoxApp extends StatefulWidget {
   const DigitavoxApp({
@@ -24,6 +26,8 @@ final class DigitavoxApp extends StatefulWidget {
 }
 
 final class _DigitavoxAppState extends State<DigitavoxApp> {
+  AppThemePreference _themePreference = AppThemePreference.standard;
+
   @override
   void dispose() {
     unawaited(widget.audioCoordinator.dispose());
@@ -32,38 +36,19 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF071A40);
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF00D9FF),
-      brightness: Brightness.dark,
-      surface: background,
-    );
-
     return MaterialApp(
       title: 'Digitavox Crianças',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: background,
-        useMaterial3: true,
-        textTheme: ThemeData.dark().textTheme.apply(
-          bodyColor: Colors.white,
-          displayColor: Colors.white,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
+      theme: DvxAppTheme.resolve(_themePreference),
+      themeAnimationDuration: const Duration(milliseconds: 200),
       home: CourseHomeScreen(
         courseCatalog: widget.courseCatalog,
         progressRepository: widget.progressRepository,
         audioCoordinator: widget.audioCoordinator,
+        onThemePreferenceChanged: (preference) {
+          if (_themePreference == preference) return;
+          setState(() => _themePreference = preference);
+        },
       ),
     );
   }

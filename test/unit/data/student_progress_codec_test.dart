@@ -21,7 +21,7 @@ void main() {
       },
       settings: AppSettings(
         spokenFeedbackEnabled: false,
-        highContrastEnabled: true,
+        themePreference: AppThemePreference.highContrast,
       ),
     );
 
@@ -29,9 +29,9 @@ void main() {
     final serializedProgress = document['progress']! as Map<String, Object?>;
     final settings = serializedProgress['settings']! as Map<String, Object?>;
 
-    expect(document['schemaVersion'], 1);
+    expect(document['schemaVersion'], 2);
     expect(settings['spokenFeedbackEnabled'], isFalse);
-    expect(settings['highContrastEnabled'], isTrue);
+    expect(settings['themePreference'], 'highContrast');
     expect(
       codec.encode(progress),
       contains('"completedExerciseIds":["exercise-1","exercise-2"]'),
@@ -56,7 +56,7 @@ void main() {
       },
       settings: AppSettings(
         spokenFeedbackEnabled: false,
-        highContrastEnabled: false,
+        themePreference: AppThemePreference.dark,
       ),
     );
 
@@ -68,7 +68,7 @@ void main() {
       <String>{'exercise-1', 'exercise-2'},
     );
     expect(restored.settings.spokenFeedbackEnabled, isFalse);
-    expect(restored.settings.highContrastEnabled, isFalse);
+    expect(restored.settings.themePreference, AppThemePreference.dark);
   });
 
   test('rejects malformed JSON with a known format error', () {
@@ -82,7 +82,7 @@ void main() {
     expect(
       () => codec.decode('''
         {
-          "schemaVersion": 2,
+          "schemaVersion": 3,
           "progress": {"courses": {}, "settings": {}}
         }
       '''),
@@ -108,7 +108,42 @@ void main() {
             },
             "settings": {
               "spokenFeedbackEnabled": true,
-              "highContrastEnabled": true
+              "themePreference": "standard"
+            }
+          }
+        }
+      '''),
+      throwsA(isA<ProgressDataFormatException>()),
+    );
+  });
+
+  test('migrates the version 1 high contrast preference', () {
+    final restored = codec.decode('''
+      {
+        "schemaVersion": 1,
+        "progress": {
+          "courses": {},
+          "settings": {
+            "spokenFeedbackEnabled": true,
+            "highContrastEnabled": true
+          }
+        }
+      }
+    ''');
+
+    expect(restored.settings.themePreference, AppThemePreference.highContrast);
+  });
+
+  test('rejects an unknown theme preference', () {
+    expect(
+      () => codec.decode('''
+        {
+          "schemaVersion": 2,
+          "progress": {
+            "courses": {},
+            "settings": {
+              "spokenFeedbackEnabled": true,
+              "themePreference": "sepia"
             }
           }
         }

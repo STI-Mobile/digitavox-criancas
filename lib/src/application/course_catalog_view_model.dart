@@ -75,4 +75,17 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     await progressRepository.save(_progress);
     notifyListeners();
   }
+
+  Future<void> updateThemePreference(AppThemePreference preference) async {
+    if (_status != CourseCatalogStatus.ready) {
+      throw StateError('O catálogo ainda não está pronto.');
+    }
+    if (_progress.settings.themePreference == preference) return;
+
+    _progress = _progress.copyWith(
+      settings: _progress.settings.copyWith(themePreference: preference),
+    );
+    await progressRepository.save(_progress);
+    notifyListeners();
+  }
 }
