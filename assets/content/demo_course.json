@@ -22,8 +22,14 @@
                   "type": "key",
                   "prompt": "Pressione a tecla F no teclado físico.",
                   "expectedInput": "f",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_f_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-key-f-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_f_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 },
@@ -33,8 +39,14 @@
                   "type": "key",
                   "prompt": "Pressione a tecla J no teclado físico.",
                   "expectedInput": "j",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_j_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-key-j-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_j_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 }
@@ -50,8 +62,14 @@
                   "type": "keySequence",
                   "prompt": "Digite A, S, D, F, G.",
                   "expectedInput": "asdfg",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_asdfg_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-left-code-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_asdfg_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 },
@@ -61,8 +79,14 @@
                   "type": "keySequence",
                   "prompt": "Agora digite G, F, D, S, A.",
                   "expectedInput": "gfdsa",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_gfdsa_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-left-code-return-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_gfdsa_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 }
@@ -84,8 +108,14 @@
                   "type": "keySequence",
                   "prompt": "Digite H, J, K, L, cê-cedilha.",
                   "expectedInput": "hjklç",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_hjklc_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-right-code-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_hjklc_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 },
@@ -95,8 +125,14 @@
                   "type": "keySequence",
                   "prompt": "Agora digite cê-cedilha, L, K, J, H.",
                   "expectedInput": "çlkjh",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_clkjh_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-right-code-return-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_clkjh_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 }
@@ -112,8 +148,14 @@
                   "type": "word",
                   "prompt": "Digite a palavra fala.",
                   "expectedInput": "fala",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_fala_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-word-fala-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_fala_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 },
@@ -123,8 +165,14 @@
                   "type": "word",
                   "prompt": "Digite a palavra sala.",
                   "expectedInput": "sala",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_sala_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-word-sala-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_sala_demo.wav"
+                      }
+                    ]
                   },
                   "minimumRepetitions": 3
                 }

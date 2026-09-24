@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'application/audio/audio_coordinator.dart';
-import 'application/audio/audio_guidance_coordinator.dart';
+import 'application/audio/audio_guidance.dart';
+import 'application/course_audio_orchestrator.dart';
 import 'domain/content/course_catalog.dart';
 import 'domain/progress/progress_repository.dart';
 import 'domain/progress/student_progress.dart';
@@ -14,15 +14,13 @@ final class DigitavoxApp extends StatefulWidget {
   const DigitavoxApp({
     required this.courseCatalog,
     required this.progressRepository,
-    required this.audioCoordinator,
-    this.audioGuidanceCoordinator,
+    required this.audioGuidance,
     super.key,
   });
 
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
-  final AudioCoordinator audioCoordinator;
-  final AudioGuidanceCoordinator? audioGuidanceCoordinator;
+  final AudioGuidance audioGuidance;
 
   @override
   State<DigitavoxApp> createState() => _DigitavoxAppState();
@@ -30,14 +28,13 @@ final class DigitavoxApp extends StatefulWidget {
 
 final class _DigitavoxAppState extends State<DigitavoxApp> {
   AppThemePreference _themePreference = AppThemePreference.standard;
+  late final CourseAudioOrchestrator _courseAudio = CourseAudioOrchestrator(
+    audioGuidance: widget.audioGuidance,
+  );
 
   @override
   void dispose() {
-    unawaited(widget.audioCoordinator.dispose());
-    final audioGuidanceCoordinator = widget.audioGuidanceCoordinator;
-    if (audioGuidanceCoordinator != null) {
-      unawaited(audioGuidanceCoordinator.dispose());
-    }
+    unawaited(widget.audioGuidance.dispose());
     super.dispose();
   }
 
@@ -51,7 +48,7 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
       home: CourseHomeScreen(
         courseCatalog: widget.courseCatalog,
         progressRepository: widget.progressRepository,
-        audioCoordinator: widget.audioCoordinator,
+        courseAudio: _courseAudio,
         onThemePreferenceChanged: (preference) {
           if (_themePreference == preference) return;
           setState(() => _themePreference = preference);

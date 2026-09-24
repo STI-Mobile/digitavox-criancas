@@ -17,34 +17,137 @@ enum ExerciseType {
   }
 }
 
-final class ContentAudioReference {
-  const ContentAudioReference({required this.assetPath});
+enum CourseAudioEvent { start, correctInput, incorrectInput, completed }
 
-  factory ContentAudioReference.fromJson(Map<String, Object?> json) {
-    final assetPath = _requiredString(json, 'asset');
-    if (!assetPath.startsWith('assets/audio/') ||
-        assetPath.contains('..') ||
-        assetPath.endsWith('/')) {
-      throw const CourseContentFormatException(
-        'O asset de áudio deve apontar para um arquivo em assets/audio/.',
+enum ContentAudioCueType {
+  speech,
+  sfx,
+  music;
+
+  static ContentAudioCueType parse(String value) {
+    return ContentAudioCueType.values.firstWhere(
+      (type) => type.name == value,
+      orElse: () => throw CourseContentFormatException(
+        'Tipo de cue de áudio desconhecido: $value.',
+      ),
+    );
+  }
+}
+
+/// Declarative audio intent. It contains no player or platform configuration.
+final class ContentAudioCue {
+  const ContentAudioCue({
+    required this.id,
+    required this.type,
+    this.text,
+    this.asset,
+    this.speaker,
+  });
+
+  factory ContentAudioCue.fromJson(Map<String, Object?> json) {
+    const supportedKeys = <String>{'id', 'type', 'text', 'asset', 'speaker'};
+    final unknownKeys = json.keys.where((key) => !supportedKeys.contains(key));
+    if (unknownKeys.isNotEmpty) {
+      throw CourseContentFormatException(
+        'Campo de cue de áudio desconhecido: ${unknownKeys.first}.',
       );
     }
 
-    return ContentAudioReference(assetPath: assetPath);
+    final type = ContentAudioCueType.parse(_requiredString(json, 'type'));
+    final text = _optionalString(json, 'text');
+    final asset = _optionalString(json, 'asset');
+    final speaker = _optionalString(json, 'speaker');
+
+    if (asset != null) _validateAudioAsset(asset);
+    switch (type) {
+      case ContentAudioCueType.speech:
+        if (text == null && asset == null) {
+          throw const CourseContentFormatException(
+            'Um cue speech precisa de text ou asset.',
+          );
+        }
+      case ContentAudioCueType.sfx || ContentAudioCueType.music:
+        if (asset == null) {
+          throw CourseContentFormatException(
+            'Um cue ${type.name} precisa de asset.',
+          );
+        }
+        if (text != null || speaker != null) {
+          throw CourseContentFormatException(
+            'Um cue ${type.name} não aceita text ou speaker.',
+          );
+        }
+    }
+
+    return ContentAudioCue(
+      id: _requiredString(json, 'id'),
+      type: type,
+      text: text,
+      asset: asset,
+      speaker: speaker,
+    );
   }
 
-  final String assetPath;
+  final String id;
+  final ContentAudioCueType type;
+  final String? text;
+  final String? asset;
+  final String? speaker;
+}
+
+/// Ordered cues keyed by generic course lifecycle events.
+final class CourseAudioConfiguration {
+  const CourseAudioConfiguration({
+    this.start = const <ContentAudioCue>[],
+    this.correctInput = const <ContentAudioCue>[],
+    this.incorrectInput = const <ContentAudioCue>[],
+    this.completed = const <ContentAudioCue>[],
+  });
+
+  factory CourseAudioConfiguration.fromJson(Map<String, Object?> json) {
+    final supportedKeys = CourseAudioEvent.values
+        .map((event) => event.name)
+        .toSet();
+    final unknownKeys = json.keys.where((key) => !supportedKeys.contains(key));
+    if (unknownKeys.isNotEmpty) {
+      throw CourseContentFormatException(
+        'Evento de áudio desconhecido: ${unknownKeys.first}.',
+      );
+    }
+
+    return CourseAudioConfiguration(
+      start: _audioCueList(json, CourseAudioEvent.start.name),
+      correctInput: _audioCueList(json, CourseAudioEvent.correctInput.name),
+      incorrectInput: _audioCueList(json, CourseAudioEvent.incorrectInput.name),
+      completed: _audioCueList(json, CourseAudioEvent.completed.name),
+    );
+  }
+
+  final List<ContentAudioCue> start;
+  final List<ContentAudioCue> correctInput;
+  final List<ContentAudioCue> incorrectInput;
+  final List<ContentAudioCue> completed;
+
+  List<ContentAudioCue> cuesFor(CourseAudioEvent event) => switch (event) {
+    CourseAudioEvent.start => start,
+    CourseAudioEvent.correctInput => correctInput,
+    CourseAudioEvent.incorrectInput => incorrectInput,
+    CourseAudioEvent.completed => completed,
+  };
 }
 
 /// Optional narrative attached to a node of the course hierarchy.
 final class ContentScene {
-  const ContentScene({required this.text, this.audio, this.characterId});
+  const ContentScene({
+    required this.text,
+    this.audioGuidance,
+    this.characterId,
+  });
 
   factory ContentScene.fromJson(Map<String, Object?> json) {
-    final audio = _optionalObject(json, 'audio');
     return ContentScene(
       text: _requiredString(json, 'text'),
-      audio: audio == null ? null : ContentAudioReference.fromJson(audio),
+      audioGuidance: _courseAudioConfiguration(json),
       characterId: json.containsKey('characterId')
           ? _requiredString(json, 'characterId')
           : null,
@@ -52,7 +155,7 @@ final class ContentScene {
   }
 
   final String text;
-  final ContentAudioReference? audio;
+  final CourseAudioConfiguration? audioGuidance;
   final String? characterId;
 }
 
@@ -97,7 +200,7 @@ final class Exercise {
     this.expectedInput,
     this.minimumRepetitions,
     this.timeLimitSeconds,
-    this.audio,
+    this.audioGuidance,
     this.scene,
   }) : assert(type != ExerciseType.key || expectedInput != null);
 
@@ -106,7 +209,6 @@ final class Exercise {
     final minimumRepetitions = json['minimumRepetitions'];
     final timeLimitSeconds = json['timeLimitSeconds'];
     final expectedInput = json['expectedInput'];
-    final audio = json['audio'];
 
     if (minimumRepetitions != null &&
         (minimumRepetitions is! int || minimumRepetitions < 1)) {
@@ -132,12 +234,6 @@ final class Exercise {
         'Exercícios de tecla exigem expectedInput com exatamente uma tecla.',
       );
     }
-    if (audio != null && audio is! Map<String, Object?>) {
-      throw const CourseContentFormatException(
-        'O campo audio deve ser um objeto.',
-      );
-    }
-
     return Exercise(
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
@@ -146,9 +242,7 @@ final class Exercise {
       expectedInput: expectedInput as String?,
       minimumRepetitions: minimumRepetitions as int?,
       timeLimitSeconds: timeLimitSeconds as int?,
-      audio: audio == null
-          ? null
-          : ContentAudioReference.fromJson(audio as Map<String, Object?>),
+      audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
     );
   }
@@ -160,7 +254,7 @@ final class Exercise {
   final String? expectedInput;
   final int? minimumRepetitions;
   final int? timeLimitSeconds;
-  final ContentAudioReference? audio;
+  final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
 }
 
@@ -169,6 +263,7 @@ final class Lesson {
     required this.id,
     required this.title,
     required this.exercises,
+    this.audioGuidance,
     this.scene,
   });
 
@@ -184,6 +279,7 @@ final class Lesson {
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
       exercises: exercises,
+      audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
     );
   }
@@ -191,6 +287,7 @@ final class Lesson {
   final String id;
   final String title;
   final List<Exercise> exercises;
+  final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
 }
 
@@ -199,6 +296,7 @@ final class CourseModule {
     required this.id,
     required this.title,
     required this.lessons,
+    this.audioGuidance,
     this.scene,
   });
 
@@ -214,6 +312,7 @@ final class CourseModule {
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
       lessons: lessons,
+      audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
     );
   }
@@ -221,6 +320,7 @@ final class CourseModule {
   final String id;
   final String title;
   final List<Lesson> lessons;
+  final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
 }
 
@@ -232,6 +332,7 @@ final class Course {
     required this.isDemo,
     required this.modules,
     this.themeId = 'default',
+    this.audioGuidance,
     this.scene,
     this.characters = const [],
   });
@@ -289,6 +390,7 @@ final class Course {
       themeId: json.containsKey('theme')
           ? _requiredString(json, 'theme')
           : 'default',
+      audioGuidance: _courseAudioConfiguration(json),
       scene: scene,
       characters: characters,
     );
@@ -300,6 +402,7 @@ final class Course {
   final bool isDemo;
   final List<CourseModule> modules;
   final String themeId;
+  final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
   final List<CourseCharacter> characters;
 }
@@ -358,6 +461,11 @@ String _requiredString(Map<String, Object?> json, String key) {
   return value;
 }
 
+String? _optionalString(Map<String, Object?> json, String key) {
+  if (!json.containsKey(key)) return null;
+  return _requiredString(json, key);
+}
+
 Map<String, Object?>? _optionalObject(Map<String, Object?> json, String key) {
   if (!json.containsKey(key)) return null;
   final value = json[key];
@@ -370,6 +478,44 @@ Map<String, Object?>? _optionalObject(Map<String, Object?> json, String key) {
 ContentScene? _scene(Map<String, Object?> json) {
   final scene = _optionalObject(json, 'scene');
   return scene == null ? null : ContentScene.fromJson(scene);
+}
+
+CourseAudioConfiguration? _courseAudioConfiguration(Map<String, Object?> json) {
+  final configuration = _optionalObject(json, 'audioGuidance');
+  return configuration == null
+      ? null
+      : CourseAudioConfiguration.fromJson(configuration);
+}
+
+List<ContentAudioCue> _audioCueList(Map<String, Object?> json, String key) {
+  if (!json.containsKey(key)) return const <ContentAudioCue>[];
+  final value = json[key];
+  if (value is! List<Object?> || value.isEmpty) {
+    throw CourseContentFormatException(
+      'O evento de áudio "$key" deve ser uma lista não vazia.',
+    );
+  }
+  return List<ContentAudioCue>.unmodifiable(
+    value.map((item) {
+      if (item is! Map<String, Object?>) {
+        throw CourseContentFormatException(
+          'Todos os cues de "$key" devem ser objetos.',
+        );
+      }
+      return ContentAudioCue.fromJson(item);
+    }),
+  );
+}
+
+void _validateAudioAsset(String assetPath) {
+  if (!assetPath.startsWith('assets/audio/') ||
+      assetPath.contains('..') ||
+      assetPath.contains('\\') ||
+      assetPath.endsWith('/')) {
+    throw const CourseContentFormatException(
+      'O asset de áudio deve apontar para um arquivo em assets/audio/.',
+    );
+  }
 }
 
 List<Map<String, Object?>> _requiredObjectList(

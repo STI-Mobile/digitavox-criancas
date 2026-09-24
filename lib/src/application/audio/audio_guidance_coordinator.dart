@@ -1,9 +1,10 @@
 import 'audio_cue.dart';
+import 'audio_guidance.dart';
 import 'audio_guidance_services.dart';
 
 /// Executes generic audio cues. Cue producers decide what and when; this class
 /// decides how, including speech asset-to-TTS fallback and sequencing.
-final class AudioGuidanceCoordinator {
+final class AudioGuidanceCoordinator implements AudioGuidance {
   factory AudioGuidanceCoordinator({
     required TextToSpeechService textToSpeechService,
     required AssetAudioPlayer speechAssetPlayer,
@@ -47,6 +48,7 @@ final class AudioGuidanceCoordinator {
 
   bool get isDisposed => _disposed;
 
+  @override
   Future<void> play(AudioCue cue) async {
     _ensureActive();
     _validate(cue);
@@ -56,6 +58,7 @@ final class AudioGuidanceCoordinator {
     await _playCue(cue, generation);
   }
 
+  @override
   Future<void> playSequence(Iterable<AudioCue> cues) async {
     _ensureActive();
     final sequence = List<AudioCue>.unmodifiable(cues);
@@ -71,12 +74,14 @@ final class AudioGuidanceCoordinator {
     }
   }
 
+  @override
   Future<void> stop() async {
     if (_disposed) return;
     ++_generation;
     await _stopPlayers();
   }
 
+  @override
   Future<void> cancelSequence() async {
     if (_disposed) return;
     ++_generation;
@@ -84,6 +89,7 @@ final class AudioGuidanceCoordinator {
     await _stopPlayers();
   }
 
+  @override
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;

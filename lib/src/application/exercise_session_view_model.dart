@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../domain/content/course_catalog.dart';
-import 'audio/audio_coordinator.dart';
-import 'exercise_sound_feedback.dart';
 
 enum ExerciseSessionStatus {
   waitingForInput,
@@ -31,8 +29,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   ExerciseSessionViewModel({
     required this.exercise,
     required this.onCompleted,
-    required this.soundFeedback,
-    required this.audioCoordinator,
+    required this.onInputEvaluated,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        _expectedCharacters =
@@ -51,8 +48,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
 
   final Exercise exercise;
   final Future<void> Function() onCompleted;
-  final ExerciseSoundFeedback soundFeedback;
-  final AudioCoordinator audioCoordinator;
+  final Future<void> Function(bool correct) onInputEvaluated;
   final DateTime Function() _now;
   final List<int> _expectedCharacters;
   final Stopwatch _stopwatch = Stopwatch();
@@ -100,11 +96,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     return total == 0 ? 100 : (_correctInputs * 100 / total).floor();
   }
 
-  Future<void> start() async {
-    final audio = exercise.audio;
-    if (audio != null) await audioCoordinator.playContent(audio);
-  }
-
   Future<void> handleInput(String? input) async {
     if (_isDisposed ||
         _isCompleting ||
@@ -113,7 +104,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     }
     if (input == null || !_isSinglePrintableCharacter(input)) return;
 
-    unawaited(audioCoordinator.stop());
     final expected = expectedCharacter;
     final correct = input.toLowerCase() == expected.toLowerCase();
     _lastInput = input;
@@ -128,7 +118,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
       _announcement = _inputIndex < _expectedCharacters.length
           ? 'Correto. Próxima tecla: ${_spoken(expectedCharacter)}.'
           : 'Correto.';
-      unawaited(soundFeedback.playCorrect());
     } else {
       _incorrectInputs++;
       _consecutiveErrors++;
@@ -142,11 +131,13 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
             'Excesso de erros. Pressione seta para direita '
             'para ouvir o restante ou F1 para ajuda. $_announcement';
       }
-      unawaited(soundFeedback.playIncorrect());
     }
+
+    final inputFeedback = onInputEvaluated(correct);
 
     if (_inputIndex < _expectedCharacters.length) {
       notifyListeners();
+      unawaited(inputFeedback);
       return;
     }
 
@@ -159,11 +150,14 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
           'Repetição $_currentRepetition de $totalRepetitions. '
           'Próxima tecla: ${_spoken(expectedCharacter)}.';
       notifyListeners();
+      unawaited(inputFeedback);
       return;
     }
 
-    notifyListeners();
     _isCompleting = true;
+    notifyListeners();
+    await inputFeedback;
+    if (_isDisposed) return;
     await onCompleted();
     _isCompleting = false;
     if (_isDisposed) return;
@@ -179,7 +173,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     String? lessonInstruction,
   }) async {
     if (_isDisposed) return;
-    await audioCoordinator.stop();
 
     switch (shortcut) {
       case ExerciseShortcut.help:
@@ -225,7 +218,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     _stopwatch.stop();
-    unawaited(audioCoordinator.stop());
     super.dispose();
   }
 }

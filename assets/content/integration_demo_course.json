@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "courses": [
+    {
+      "id": "technical-audio-integration-demo",
+      "title": "Demo de Integração",
+      "version": "1.0.0-demo",
+      "isDemo": true,
+      "audioGuidance": {
+        "start": [
+          {
+            "id": "demo-start",
+            "type": "speech",
+            "text": "Teste de início.",
+            "speaker": "system-demo"
+          }
+        ]
+      },
+      "modules": [
+        {
+          "id": "technical-integration",
+          "title": "Teste de Integração",
+          "lessons": [
+            {
+              "id": "single-key-a",
+              "title": "Teste de tecla única",
+              "exercises": [
+                {
+                  "id": "press-a",
+                  "title": "Teste A",
+                  "type": "key",
+                  "prompt": "Entrada visual A.",
+                  "expectedInput": "a",
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "press-a-instruction",
+                        "type": "speech",
+                        "text": "Pressione a tecla A.",
+                        "asset": "assets/audio/demo/instruction_a_demo.wav",
+                        "speaker": "demo-speaker"
+                      }
+                    ],
+                    "correctInput": [
+                      {
+                        "id": "press-a-correct",
+                        "type": "speech",
+                        "text": "Entrada correta."
+                      }
+                    ],
+                    "incorrectInput": [
+                      {
+                        "id": "press-a-incorrect",
+                        "type": "sfx",
+                        "asset": "assets/audio/demo/technical_signal_demo.wav"
+                      }
+                    ],
+                    "completed": [
+                      {
+                        "id": "press-a-completed",
+                        "type": "speech",
+                        "text": "Teste concluído."
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "single-key-f",
+              "title": "Teste de segunda tecla",
+              "exercises": [
+                {
+                  "id": "press-f",
+                  "title": "Teste F",
+                  "type": "key",
+                  "prompt": "Entrada visual F.",
+                  "expectedInput": "f",
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "press-f-instruction",
+                        "type": "speech",
+                        "text": "Pressione a tecla F.",
+                        "asset": "assets/audio/demo/missing_technical_demo.wav"
+                      }
+                    ],
+                    "correctInput": [
+                      {
+                        "id": "press-f-correct",
+                        "type": "speech",
+                        "text": "Entrada correta."
+                      }
+                    ],
+                    "incorrectInput": [
+                      {
+                        "id": "press-f-incorrect",
+                        "type": "sfx",
+                        "asset": "assets/audio/demo/technical_signal_demo.wav"
+                      }
+                    ],
+                    "completed": [
+                      {
+                        "id": "press-f-completed",
+                        "type": "speech",
+                        "text": "Próximo teste."
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "key-sequence",
+              "title": "Teste de sequência",
+              "exercises": [
+                {
+                  "id": "type-af",
+                  "title": "Teste A F",
+                  "type": "keySequence",
+                  "prompt": "Entrada visual A F.",
+                  "expectedInput": "af",
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "type-af-instruction",
+                        "type": "speech",
+                        "text": "Pressione A e F."
+                      }
+                    ],
+                    "correctInput": [
+                      {
+                        "id": "type-af-correct",
+                        "type": "speech",
+                        "text": "Entrada correta."
+                      }
+                    ],
+                    "incorrectInput": [
+                      {
+                        "id": "type-af-incorrect",
+                        "type": "sfx",
+                        "asset": "assets/audio/demo/technical_signal_demo.wav"
+                      }
+                    ],
+                    "completed": [
+                      {
+                        "id": "type-af-completed-start",
+                        "type": "speech",
+                        "text": "Teste concluído."
+                      },
+                      {
+                        "id": "type-af-completed-signal",
+                        "type": "sfx",
+                        "asset": "assets/audio/demo/technical_signal_demo.wav"
+                      },
+                      {
+                        "id": "type-af-completed-end",
+                        "type": "speech",
+                        "text": "Fim da demonstração."
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

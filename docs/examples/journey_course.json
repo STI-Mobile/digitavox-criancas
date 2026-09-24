@@ -24,7 +24,15 @@
       "scene": {
         "text": "Bem-vindo à jornada de demonstração.",
         "characterId": "aurora",
-        "audio": { "asset": "assets/audio/demo/welcome.wav" }
+        "audioGuidance": {
+          "start": [
+            {
+              "id": "journey-start",
+              "type": "speech",
+              "asset": "assets/audio/demo/welcome.wav"
+            }
+          ]
+        }
       },
       "modules": [
         {
@@ -32,7 +40,15 @@
           "title": "Preparação",
           "scene": {
             "text": "Vamos conhecer o teclado.",
-            "audio": { "asset": "assets/audio/demo/preparation.wav" }
+            "audioGuidance": {
+              "start": [
+                {
+                  "id": "preparation-start",
+                  "type": "speech",
+                  "asset": "assets/audio/demo/preparation.wav"
+                }
+              ]
+            }
           },
           "lessons": [
             {
@@ -40,7 +56,15 @@
               "title": "Sensores",
               "scene": {
                 "text": "Encontre as marcas das teclas F e J.",
-                "audio": { "asset": "assets/audio/demo/sensors.wav" }
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "sensors-start",
+                      "type": "speech",
+                      "asset": "assets/audio/demo/sensors.wav"
+                    }
+                  ]
+                }
               },
               "exercises": [
                 {
@@ -51,7 +75,15 @@
                   "expectedInput": "f",
                   "scene": {
                     "text": "Pressione F.",
-                    "audio": { "asset": "assets/audio/demo/key_f.wav" }
+                    "audioGuidance": {
+                      "start": [
+                        {
+                          "id": "key-f-start",
+                          "type": "speech",
+                          "asset": "assets/audio/demo/key_f.wav"
+                        }
+                      ]
+                    }
                   }
                 },
                 {
@@ -70,7 +102,15 @@
                   "scene": {
                     "text": "Pressione J.",
                     "characterId": "explorer",
-                    "audio": { "asset": "assets/audio/demo/key_j.wav" }
+                    "audioGuidance": {
+                      "start": [
+                        {
+                          "id": "key-j-start",
+                          "type": "speech",
+                          "asset": "assets/audio/demo/key_j.wav"
+                        }
+                      ]
+                    }
                   }
                 }
               ]
@@ -80,7 +120,15 @@
               "title": "Mão esquerda",
               "scene": {
                 "text": "Vamos encontrar a tecla A.",
-                "audio": { "asset": "assets/audio/demo/left_hand.wav" }
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "left-hand-start",
+                      "type": "speech",
+                      "asset": "assets/audio/demo/left_hand.wav"
+                    }
+                  ]
+                }
               },
               "exercises": [
                 {
@@ -89,7 +137,15 @@
                   "type": "key",
                   "prompt": "Pressione A.",
                   "expectedInput": "a",
-                  "audio": { "asset": "assets/audio/demo/instruction_a_demo.wav" }
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "key-a-start",
+                        "type": "speech",
+                        "asset": "assets/audio/demo/instruction_a_demo.wav"
+                      }
+                    ]
+                  }
                 }
               ]
             }

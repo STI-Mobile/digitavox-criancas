@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../application/audio/audio_coordinator.dart';
+import '../application/course_audio_orchestrator.dart';
 import '../application/course_catalog_view_model.dart';
 import '../application/course_journey_engine.dart';
 import '../domain/content/course_catalog.dart';
 import '../domain/progress/progress_repository.dart';
 import '../domain/progress/student_progress.dart';
-import '../infrastructure/feedback/system_exercise_sound_feedback.dart';
 import 'course_journey_screen.dart';
 import 'design_system/tokens/dvx_tokens.dart';
 
@@ -16,14 +15,14 @@ final class CourseHomeScreen extends StatefulWidget {
   const CourseHomeScreen({
     required this.courseCatalog,
     required this.progressRepository,
-    required this.audioCoordinator,
+    required this.courseAudio,
     required this.onThemePreferenceChanged,
     super.key,
   });
 
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
-  final AudioCoordinator audioCoordinator;
+  final CourseAudioOrchestrator courseAudio;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
@@ -55,8 +54,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
       _engine = CourseJourneyEngine(
         course: _catalog.courses.first,
         catalog: _catalog,
-        audio: widget.audioCoordinator,
-        soundFeedback: const SystemExerciseSoundFeedback(),
+        courseAudio: widget.courseAudio,
       );
     });
     unawaited(_engine!.start());
@@ -65,7 +63,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
-      unawaited(widget.audioCoordinator.stop());
+      unawaited(_engine?.stopNarration());
     }
   }
 

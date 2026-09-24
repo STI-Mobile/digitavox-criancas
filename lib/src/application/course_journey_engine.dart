@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../domain/content/course_catalog.dart';
-import 'audio/audio_coordinator.dart';
+import 'course_audio_orchestrator.dart';
 import 'course_catalog_view_model.dart';
 import 'exercise_session_view_model.dart';
-import 'exercise_sound_feedback.dart';
 
 enum JourneyStage { course, module, lesson, exercise }
 
@@ -22,16 +21,14 @@ final class CourseJourneyEngine extends ChangeNotifier {
   CourseJourneyEngine({
     required this.course,
     required this.catalog,
-    required this.audio,
-    required this.soundFeedback,
+    required this.courseAudio,
   }) {
     catalog.addListener(_changed);
   }
 
   final Course course;
   final CourseCatalogViewModel catalog;
-  final AudioCoordinator audio;
-  final ExerciseSoundFeedback soundFeedback;
+  final CourseAudioOrchestrator courseAudio;
 
   JourneyStage _stage = JourneyStage.course;
   CourseModule? _module;
@@ -39,6 +36,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
   Exercise? _exercise;
   ExerciseSessionViewModel? _session;
   ExerciseSessionViewModel? _scheduledAdvance;
+  var _audioRequestGeneration = 0;
   bool _disposed = false;
 
   JourneyStage get stage => _stage;
@@ -59,9 +57,17 @@ final class CourseJourneyEngine extends ChangeNotifier {
     JourneyStage.exercise => _exercise!.scene,
   };
 
-  ContentAudioReference? get currentAudio =>
-      scene?.audio ??
-      (_stage == JourneyStage.exercise ? _exercise?.audio : null);
+  CourseAudioConfiguration? get currentAudioConfiguration =>
+      scene?.audioGuidance ??
+      switch (_stage) {
+        JourneyStage.course => course.audioGuidance,
+        JourneyStage.module => _module!.audioGuidance,
+        JourneyStage.lesson => _lesson!.audioGuidance,
+        JourneyStage.exercise => _exercise!.audioGuidance,
+      };
+
+  bool get canReplayNarration =>
+      courseAudio.hasCues(currentAudioConfiguration, CourseAudioEvent.start);
 
   CourseCharacter? get character {
     final id =
@@ -216,11 +222,14 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   Future<void> replayNarration() {
     if (_disposed) return Future<void>.value();
-    final reference = currentAudio;
-    return reference == null ? audio.stop() : audio.playContent(reference);
+    final generation = ++_audioRequestGeneration;
+    return _playCurrentNarration(generation);
   }
 
-  Future<void> stopNarration() => audio.stop();
+  Future<void> stopNarration() {
+    ++_audioRequestGeneration;
+    return courseAudio.cancel();
+  }
 
   void _validateLesson(CourseModule module, Lesson lesson) {
     if (!course.modules.contains(module) || !module.lessons.contains(lesson)) {
@@ -247,17 +256,39 @@ final class CourseJourneyEngine extends ChangeNotifier {
     if (exercise != null && lesson != null) {
       _session = ExerciseSessionViewModel(
         exercise: exercise,
-        onCompleted: () => catalog.completeExercise(
-          courseId: course.id,
-          lessonId: lesson.id,
-          exerciseId: exercise.id,
+        onCompleted: () async {
+          await catalog.completeExercise(
+            courseId: course.id,
+            lessonId: lesson.id,
+            exerciseId: exercise.id,
+          );
+          await courseAudio.play(
+            currentAudioConfiguration,
+            CourseAudioEvent.completed,
+          );
+        },
+        onInputEvaluated: (correct) => courseAudio.play(
+          currentAudioConfiguration,
+          correct
+              ? CourseAudioEvent.correctInput
+              : CourseAudioEvent.incorrectInput,
         ),
-        soundFeedback: soundFeedback,
-        audioCoordinator: audio,
       )..addListener(_changed);
     }
-    unawaited(replayNarration());
+    final audioGeneration = ++_audioRequestGeneration;
+    unawaited(_replaceNarration(audioGeneration));
     notifyListeners();
+  }
+
+  Future<void> _replaceNarration(int generation) async {
+    await courseAudio.cancel();
+    if (_disposed || generation != _audioRequestGeneration) return;
+    await _playCurrentNarration(generation);
+  }
+
+  Future<void> _playCurrentNarration(int generation) async {
+    if (_disposed || generation != _audioRequestGeneration) return;
+    await courseAudio.play(currentAudioConfiguration, CourseAudioEvent.start);
   }
 
   void _changed() {
@@ -278,10 +309,11 @@ final class CourseJourneyEngine extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    ++_audioRequestGeneration;
     catalog.removeListener(_changed);
     _session?.removeListener(_changed);
     _session?.dispose();
-    unawaited(audio.stop());
+    unawaited(courseAudio.cancel());
     super.dispose();
   }
 }

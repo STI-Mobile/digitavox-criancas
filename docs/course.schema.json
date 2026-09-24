@@ -9,12 +9,40 @@
   },
   "$defs": {
     "text": { "type": "string", "pattern": "\\S" },
-    "audio": {
+    "audioCue": {
       "type": "object",
-      "required": ["asset"],
+      "required": ["id", "type"],
       "properties": {
-        "asset": { "type": "string", "pattern": "^assets/audio/(?!.*\\.\\.)(?!.*\\/$).+" }
-      }
+        "id": { "$ref": "#/$defs/text" },
+        "type": { "enum": ["speech", "sfx", "music"] },
+        "text": { "$ref": "#/$defs/text" },
+        "asset": { "type": "string", "pattern": "^assets/audio/(?!.*\\.\\.)(?!.*\\\\)(?!.*\\/$).+" },
+        "speaker": { "$ref": "#/$defs/text" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "speech" } } },
+          "then": { "anyOf": [{ "required": ["text"] }, { "required": ["asset"] }] }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["sfx", "music"] } } },
+          "then": {
+            "required": ["asset"],
+            "not": { "anyOf": [{ "required": ["text"] }, { "required": ["speaker"] }] }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "audioGuidance": {
+      "type": "object",
+      "properties": {
+        "start": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/audioCue" } },
+        "correctInput": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/audioCue" } },
+        "incorrectInput": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/audioCue" } },
+        "completed": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/audioCue" } }
+      },
+      "additionalProperties": false
     },
     "scene": {
       "type": "object",
@@ -22,7 +50,7 @@
       "properties": {
         "text": { "$ref": "#/$defs/text" },
         "characterId": { "$ref": "#/$defs/text" },
-        "audio": { "$ref": "#/$defs/audio" }
+        "audioGuidance": { "$ref": "#/$defs/audioGuidance" }
       }
     },
     "character": {
@@ -46,7 +74,7 @@
         "expectedInput": { "type": ["string", "null"] },
         "minimumRepetitions": { "type": ["integer", "null"], "minimum": 1 },
         "timeLimitSeconds": { "type": ["integer", "null"], "minimum": 1 },
-        "audio": { "anyOf": [{ "$ref": "#/$defs/audio" }, { "type": "null" }] },
+        "audioGuidance": { "$ref": "#/$defs/audioGuidance" },
         "scene": { "$ref": "#/$defs/scene" }
       },
       "allOf": [
@@ -65,6 +93,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/text" },
         "title": { "$ref": "#/$defs/text" },
+        "audioGuidance": { "$ref": "#/$defs/audioGuidance" },
         "scene": { "$ref": "#/$defs/scene" },
         "exercises": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/exercise" } }
       }
@@ -75,6 +104,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/text" },
         "title": { "$ref": "#/$defs/text" },
+        "audioGuidance": { "$ref": "#/$defs/audioGuidance" },
         "scene": { "$ref": "#/$defs/scene" },
         "lessons": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/lesson" } }
       }
@@ -88,6 +118,7 @@
         "version": { "$ref": "#/$defs/text" },
         "isDemo": { "type": "boolean" },
         "theme": { "$ref": "#/$defs/text" },
+        "audioGuidance": { "$ref": "#/$defs/audioGuidance" },
         "scene": { "$ref": "#/$defs/scene" },
         "characters": { "type": "array", "items": { "$ref": "#/$defs/character" } },
         "modules": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/module" } }

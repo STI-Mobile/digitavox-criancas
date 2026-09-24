@@ -72,7 +72,7 @@ final class CourseJourneyScreen extends StatelessWidget {
                 JourneyStage.exercise => 'Exercício',
               },
               actions: [
-                if (engine.currentAudio != null)
+                if (engine.canReplayNarration)
                   IconButton(
                     onPressed: engine.replayNarration,
                     tooltip: 'Ouvir novamente',
@@ -117,7 +117,7 @@ final class CourseJourneyScreen extends StatelessWidget {
                         scene: engine.scene,
                         character: engine.character,
                       ),
-                      if (engine.currentAudio != null) ...[
+                      if (engine.canReplayNarration) ...[
                         Wrap(
                           spacing: 8,
                           children: [
