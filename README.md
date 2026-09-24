@@ -66,8 +66,9 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 - [ADR 0002: persistência local do progresso](docs/adr/0002-persistencia-local-progresso.md)
 - [ADR 0003: arquitetura de áudio](docs/adr/0003-arquitetura-audio.md)
 - [Audio Guidance](docs/architecture/audio-guidance.md)
+- [Integração Course Audio](docs/architecture/course-audio-integration.md)
 - [Contrato para agentes](AGENTS.md)
 
 ## Estado atual
 
-O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução visual e semanticamente, reproduz uma fala técnica associada ao conteúdo, recebe teclado físico, informa erro ou acerto e persiste conclusões e estrelas entre reinicializações. A fundação genérica de Audio Guidance oferece TTS nativo, SFX, música básica e fallback de fala gravada, mas ainda não está integrada ao conteúdo. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há áudio pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.
+Em debug, o app carrega um Demo Course técnico que usa o mesmo parser, engine, ViewModels e progresso da jornada normal. A configuração declarativa produz Speech e SFX via Course Audio Orchestration, incluindo asset, fallback TTS, sequenciamento e cancelamento. Em release, o catálogo técnico fica desabilitado. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.

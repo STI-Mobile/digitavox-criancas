@@ -71,7 +71,7 @@ Não existe scheduler ou fila global. A semântica é deliberadamente determiní
 
 ## Lifecycle
 
-`dispose` invalida a geração corrente, interrompe os quatro canais, libera players, TTS e subscriptions e é idempotente. Depois disso, `play` e `playSequence` lançam `AudioGuidanceDisposedException`; `stop` e `cancelSequence` não iniciam trabalho novo. O ponto de composição entrega o coordenador ao app apenas para controlar seu lifecycle. Nenhuma tela ou fluxo de curso consome Audio Guidance nesta etapa.
+`dispose` invalida a geração corrente, interrompe os quatro canais, libera players, TTS e subscriptions e é idempotente. Depois disso, `play` e `playSequence` lançam `AudioGuidanceDisposedException`; `stop` e `cancelSequence` não iniciam trabalho novo. O ponto de composição mantém a propriedade e o descarte do coordenador. O curso o consome somente pelo contrato `AudioGuidance`, através do `CourseAudioOrchestrator`; consulte [Integração entre Course Engine e Audio Guidance](course-audio-integration.md).
 
 ## Erros e logging
 

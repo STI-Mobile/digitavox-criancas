@@ -14,7 +14,7 @@ A persistência local é validada sem depender do filesystem ou de estado global
 
 O Design System possui testes unitários para as paletas Standard, Dark e High Contrast, seleção e composição do tema espacial e fallback neutro. Testes de widget cobrem estados de feedback, prompt com texto ampliado, redução decorativa em alto contraste e alternância/persistência da preferência sem golden tests frágeis.
 
-Áudio é testado por uma implementação fake de `ContentAudioService`. Testes unitários cobrem parsing da referência, rejeição de caminhos inválidos, início, substituição, stop, dispose e falha conhecida. Testes do ViewModel demonstram que teclado, avaliação e conclusão continuam funcionando durante reprodução ou falha. O widget test preserva as asserções semânticas e verifica parada ao sair; a integração usa o player e o asset reais, sem tentar provar programaticamente a saída física do alto-falante.
+Áudio de curso é testado com um fake de `AudioGuidance`. Testes unitários cobrem parsing de `audioGuidance`, resolução ordenada para `SpeechCue`, `SfxCue` e `MusicCue`, eventos sem configuração e propagação de metadata. Testes do engine demonstram que teclado, avaliação, conclusão e persistência continuam funcionando durante reprodução ou falha. O widget test preserva as asserções semânticas e verifica cancelamento ao sair; a infraestrutura concreta possui testes próprios para asset, TTS, fallback, sequenciamento e lifecycle, sem tentar provar programaticamente a saída física do alto-falante.
 
 Para regressões de acessibilidade, verifique rótulos/estados semânticos quando útil e complemente com VoiceOver/TalkBack em fluxos afetados. Consulte `docs/accessibility.md`.
 

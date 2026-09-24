@@ -30,10 +30,9 @@ presentation → application → domain
 - `CourseJourneyEngine` interpreta a hierarquia e a ordem do catálogo, mantém a etapa atual e coordena retomada, avanço, retorno, sessão de exercício, cena e personagem. As telas enviam comandos ao engine; o conteúdo não é convertido em regras de widgets. Consulte o ADR 0004 e `docs/course.schema.json`.
 - Eventos de teclado físico são filtrados na infraestrutura, avaliados por uma regra de domínio e coordenados por `ExerciseSessionViewModel`; widgets apenas encaminham a entrada e apresentam o estado.
 - A sessão de exercício distingue espera, erro, acerto e conclusão. A conclusão delega a atualização ao ViewModel do catálogo, preservando a infraestrutura existente de progresso.
-- `ExerciseSoundFeedback` mantém o ViewModel testável e desacoplado da plataforma. A implementação atual usa um clique do sistema para acerto e dois para erro, sem pacote externo; som sempre complementa texto e semântica.
-- Áudio de conteúdo segue `ContentAudioReference` → `AudioCoordinator` → `ContentAudioService` → `AudioplayersContentAudioService`. O coordenador mantém somente uma fala narrativa ativa, interrompe ao receber entrada ou sair da tela e contém falhas conhecidas sem bloquear o exercício.
+- Áudio declarado pelo curso segue `CourseAudioConfiguration` → `CourseAudioOrchestrator` → `AudioCue` → `AudioGuidance`. O engine emite contexto e eventos, mas não conhece assets físicos, TTS ou players. Consulte `docs/architecture/course-audio-integration.md`.
 - Áudio gravado do curso, futura fala dinâmica e acessibilidade do sistema são responsabilidades distintas. `Semantics`, VoiceOver e TalkBack não são mecanismos narrativos do curso.
-- `AudioGuidanceCoordinator` oferece cues genéricos tipados, sequenciamento, cancelamento e fallback de fala gravada para TTS nativo. A infraestrutura ainda não está integrada ao conteúdo do curso. Consulte `docs/architecture/audio-guidance.md`.
+- `AudioGuidanceCoordinator` oferece cues genéricos tipados, sequenciamento, cancelamento e fallback de fala gravada para TTS nativo. O contrato `AudioGuidance` permite integrar e testar consumidores sem plugin. Consulte `docs/architecture/audio-guidance.md`.
 - Cada primeira conclusão ainda concede uma estrela pela regra mínima do harness. Essa regra é provisória e não representa pontuação baseada em desempenho.
 
 ## Pontos de extensão
@@ -41,7 +40,7 @@ presentation → application → domain
 - Evolução do progresso: incrementar o schema, definir migração ou fallback e cobrir compatibilidade antes de alterar o formato persistido.
 - Pacotes de escola: implementar outro `CourseCatalog`, incluindo segurança, migração e origem do pacote quando os requisitos existirem.
 - Exercícios: estender o schema e o domínio, depois criar apresentação especializada por tipo.
-- Fala dinâmica: integrar cues ao orquestrador de conteúdo somente quando os contratos dessa etapa estiverem definidos; o serviço de TTS permanece uma infraestrutura genérica.
+- Fala dinâmica: validar conteúdo de cursos reais sobre o contrato declarativo já integrado; o serviço de TTS permanece uma infraestrutura genérica.
 - Política de áudio: revisar foco, ducking e coexistência depois de testes empíricos com VoiceOver e TalkBack em dispositivos físicos.
 
 Mudanças estruturais relevantes devem receber um ADR em `docs/adr`.
