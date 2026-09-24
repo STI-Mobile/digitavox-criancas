@@ -78,6 +78,26 @@ void main() {
     expect(repository.saveCount, 1);
   });
 
+  test('persists the selected application theme', () async {
+    final repository = InMemoryProgressRepository();
+    final viewModel = CourseCatalogViewModel(
+      courseCatalog: const _FakeCourseCatalog(),
+      progressRepository: repository,
+    );
+    await viewModel.initialize();
+
+    await viewModel.updateThemePreference(AppThemePreference.dark);
+
+    expect(
+      viewModel.progress.settings.themePreference,
+      AppThemePreference.dark,
+    );
+    expect(
+      (await repository.load()).settings.themePreference,
+      AppThemePreference.dark,
+    );
+  });
+
   test('restores completion after recreating the application state', () async {
     final store = _MemoryDocumentStore();
     final firstSession = CourseCatalogViewModel(

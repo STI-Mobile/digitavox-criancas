@@ -1,7 +1,9 @@
 import 'package:digitavox_criancas/src/app.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
+import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/tokens/dvx_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -85,7 +87,7 @@ void main() {
   );
 
   testWidgets(
-    'JSON drives character and narration with a missing-image fallback',
+    'JSON drives character assets, narration and missing-image fallback',
     (tester) async {
       final service = FakeContentAudioService();
       await tester.pumpWidget(
@@ -103,7 +105,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
       expect(service.events.last, 'play:assets/audio/demo/welcome.wav');
       await tester.tap(find.text('Parar áudio'));
       await tester.pumpAndSettle();
@@ -127,6 +129,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
       expect(service.events.last, 'play:assets/audio/demo/key_j.wav');
       expect(tester.takeException(), isNull);
     },
@@ -195,6 +198,39 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.text('Digitavox'), findsOneWidget);
+  });
+
+  testWidgets('switches and persists Standard, Dark and High Contrast', (
+    tester,
+  ) async {
+    final repository = InMemoryProgressRepository();
+    await _pumpDemo(tester, repository: repository);
+    var context = tester.element(find.text('Digitavox'));
+    expect(Theme.of(context).brightness, Brightness.light);
+
+    await tester.tap(find.byTooltip('Alterar tema visual'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Escuro'));
+    await tester.pumpAndSettle();
+    context = tester.element(find.text('Digitavox'));
+    expect(Theme.of(context).brightness, Brightness.dark);
+    expect(
+      (await repository.load()).settings.themePreference,
+      AppThemePreference.dark,
+    );
+
+    await tester.tap(find.byTooltip('Alterar tema visual'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alto contraste'));
+    await tester.pumpAndSettle();
+    context = tester.element(find.text('Digitavox'));
+    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await _pumpDemo(tester, repository: repository);
+    context = tester.element(find.text('Digitavox'));
+    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
   });
 }
 
