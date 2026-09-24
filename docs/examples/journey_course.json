@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 2,
+  "courses": [
+    {
+      "id": "journey-demo",
+      "title": "Jornada de demonstração",
+      "version": "1.0.0-demo",
+      "isDemo": true,
+      "characters": [
+        {
+          "id": "aurora",
+          "name": "Aurora",
+          "imageAsset": "assets/images/demo/aurora.png",
+          "imageDescription": "Personagem guia da jornada de demonstração."
+        },
+        {
+          "id": "explorer",
+          "name": "Explorador",
+          "imageAsset": "assets/images/demo/explorer.png",
+          "imageDescription": "Personagem explorador da jornada de demonstração."
+        }
+      ],
+      "scene": {
+        "text": "Bem-vindo à jornada de demonstração.",
+        "characterId": "aurora",
+        "audio": { "asset": "assets/audio/demo/welcome.wav" }
+      },
+      "modules": [
+        {
+          "id": "preparation",
+          "title": "Preparação",
+          "scene": {
+            "text": "Vamos conhecer o teclado.",
+            "audio": { "asset": "assets/audio/demo/preparation.wav" }
+          },
+          "lessons": [
+            {
+              "id": "sensors",
+              "title": "Sensores",
+              "scene": {
+                "text": "Encontre as marcas das teclas F e J.",
+                "audio": { "asset": "assets/audio/demo/sensors.wav" }
+              },
+              "exercises": [
+                {
+                  "id": "key-f",
+                  "title": "Tecla F",
+                  "type": "key",
+                  "prompt": "Pressione F.",
+                  "expectedInput": "f",
+                  "scene": {
+                    "text": "Pressione F.",
+                    "audio": { "asset": "assets/audio/demo/key_f.wav" }
+                  }
+                },
+                {
+                  "id": "sequence-fj",
+                  "title": "Sequência F J",
+                  "type": "keySequence",
+                  "prompt": "Digite F e J.",
+                  "expectedInput": "fj"
+                },
+                {
+                  "id": "key-j",
+                  "title": "Tecla J",
+                  "type": "key",
+                  "prompt": "Pressione J.",
+                  "expectedInput": "j",
+                  "scene": {
+                    "text": "Pressione J.",
+                    "characterId": "explorer",
+                    "audio": { "asset": "assets/audio/demo/key_j.wav" }
+                  }
+                }
+              ]
+            },
+            {
+              "id": "left-hand",
+              "title": "Mão esquerda",
+              "scene": {
+                "text": "Vamos encontrar a tecla A.",
+                "audio": { "asset": "assets/audio/demo/left_hand.wav" }
+              },
+              "exercises": [
+                {
+                  "id": "key-a",
+                  "title": "Tecla A",
+                  "type": "key",
+                  "prompt": "Pressione A.",
+                  "expectedInput": "a",
+                  "audio": { "asset": "assets/audio/demo/instruction_a_demo.wav" }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "exploration",
+          "title": "Exploração",
+          "scene": { "text": "Continue explorando o teclado." },
+          "lessons": [
+            {
+              "id": "new-key",
+              "title": "Outra tecla",
+              "exercises": [
+                {
+                  "id": "key-b",
+                  "title": "Tecla B",
+                  "type": "key",
+                  "prompt": "Pressione B.",
+                  "expectedInput": "b"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

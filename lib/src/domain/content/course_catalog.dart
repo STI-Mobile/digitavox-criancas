@@ -36,6 +36,58 @@ final class ContentAudioReference {
   final String assetPath;
 }
 
+/// Optional narrative attached to a node of the course hierarchy.
+final class ContentScene {
+  const ContentScene({required this.text, this.audio, this.characterId});
+
+  factory ContentScene.fromJson(Map<String, Object?> json) {
+    final audio = _optionalObject(json, 'audio');
+    return ContentScene(
+      text: _requiredString(json, 'text'),
+      audio: audio == null ? null : ContentAudioReference.fromJson(audio),
+      characterId: json.containsKey('characterId')
+          ? _requiredString(json, 'characterId')
+          : null,
+    );
+  }
+
+  final String text;
+  final ContentAudioReference? audio;
+  final String? characterId;
+}
+
+final class CourseCharacter {
+  const CourseCharacter({
+    required this.id,
+    required this.name,
+    required this.imageAsset,
+    required this.imageDescription,
+  });
+
+  factory CourseCharacter.fromJson(Map<String, Object?> json) {
+    final asset = _requiredString(json, 'imageAsset');
+    if (!asset.startsWith('assets/images/') ||
+        asset.contains('..') ||
+        asset.contains('\\') ||
+        asset.endsWith('/')) {
+      throw const CourseContentFormatException(
+        'A imagem do personagem deve apontar para um arquivo em assets/images/.',
+      );
+    }
+    return CourseCharacter(
+      id: _requiredString(json, 'id'),
+      name: _requiredString(json, 'name'),
+      imageAsset: asset,
+      imageDescription: _requiredString(json, 'imageDescription'),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String imageAsset;
+  final String imageDescription;
+}
+
 final class Exercise {
   const Exercise({
     required this.id,
@@ -46,6 +98,7 @@ final class Exercise {
     this.minimumRepetitions,
     this.timeLimitSeconds,
     this.audio,
+    this.scene,
   }) : assert(type != ExerciseType.key || expectedInput != null);
 
   factory Exercise.fromJson(Map<String, Object?> json) {
@@ -67,16 +120,16 @@ final class Exercise {
         'timeLimitSeconds deve ser um inteiro positivo.',
       );
     }
-    if (expectedInput != null &&
+    if (expectedInput != null && expectedInput is! String) {
+      throw const CourseContentFormatException(
+        'expectedInput deve ser um texto.',
+      );
+    }
+    if (type == ExerciseType.key &&
         (expectedInput is! String ||
             !_isSinglePrintableCharacter(expectedInput))) {
       throw const CourseContentFormatException(
-        'expectedInput deve representar exatamente uma tecla.',
-      );
-    }
-    if (type == ExerciseType.key && expectedInput == null) {
-      throw const CourseContentFormatException(
-        'Exercícios de tecla exigem o campo expectedInput.',
+        'Exercícios de tecla exigem expectedInput com exatamente uma tecla.',
       );
     }
     if (audio != null && audio is! Map<String, Object?>) {
@@ -96,6 +149,7 @@ final class Exercise {
       audio: audio == null
           ? null
           : ContentAudioReference.fromJson(audio as Map<String, Object?>),
+      scene: _scene(json),
     );
   }
 
@@ -107,6 +161,7 @@ final class Exercise {
   final int? minimumRepetitions;
   final int? timeLimitSeconds;
   final ContentAudioReference? audio;
+  final ContentScene? scene;
 }
 
 final class Lesson {
@@ -114,6 +169,7 @@ final class Lesson {
     required this.id,
     required this.title,
     required this.exercises,
+    this.scene,
   });
 
   factory Lesson.fromJson(Map<String, Object?> json) {
@@ -128,12 +184,14 @@ final class Lesson {
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
       exercises: exercises,
+      scene: _scene(json),
     );
   }
 
   final String id;
   final String title;
   final List<Exercise> exercises;
+  final ContentScene? scene;
 }
 
 final class CourseModule {
@@ -141,6 +199,7 @@ final class CourseModule {
     required this.id,
     required this.title,
     required this.lessons,
+    this.scene,
   });
 
   factory CourseModule.fromJson(Map<String, Object?> json) {
@@ -155,12 +214,14 @@ final class CourseModule {
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
       lessons: lessons,
+      scene: _scene(json),
     );
   }
 
   final String id;
   final String title;
   final List<Lesson> lessons;
+  final ContentScene? scene;
 }
 
 final class Course {
@@ -170,6 +231,8 @@ final class Course {
     required this.version,
     required this.isDemo,
     required this.modules,
+    this.scene,
+    this.characters = const [],
   });
 
   factory Course.fromJson(Map<String, Object?> json) {
@@ -187,12 +250,43 @@ final class Course {
       );
     }
 
+    final characters = json.containsKey('characters')
+        ? _requiredObjectList(
+            json,
+            'characters',
+          ).map(CourseCharacter.fromJson).toList(growable: false)
+        : <CourseCharacter>[];
+    _requireUniqueIds(
+      characters.map((character) => character.id),
+      'personagem',
+    );
+    final scene = _scene(json);
+    final characterIds = characters.map((character) => character.id).toSet();
+    final scenes = <ContentScene?>[
+      scene,
+      for (final module in modules) ...[
+        module.scene,
+        for (final lesson in module.lessons) ...[
+          lesson.scene,
+          for (final exercise in lesson.exercises) exercise.scene,
+        ],
+      ],
+    ];
+    for (final scene in scenes) {
+      final id = scene?.characterId;
+      if (id != null && !characterIds.contains(id)) {
+        throw CourseContentFormatException('Personagem desconhecido: $id.');
+      }
+    }
+
     return Course(
       id: _requiredString(json, 'id'),
       title: _requiredString(json, 'title'),
       version: _requiredString(json, 'version'),
       isDemo: isDemo,
       modules: modules,
+      scene: scene,
+      characters: characters,
     );
   }
 
@@ -201,6 +295,8 @@ final class Course {
   final String version;
   final bool isDemo;
   final List<CourseModule> modules;
+  final ContentScene? scene;
+  final List<CourseCharacter> characters;
 }
 
 final class CourseCatalogDocument {
@@ -255,6 +351,20 @@ String _requiredString(Map<String, Object?> json, String key) {
     );
   }
   return value;
+}
+
+Map<String, Object?>? _optionalObject(Map<String, Object?> json, String key) {
+  if (!json.containsKey(key)) return null;
+  final value = json[key];
+  if (value is! Map<String, Object?>) {
+    throw CourseContentFormatException('O campo $key deve ser um objeto.');
+  }
+  return value;
+}
+
+ContentScene? _scene(Map<String, Object?> json) {
+  final scene = _optionalObject(json, 'scene');
+  return scene == null ? null : ContentScene.fromJson(scene);
 }
 
 List<Map<String, Object?>> _requiredObjectList(

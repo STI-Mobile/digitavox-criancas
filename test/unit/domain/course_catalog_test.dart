@@ -105,6 +105,42 @@ void main() {
       );
     });
 
+    test('rejects a key exercise with multiple expected characters', () {
+      final catalog = _validCatalog();
+      final exercise = _firstExercise(catalog);
+      exercise['expectedInput'] = 'asdf';
+
+      expect(
+        () => CourseCatalogDocument.fromJson(catalog),
+        throwsA(isA<CourseContentFormatException>()),
+      );
+    });
+
+    test('accepts multiple expected characters for sequence and word', () {
+      for (final (type, expectedInput) in <(String, String)>[
+        ('keySequence', 'asdfg'),
+        ('word', 'fala'),
+      ]) {
+        final catalog = _validCatalog();
+        _firstExercise(catalog)
+          ..['type'] = type
+          ..['expectedInput'] = expectedInput;
+
+        final parsedExercise = CourseCatalogDocument.fromJson(catalog)
+            .courses
+            .single
+            .modules
+            .single
+            .lessons
+            .single
+            .exercises
+            .single;
+
+        expect(parsedExercise.type.name, type);
+        expect(parsedExercise.expectedInput, expectedInput);
+      }
+    });
+
     test('rejects an audio reference outside the audio asset directory', () {
       final catalog = _validCatalog();
       final exercise = _firstExercise(catalog);
