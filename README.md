@@ -5,7 +5,7 @@ Harness inicial do aplicativo Flutter acessível Digitavox Crianças. O projeto 
 ## Pré-requisitos
 
 - Flutter 3.47.2 (canal stable) com Dart 3.13.2;
-- Xcode/CocoaPods para execução em iOS;
+- Xcode com Swift Package Manager para execução em iOS;
 - Android Studio ou Android SDK para execução em Android;
 - `make` para usar os comandos padronizados.
 
@@ -65,8 +65,9 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 - [ADR 0001: Flutter + MVVM](docs/adr/0001-flutter-mvvm.md)
 - [ADR 0002: persistência local do progresso](docs/adr/0002-persistencia-local-progresso.md)
 - [ADR 0003: arquitetura de áudio](docs/adr/0003-arquitetura-audio.md)
+- [Audio Guidance](docs/architecture/audio-guidance.md)
 - [Contrato para agentes](AGENTS.md)
 
 ## Estado atual
 
-O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução visual e semanticamente, reproduz uma fala técnica associada ao conteúdo, recebe teclado físico, informa erro ou acerto e persiste conclusões e estrelas entre reinicializações. A fala gravada do curso, uma futura fala dinâmica por TTS e VoiceOver/TalkBack são canais arquiteturalmente separados. Ainda não há áudio pedagógico definitivo, TTS próprio, música, sincronização em nuvem, backend ou importação de pacotes externos.
+O app carrega um catálogo JSON local e executa de ponta a ponta o exercício demo de uma tecla: apresenta a instrução visual e semanticamente, reproduz uma fala técnica associada ao conteúdo, recebe teclado físico, informa erro ou acerto e persiste conclusões e estrelas entre reinicializações. A fundação genérica de Audio Guidance oferece TTS nativo, SFX, música básica e fallback de fala gravada, mas ainda não está integrada ao conteúdo. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há áudio pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.
