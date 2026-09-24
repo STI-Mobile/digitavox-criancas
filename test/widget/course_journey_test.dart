@@ -1,5 +1,3 @@
-import 'dart:ui' show Tristate;
-
 import 'package:digitavox_criancas/src/app.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
@@ -46,27 +44,22 @@ void main() {
     },
   );
 
-  testWidgets(
-    'unavailable activities are inspectable and explicitly disabled',
-    (tester) async {
-      await _pumpDemo(tester);
-      await tester.tap(find.text('Módulo 1 · O Despertar da Aurora'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Lição 2 · Asa Esquerda'));
-      await tester.pumpAndSettle();
-      final activity = find.widgetWithText(
-        OutlinedButton,
-        '1. Código da Asa Esquerda',
-      );
-      expect(tester.widget<OutlinedButton>(activity).onPressed, isNull);
-      expect(
-        tester.getSemantics(activity).flagsCollection.isEnabled,
-        Tristate.isFalse,
-      );
-      expect(find.textContaining('Ainda não disponível'), findsWidgets);
-      expect(find.text('Começar lição'), findsNothing);
-    },
-  );
+  testWidgets('sequence activities are driven by the catalog', (tester) async {
+    await _pumpDemo(tester);
+    await tester.tap(find.text('Módulo 1 · O Despertar da Aurora'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lição 2 · Asa Esquerda'));
+    await tester.pumpAndSettle();
+    final activity = find.widgetWithText(
+      OutlinedButton,
+      '1. Código da Asa Esquerda',
+    );
+    expect(tester.widget<OutlinedButton>(activity).onPressed, isNotNull);
+    await tester.tap(activity);
+    await tester.pumpAndSettle();
+    expect(find.text('ASDFG'), findsOneWidget);
+    expect(find.text('Repetição 1 de 3'), findsOneWidget);
+  });
 
   testWidgets(
     'resumes saved progress and keeps continuation accessible by keyboard',
@@ -75,11 +68,10 @@ void main() {
       await _pumpDemo(tester, repository: repository);
       await tester.tap(find.text('Começar curso'));
       await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-      await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-      await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      for (var index = 0; index < 3; index++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+        await tester.pump();
+      }
       await tester.pumpAndSettle();
       expect(find.text('Tecla J'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -124,11 +116,10 @@ void main() {
       await tester.tap(find.text('Começar curso'));
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-      await tester.pumpAndSettle();
-      final next = find.text('Próximo exercício: Tecla J');
-      await tester.scrollUntilVisible(next, 250);
-      await tester.pumpAndSettle();
-      await tester.tap(next);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
       await tester.pumpAndSettle();
       expect(
         find.bySemanticsLabel(
@@ -163,19 +154,47 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(start);
     await tester.pumpAndSettle();
-    final keyboard = find.byTooltip('Ativar entrada pelo teclado físico');
+    final keyboard = find.text('Ativar teclado');
     await tester.scrollUntilVisible(keyboard, 250);
     await tester.pumpAndSettle();
     await tester.tap(keyboard);
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-    await tester.pumpAndSettle();
-    final next = find.text('Próximo exercício: Tecla J');
-    await tester.scrollUntilVisible(next, 250);
-    await tester.pumpAndSettle();
-    await tester.tap(next);
+    for (var index = 0; index < 3; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
     expect(find.text('Tecla J'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('supports exercise shortcuts and Escape navigation', (
+    tester,
+  ) async {
+    await _pumpDemo(tester);
+    await tester.tap(find.text('Começar curso'));
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.f2);
+    await tester.pump();
+    expect(find.bySemanticsLabel('Próxima tecla: f.'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+    expect(find.text('Atalhos do exercício'), findsOneWidget);
+    expect(find.textContaining('F9 — tempo'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Sensores da Aurora'), findsWidgets);
+    expect(find.text('0 de 2 exercícios concluídos'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Lição 1 · Sensores da Aurora'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Digitavox'), findsOneWidget);
   });
 }
 

@@ -39,7 +39,7 @@ void main() {
     await audio.dispose();
   });
 
-  test('follows JSON order across lessons and modules, skipping unsupported execution', () async {
+  test('follows JSON order and pauses at each new lesson', () async {
     expect(engine.exercises.map((target) => target.exercise.id), [
       'key-f',
       'sequence-fj',
@@ -48,14 +48,17 @@ void main() {
       'key-b',
     ]);
     engine.resume();
-    engine.continueAfterExercise();
     expect(engine.exercise!.id, 'key-f');
     await engine.session!.handleInput('f');
-    engine.continueAfterExercise();
+    await pumpEventQueue();
+    expect(engine.exercise!.id, 'sequence-fj');
+    await engine.session!.handleInput('f');
+    await engine.session!.handleInput('j');
+    await pumpEventQueue();
     expect(engine.exercise!.id, 'key-j');
     expect(engine.session!.status, ExerciseSessionStatus.waitingForInput);
     await engine.session!.handleInput('j');
-    engine.continueAfterExercise();
+    await pumpEventQueue();
     expect(engine.stage, JourneyStage.lesson);
     expect(engine.lesson!.id, 'left-hand');
     engine.openExercise(
@@ -64,16 +67,16 @@ void main() {
       engine.pendingIn(engine.lesson!)!,
     );
     await engine.session!.handleInput('a');
-    engine.continueAfterExercise();
+    await pumpEventQueue();
     expect(engine.module!.id, 'exploration');
     expect(engine.lesson!.id, 'new-key');
     engine.resume();
     await engine.session!.handleInput('b');
-    engine.continueAfterExercise();
+    await pumpEventQueue();
     expect(engine.stage, JourneyStage.lesson);
     expect(engine.resumeTarget, isNull);
-    expect(engine.completedCount, 4);
-    expect(engine.exerciseCount, 5); // Unsupported is not falsely completed.
+    expect(engine.completedCount, 5);
+    expect(engine.exerciseCount, 5);
   });
 
   test(
@@ -109,8 +112,10 @@ void main() {
       final lesson = engine.lesson!;
       final module = engine.module!;
       await engine.session!.handleInput('f');
+      await pumpEventQueue();
       engine.openExercise(module, lesson, first);
       await engine.session!.handleInput('f');
+      await pumpEventQueue();
       expect((await repository.load()).totalStars, 1);
       engine.dispose();
       catalog.dispose();
@@ -126,7 +131,7 @@ void main() {
         soundFeedback: SilentExerciseFeedback(),
       );
       engine.resume();
-      expect(engine.exercise!.id, 'key-j');
+      expect(engine.exercise!.id, 'sequence-fj');
       engine.back();
       expect(engine.stage, JourneyStage.lesson);
       engine.back();
@@ -153,7 +158,10 @@ void main() {
       await pumpEventQueue();
       expect(service.events.last, 'play:assets/audio/demo/key_f.wav');
       await engine.session!.handleInput('f');
-      engine.continueAfterExercise();
+      await pumpEventQueue();
+      expect(engine.exercise!.id, 'sequence-fj');
+      await engine.session!.handleInput('f');
+      await engine.session!.handleInput('j');
       await pumpEventQueue();
       expect(engine.character!.id, 'explorer');
       expect(engine.character!.imageAsset, 'assets/images/demo/explorer.png');
@@ -197,24 +205,59 @@ void main() {
       await pumpEventQueue();
       expect(audio.lastFailure, isNotNull);
       await engine.session!.handleInput('f');
-      engine.continueAfterExercise();
-      expect(engine.exercise!.id, 'key-j');
+      await pumpEventQueue();
+      expect(engine.exercise!.id, 'sequence-fj');
       expect((await repository.load()).totalStars, 1);
     },
   );
 
-  test('rejects unavailable or foreign targets before changing location', () {
-    final module = engine.course.modules.first;
-    final lesson = module.lessons.first;
-    expect(
-      () => engine.openExercise(module, lesson, lesson.exercises[1]),
-      throwsArgumentError,
-    );
-    expect(
-      () =>
-          engine.openLesson(module, engine.course.modules.last.lessons.single),
-      throwsArgumentError,
-    );
-    expect(engine.stage, JourneyStage.course);
-  });
+  test(
+    'rejects unavailable or foreign targets before changing location',
+    () async {
+      final json = journeyJson();
+      final courses = json['courses'] as List<Object?>;
+      final course = courses.single! as Map<String, Object?>;
+      final modules = course['modules'] as List<Object?>;
+      final moduleJson = modules.first! as Map<String, Object?>;
+      final lessons = moduleJson['lessons'] as List<Object?>;
+      final lessonJson = lessons.first! as Map<String, Object?>;
+      final exercises = lessonJson['exercises'] as List<Object?>;
+      final unavailableJson = exercises[1]! as Map<String, Object?>;
+      unavailableJson['type'] = 'timed';
+      final unavailableCatalog = CourseCatalogViewModel(
+        courseCatalog: JourneyFixtureCatalog(json),
+        progressRepository: InMemoryProgressRepository(),
+      );
+      await unavailableCatalog.initialize();
+      final unavailableEngine = CourseJourneyEngine(
+        course: unavailableCatalog.courses.single,
+        catalog: unavailableCatalog,
+        audio: audio,
+        soundFeedback: SilentExerciseFeedback(),
+      );
+      addTearDown(() {
+        unavailableEngine.dispose();
+        unavailableCatalog.dispose();
+      });
+      final unavailableModule = unavailableEngine.course.modules.first;
+      final unavailableLesson = unavailableModule.lessons.first;
+      final module = engine.course.modules.first;
+      expect(
+        () => unavailableEngine.openExercise(
+          unavailableModule,
+          unavailableLesson,
+          unavailableLesson.exercises[1],
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => engine.openLesson(
+          module,
+          engine.course.modules.last.lessons.single,
+        ),
+        throwsArgumentError,
+      );
+      expect(engine.stage, JourneyStage.course);
+    },
+  );
 }

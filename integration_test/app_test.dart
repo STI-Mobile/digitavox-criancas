@@ -53,7 +53,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Começar curso'));
     await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    for (var index = 0; index < 3; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Voltar à lição'));
     await tester.pumpAndSettle();

@@ -38,12 +38,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tecla F'), findsWidgets);
-    expect(find.text('Pressione'), findsOneWidget);
     expect(find.text('F'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(RegExp('A tecla esperada é F')),
-      findsOneWidget,
-    );
+    expect(find.bySemanticsLabel(RegExp('Próxima tecla: f')), findsOneWidget);
     expect(
       audioService.events,
       contains('play:assets/audio/demo/instruction_f_demo.wav'),
@@ -52,28 +48,15 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
     await tester.pump();
 
-    expect(find.text('Tente novamente'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('Tecla X incorreta')), findsOneWidget);
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Concluído'), findsOneWidget);
+    expect(find.text('Repetição 2 de 3'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('Resposta correta. Exercício concluído.'),
+      find.bySemanticsLabel(RegExp('Tecla x incorreta. Era f')),
       findsOneWidget,
     );
 
-    final stopsBeforeLeaving = audioService.events
-        .where((event) => event == 'stop')
-        .length;
-    final next = find.widgetWithText(
-      ElevatedButton,
-      'Próximo exercício: Tecla J',
-    );
-    await tester.ensureVisible(next);
-    await tester.pumpAndSettle();
-    await tester.tap(next);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
     await tester.pumpAndSettle();
 
     expect(find.text('Tecla J'), findsOneWidget);
@@ -82,12 +65,15 @@ void main() {
       audioService.events.last,
       'play:assets/audio/demo/instruction_j_demo.wav',
     );
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+    for (var index = 0; index < 3; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+      await tester.pump();
+    }
     await tester.pumpAndSettle();
-    final back = find.widgetWithText(ElevatedButton, 'Voltar à lição');
-    await tester.ensureVisible(back);
+    expect(find.text('Asa Esquerda'), findsWidgets);
+    await tester.tap(find.byTooltip('Voltar ao módulo'));
     await tester.pumpAndSettle();
-    await tester.tap(back);
+    await tester.tap(find.text('Lição 1 · Sensores da Aurora'));
     await tester.pumpAndSettle();
     expect(find.text('2 de 2 exercícios concluídos'), findsOneWidget);
     expect(find.textContaining('Concluído · Refazer exercício'), findsWidgets);
@@ -97,10 +83,7 @@ void main() {
     await tester.tap(course);
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('2 estrelas conquistadas'), findsOneWidget);
-    expect(
-      audioService.events.where((event) => event == 'stop').length,
-      greaterThan(stopsBeforeLeaving),
-    );
+    expect(audioService.events, contains('stop'));
     semantics.dispose();
   });
 }
