@@ -15,7 +15,9 @@ As cenas opcionais (`scene`) contêm texto, áudio gravado e referência a perso
 
 Toda transição descarta a sessão antiga antes de solicitar a nova narrativa ao `AudioCoordinator`. O widget de exercício não possui nem descarta a sessão. Isso evita que o descarte atrasado de um widget interrompa o áudio da próxima etapa. A entrada válida continua interrompendo a narração. Navegação rápida aproveita o cancelamento de solicitações obsoletas já existente no coordenador. Saída para segundo plano interrompe o áudio, sem reinício automático.
 
-O avanço é explícito. Dentro da lição vai ao próximo exercício pendente executável; entre lições apresenta a introdução da próxima lição com atividade executável. Tipos ainda sem avaliador ficam visíveis como indisponíveis e não recebem conclusão. Todas as lições permanecem consultáveis pela hierarquia, inclusive as sem atividades executáveis. A retomada usa o progresso salvo e não toca narrativas de etapas que não foram abertas.
+O avanço é automático entre exercícios executáveis da mesma lição, depois que todas as repetições definidas pelo conteúdo terminam. Entre lições, o engine apresenta a introdução da próxima lição e aguarda uma ação explícita. Tipos ainda sem executor ficam visíveis como indisponíveis e não recebem conclusão. Todas as lições permanecem consultáveis pela hierarquia, inclusive as sem atividades executáveis. A retomada usa o progresso salvo e não toca narrativas de etapas que não foram abertas.
+
+O executor textual cobre `key`, `keySequence`, `word` e `phrase`. Ele consome uma posição mesmo quando a tecla está errada, preserva estatísticas da sessão e expõe os atalhos de consulta F1–F9 e setas adotados pelo Digitavox adulto. O JSON determina texto, repetições, ordem, cenas, áudio e personagens. A camada de apresentação apenas encaminha teclas e renderiza o estado.
 
 ## Consequências
 
