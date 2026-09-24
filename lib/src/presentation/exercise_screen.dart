@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../application/course_journey_engine.dart';
 import '../application/exercise_session_view_model.dart';
 import '../infrastructure/input/physical_keyboard_input_interpreter.dart';
+import 'design_system/components/dvx_game_components.dart';
+import 'design_system/tokens/dvx_tokens.dart';
 
 final class ExerciseScreen extends StatefulWidget {
   const ExerciseScreen({required this.engine, super.key});
@@ -110,39 +112,31 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
           children: [
             Semantics(
               header: true,
-              label:
-                  '${_viewModel.exercise.prompt} '
-                  'Exercício: $expected. '
-                  'Próxima tecla: ${_viewModel.expectedCharacter}.',
-              child: ExcludeSemantics(
-                child: Column(
-                  children: [
-                    Text(
-                      _viewModel.exercise.prompt,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      expected.toUpperCase(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: expected.runes.length == 1 ? 96 : 42,
-                        fontWeight: FontWeight.bold,
-                        height: 1.15,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Text(
+                _viewModel.exercise.prompt,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DvxSpacing.md),
+            DvxKeyPrompt(
+              value: expected,
+              nextCharacter: _viewModel.expectedCharacter,
+            ),
+            const SizedBox(height: DvxSpacing.md),
             if (_viewModel.totalRepetitions > 1)
-              Text(
-                'Repetição ${_viewModel.currentRepetition} de ${_viewModel.totalRepetitions}',
-                textAlign: TextAlign.center,
+              DvxGameCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DvxSpacing.md,
+                  vertical: DvxSpacing.sm,
+                ),
+                child: Text(
+                  'Repetição ${_viewModel.currentRepetition} de ${_viewModel.totalRepetitions}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DvxSpacing.sm),
             Text(
               _viewModel.typedInput.isEmpty
                   ? 'Aguardando entrada'
@@ -156,16 +150,24 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 16),
-            _ExerciseFeedback(
-              status: _viewModel.status,
-              announcement: _viewModel.announcement,
+            const SizedBox(height: DvxSpacing.md),
+            DvxFeedback(
+              kind: switch (_viewModel.status) {
+                ExerciseSessionStatus.waitingForInput =>
+                  DvxFeedbackKind.waiting,
+                ExerciseSessionStatus.correctAnswer => DvxFeedbackKind.success,
+                ExerciseSessionStatus.incorrectAnswer => DvxFeedbackKind.error,
+                ExerciseSessionStatus.completed => DvxFeedbackKind.completed,
+              },
+              message:
+                  _viewModel.announcement ??
+                  'Digite a próxima tecla do exercício.',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DvxSpacing.md),
             Wrap(
               alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+              spacing: DvxSpacing.sm,
+              runSpacing: DvxSpacing.sm,
               children: [
                 OutlinedButton.icon(
                   onPressed: _keyboardFocusNode.requestFocus,
@@ -187,45 +189,6 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       },
     ),
   );
-}
-
-final class _ExerciseFeedback extends StatelessWidget {
-  const _ExerciseFeedback({required this.status, required this.announcement});
-
-  final ExerciseSessionStatus status;
-  final String? announcement;
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = switch (status) {
-      ExerciseSessionStatus.waitingForInput => Icons.keyboard,
-      ExerciseSessionStatus.incorrectAnswer => Icons.error_outline,
-      ExerciseSessionStatus.correctAnswer => Icons.check_circle_outline,
-      ExerciseSessionStatus.completed => Icons.celebration_outlined,
-    };
-    final message = announcement ?? 'Digite a próxima tecla do exercício.';
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      label: message,
-      child: ExcludeSemantics(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.white, width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 32),
-              const SizedBox(width: 12),
-              Expanded(child: Text(message)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 final class _ExerciseShortcutHelp extends StatelessWidget {
@@ -252,9 +215,9 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
     label: items.join('. '),
     child: ExcludeSemantics(
       child: Card(
-        margin: const EdgeInsets.only(top: 16),
+        margin: const EdgeInsets.only(top: DvxSpacing.md),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(DvxSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -262,10 +225,10 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
                 'Atalhos do exercício',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DvxSpacing.sm),
               for (final item in items)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
                   child: Text(item),
                 ),
             ],

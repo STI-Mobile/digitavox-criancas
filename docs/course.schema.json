@@ -87,6 +87,7 @@
         "title": { "$ref": "#/$defs/text" },
         "version": { "$ref": "#/$defs/text" },
         "isDemo": { "type": "boolean" },
+        "theme": { "$ref": "#/$defs/text" },
         "scene": { "$ref": "#/$defs/scene" },
         "characters": { "type": "array", "items": { "$ref": "#/$defs/character" } },
         "modules": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/module" } }

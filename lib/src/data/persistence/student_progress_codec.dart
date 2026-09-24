@@ -20,7 +20,7 @@ final class UnsupportedProgressSchemaException
 final class StudentProgressCodec {
   const StudentProgressCodec();
 
-  static const int schemaVersion = 1;
+  static const int schemaVersion = 2;
   static const String _coursesPath = r'$.progress.courses';
 
   String encode(StudentProgress progress) {
@@ -67,7 +67,7 @@ final class StudentProgressCodec {
         'courses': courses,
         'settings': <String, Object?>{
           'spokenFeedbackEnabled': progress.settings.spokenFeedbackEnabled,
-          'highContrastEnabled': progress.settings.highContrastEnabled,
+          'themePreference': progress.settings.themePreference.name,
         },
       },
     });
@@ -83,7 +83,7 @@ final class StudentProgressCodec {
 
     final root = _expectObject(decoded, r'$');
     final version = _expectInt(root['schemaVersion'], r'$.schemaVersion');
-    if (version != schemaVersion) {
+    if (version != 1 && version != schemaVersion) {
       throw UnsupportedProgressSchemaException(version);
     }
 
@@ -154,10 +154,14 @@ final class StudentProgressCodec {
           settingsJson['spokenFeedbackEnabled'],
           r'$.progress.settings.spokenFeedbackEnabled',
         ),
-        highContrastEnabled: _expectBool(
-          settingsJson['highContrastEnabled'],
-          r'$.progress.settings.highContrastEnabled',
-        ),
+        themePreference: version == 1
+            ? (_expectBool(
+                    settingsJson['highContrastEnabled'],
+                    r'$.progress.settings.highContrastEnabled',
+                  )
+                  ? AppThemePreference.highContrast
+                  : AppThemePreference.standard)
+            : _themePreference(settingsJson['themePreference']),
       ),
     );
   }
@@ -195,6 +199,17 @@ final class StudentProgressCodec {
       throw ProgressDataFormatException('Booleano obrigatório em $path.');
     }
     return value;
+  }
+
+  static AppThemePreference _themePreference(Object? value) {
+    final name = _expectString(value, r'$.progress.settings.themePreference');
+    try {
+      return AppThemePreference.parse(name);
+    } on ArgumentError {
+      throw ProgressDataFormatException(
+        'Tema desconhecido em \$.progress.settings.themePreference: "$name".',
+      );
+    }
   }
 
   static void _validateId(String id, String path) {

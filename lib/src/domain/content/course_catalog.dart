@@ -231,6 +231,7 @@ final class Course {
     required this.version,
     required this.isDemo,
     required this.modules,
+    this.themeId = 'default',
     this.scene,
     this.characters = const [],
   });
@@ -285,6 +286,9 @@ final class Course {
       version: _requiredString(json, 'version'),
       isDemo: isDemo,
       modules: modules,
+      themeId: json.containsKey('theme')
+          ? _requiredString(json, 'theme')
+          : 'default',
       scene: scene,
       characters: characters,
     );
@@ -295,6 +299,7 @@ final class Course {
   final String version;
   final bool isDemo;
   final List<CourseModule> modules;
+  final String themeId;
   final ContentScene? scene;
   final List<CourseCharacter> characters;
 }
