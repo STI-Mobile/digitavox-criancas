@@ -96,7 +96,7 @@ Detalhes e checklist estão em `docs/accessibility.md`.
 
 - Separe áudio gravado do curso, futura fala dinâmica por TTS e acessibilidade do sistema; VoiceOver/TalkBack não são motores narrativos.
 - Nunca remova ou reduza `Semantics` porque uma informação também possui áudio.
-- Packages e APIs nativas de áudio ficam na infraestrutura. Domínio, ViewModels e widgets usam referências de conteúdo, `AudioCoordinator` e contratos da aplicação.
+- Packages e APIs nativas de áudio ficam na infraestrutura. Eventos do curso passam pelo `CourseAudioOrchestrator`; execução e lifecycle usam `AudioGuidance` e contratos da aplicação.
 - Toda fala controlada pelo app deve passar pelo coordenador; não crie sobreposição narrativa fora da política estabelecida.
 - Não use TTS para substituir um asset gravado sem uma necessidade explícita de conteúdo dinâmico.
 - Falha sonora não pode impedir teclado, avaliação, conclusão, progresso ou acessibilidade.

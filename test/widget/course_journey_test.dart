@@ -1,5 +1,5 @@
 import 'package:digitavox_criancas/src/app.dart';
-import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
 import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
@@ -9,8 +9,8 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/fake_content_audio_service.dart';
 import '../support/journey_fixture.dart';
+import '../support/recording_audio_guidance.dart';
 
 void main() {
   testWidgets(
@@ -89,12 +89,12 @@ void main() {
   testWidgets(
     'JSON drives character assets, narration and missing-image fallback',
     (tester) async {
-      final service = FakeContentAudioService();
+      final audio = RecordingAudioGuidance();
       await tester.pumpWidget(
         DigitavoxApp(
           courseCatalog: JourneyFixtureCatalog(),
           progressRepository: InMemoryProgressRepository(),
-          audioCoordinator: AudioCoordinator(contentAudioService: service),
+          audioGuidance: audio,
         ),
       );
       await tester.pumpAndSettle();
@@ -106,13 +106,19 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(Image), findsOneWidget);
-      expect(service.events.last, 'play:assets/audio/demo/welcome.wav');
+      expect(
+        (audio.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/welcome.wav',
+      );
       await tester.tap(find.text('Parar áudio'));
       await tester.pumpAndSettle();
-      expect(service.events.last, 'stop');
+      expect(audio.events.last, 'cancel');
       await tester.tap(find.text('Ouvir novamente'));
       await tester.pumpAndSettle();
-      expect(service.events.last, 'play:assets/audio/demo/welcome.wav');
+      expect(
+        (audio.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/welcome.wav',
+      );
       await tester.ensureVisible(find.text('Começar curso'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Começar curso'));
@@ -130,7 +136,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.byIcon(Icons.person_outline), findsOneWidget);
-      expect(service.events.last, 'play:assets/audio/demo/key_j.wav');
+      expect(
+        (audio.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/key_j.wav',
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -247,9 +256,7 @@ Future<void> _pumpDemo(
         assetPath: 'assets/content/demo_course.json',
       ),
       progressRepository: repository ?? InMemoryProgressRepository(),
-      audioCoordinator: AudioCoordinator(
-        contentAudioService: FakeContentAudioService(),
-      ),
+      audioGuidance: RecordingAudioGuidance(),
     ),
   );
   await tester.pumpAndSettle();

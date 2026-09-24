@@ -45,8 +45,10 @@ void main() {
             .single
             .exercises
             .single
-            .audio
-            ?.assetPath,
+            .audioGuidance
+            ?.start
+            .single
+            .asset,
         'assets/audio/demo/instruction_a_demo.wav',
       );
     });
@@ -142,11 +144,17 @@ void main() {
       }
     });
 
-    test('rejects an audio reference outside the audio asset directory', () {
+    test('rejects a cue asset outside the audio asset directory', () {
       final catalog = _validCatalog();
       final exercise = _firstExercise(catalog);
-      exercise['audio'] = <String, Object?>{
-        'asset': '../private/instruction.wav',
+      exercise['audioGuidance'] = <String, Object?>{
+        'start': <Object?>[
+          <String, Object?>{
+            'id': 'unsafe-speech',
+            'type': 'speech',
+            'asset': '../private/instruction.wav',
+          },
+        ],
       };
 
       expect(
@@ -155,10 +163,14 @@ void main() {
       );
     });
 
-    test('rejects an audio object without an asset path', () {
+    test('rejects a speech cue without text or asset', () {
       final catalog = _validCatalog();
       final exercise = _firstExercise(catalog);
-      exercise['audio'] = <String, Object?>{};
+      exercise['audioGuidance'] = <String, Object?>{
+        'start': <Object?>[
+          <String, Object?>{'id': 'empty-speech', 'type': 'speech'},
+        ],
+      };
 
       expect(
         () => CourseCatalogDocument.fromJson(catalog),
@@ -193,8 +205,14 @@ Map<String, Object?> _validCatalog() {
                     'type': 'key',
                     'prompt': 'Encontre a tecla F.',
                     'expectedInput': 'a',
-                    'audio': <String, Object?>{
-                      'asset': 'assets/audio/demo/instruction_a_demo.wav',
+                    'audioGuidance': <String, Object?>{
+                      'start': <Object?>[
+                        <String, Object?>{
+                          'id': 'exercise-start',
+                          'type': 'speech',
+                          'asset': 'assets/audio/demo/instruction_a_demo.wav',
+                        },
+                      ],
                     },
                   },
                 ],

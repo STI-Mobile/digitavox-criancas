@@ -8,19 +8,26 @@ Course → Module → Lesson → Exercise
 
 O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, versão, indicação explícita de demo e módulos. IDs devem ser únicos entre irmãos. Listas estruturais não podem ser vazias. O campo opcional `theme` seleciona uma identidade visual conhecida pelo aplicativo, como `space`; o catálogo não contém cores nem detalhes de Flutter. Sem tema conhecido, a apresentação usa uma identidade neutra.
 
-Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; nesse tipo ele deve representar exatamente um caractere imprimível. Outros tipos podem carregar entradas textuais maiores. Os identificadores reconhecidos são `key`, `keySequence`, `word`, `phrase`, `timed`, `repetition` e `challenge`. `key`, `keySequence`, `word` e `phrase` possuem fluxo funcional quando `expectedInput` não está vazio; os demais permanecem desabilitados. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds`, `audio` e `scene`.
+Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; nesse tipo ele deve representar exatamente um caractere imprimível. Outros tipos podem carregar entradas textuais maiores. Os identificadores reconhecidos são `key`, `keySequence`, `word`, `phrase`, `timed`, `repetition` e `challenge`. `key`, `keySequence`, `word` e `phrase` possuem fluxo funcional quando `expectedInput` não está vazio; os demais permanecem desabilitados. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds`, `audioGuidance` e `scene`.
 
-O contrato legível por ferramentas está em [course.schema.json](course.schema.json). O parser Dart continua sendo a validação em execução e verifica também unicidade de IDs e referências de personagens, restrições que o JSON Schema não expressa sozinho. Propriedades adicionais são toleradas para compatibilidade; elas não viram comandos executáveis.
+O contrato legível por ferramentas está em [course.schema.json](course.schema.json). O parser Dart continua sendo a validação em execução e verifica também unicidade de IDs e referências de personagens, restrições que o JSON Schema não expressa sozinho. Propriedades adicionais desconhecidas não viram comandos executáveis.
 
-`audio` referencia conteúdo gravado controlado pelo Digitavox sem expor tecnologia de player. Quando presente, deve ser um objeto com `asset` textual, não vazio, sem travessia de diretório e sob `assets/audio/`:
+`audioGuidance` declara intenção sonora por evento, sem expor tecnologia de player. Cada evento possui uma lista ordenada de cues `speech`, `sfx` ou `music`. Texto falado é independente do `prompt` visual:
 
 ```json
-"audio": {
-  "asset": "assets/audio/demo/instruction_a_demo.wav"
+"audioGuidance": {
+  "start": [
+    {
+      "id": "demo-instruction",
+      "type": "speech",
+      "text": "Pressione a tecla A.",
+      "asset": "assets/audio/demo/instruction_a_demo.wav"
+    }
+  ]
 }
 ```
 
-A ausência do campo continua válida. A existência física do asset é verificada pelo bundle/player; uma falha de reprodução não invalida os canais visual, semântico ou de teclado. Assets em `assets/audio/demo/` são técnicos e não constituem conteúdo pedagógico aprovado.
+A ausência do campo continua válida. Speech exige texto ou asset; SFX e Music exigem asset. Caminhos devem ficar sob `assets/audio/`, sem travessia de diretório. A existência física do asset é verificada pelo bundle/player; uma falha de reprodução não invalida os canais visual, semântico ou de teclado. Assets em `assets/audio/demo/` são técnicos e não constituem conteúdo pedagógico aprovado.
 
 Exemplo reduzido:
 
@@ -48,8 +55,15 @@ Exemplo reduzido:
                   "type": "key",
                   "prompt": "Pressione a tecla A no teclado físico.",
                   "expectedInput": "a",
-                  "audio": {
-                    "asset": "assets/audio/demo/instruction_a_demo.wav"
+                  "audioGuidance": {
+                    "start": [
+                      {
+                        "id": "demo-key-a-instruction",
+                        "type": "speech",
+                        "text": "Pressione a tecla A.",
+                        "asset": "assets/audio/demo/instruction_a_demo.wav"
+                      }
+                    ]
                   }
                 }
               ]
@@ -62,7 +76,7 @@ Exemplo reduzido:
 }
 ```
 
-O exemplo é apenas ilustrativo e continua sendo conteúdo técnico, não pedagogia aprovada. A fixture executável está em `assets/content/demo_course.json`.
+O exemplo é apenas ilustrativo e continua sendo conteúdo técnico, não pedagogia aprovada. A fixture de integração executável está em `assets/content/integration_demo_course.json` e só entra no catálogo em debug.
 
 ## Evolução e pacotes externos
 
@@ -75,7 +89,7 @@ O exemplo é apenas ilustrativo e continua sendo conteúdo técnico, não pedago
 O comportamento segue a dinâmica observada no Digitavox adulto, sem reutilizar sua implementação:
 
 - cada caractere digitado consome a posição atual, esteja certo ou errado;
-- o erro informa a tecla recebida e a esperada, toca o feedback sonoro e segue para a próxima posição;
+- o erro informa a tecla recebida e a esperada, emite o evento configurável de input incorreto e segue para a próxima posição;
 - quatro erros consecutivos acrescentam a orientação para seta à direita ou F1; um acerto zera essa contagem;
 - ao terminar `expectedInput`, começa automaticamente a próxima de `minimumRepetitions` repetições; sem o campo, há uma repetição;
 - ao terminar a última repetição, persiste a conclusão e o engine avança conforme a estrutura do catálogo;
@@ -83,7 +97,7 @@ O comportamento segue a dinâmica observada no Digitavox adulto, sem reutilizar 
 
 O app adulto acrescenta um espaço separador ao final de cada exercício. O app infantil não cria esse caractere implicitamente: o conteúdo executado é exatamente `expectedInput`, de modo que o JSON permaneça a fonte explícita da jornada.
 
-Durante o exercício, F1 abre a ajuda; F2/seta para baixo informa a próxima tecla; F3/Control + seta para direita soletra o restante; F4/seta para direita informa o restante; F5/seta para cima repete a instrução; F6/Control + seta para cima informa a apresentação da lição; F7/Control + seta para baixo informa a instrução; F8 informa a hora; F9 informa tempo e acertos; seta para esquerda informa a repetição; Control + seta para esquerda informa o percentual. Escape volta um nível em qualquer etapa da jornada. Os resultados são sempre expostos visualmente e em região semântica viva. Áudio gravado continua passando pelo `AudioCoordinator`; atalhos dinâmicos não introduzem TTS.
+Durante o exercício, F1 abre a ajuda; F2/seta para baixo informa a próxima tecla; F3/Control + seta para direita soletra o restante; F4/seta para direita informa o restante; F5/seta para cima repete a instrução; F6/Control + seta para cima informa a apresentação da lição; F7/Control + seta para baixo informa a instrução; F8 informa a hora; F9 informa tempo e acertos; seta para esquerda informa a repetição; Control + seta para esquerda informa o percentual. Escape volta um nível em qualquer etapa da jornada. Os resultados são sempre expostos visualmente e em região semântica viva. Conteúdo sonoro declarado passa pelo `CourseAudioOrchestrator`; atalhos dinâmicos não inventam conteúdo TTS.
 
 Curso, módulo, lição e exercício podem declarar uma `scene`:
 
@@ -91,11 +105,19 @@ Curso, módulo, lição e exercício podem declarar uma `scene`:
 "scene": {
   "text": "Encontre as marcas das teclas F e J.",
   "characterId": "aurora",
-  "audio": { "asset": "assets/audio/demo/sensors.wav" }
+  "audioGuidance": {
+    "start": [
+      {
+        "id": "sensors-start",
+        "type": "speech",
+        "asset": "assets/audio/demo/sensors.wav"
+      }
+    ]
+  }
 }
 ```
 
-O texto é obrigatório e mantém a narrativa acessível sem som. `characterId` e `audio` são opcionais. Cada cena reproduz somente seu próprio áudio ao entrar na etapa ou acionar “Ouvir novamente”; texto e áudio não são herdados. A retomada direta não reproduz cenas de ancestrais que foram puladas. Em exercícios, `scene.audio` tem precedência sobre o campo legado `audio`. A navegação, a entrada no exercício, “Parar áudio” e a saída do app interrompem a fala pelo `AudioCoordinator`.
+O texto é obrigatório e mantém a narrativa acessível sem som. `characterId` e `audioGuidance` são opcionais. Cada cena reproduz somente sua própria configuração ao entrar na etapa ou acionar “Ouvir novamente”; texto e áudio não são herdados. A retomada direta não reproduz cenas de ancestrais que foram puladas. Em exercícios, `scene.audioGuidance` tem precedência sobre a configuração do exercício. Navegação, “Parar áudio” e saída do app cancelam a sequência pelo `CourseAudioOrchestrator`.
 
 Os personagens são definidos por curso:
 
@@ -114,7 +136,7 @@ Os personagens são definidos por curso:
 
 Declare os arquivos físicos no `pubspec.yaml` para incluí-los no bundle. O [exemplo completo](examples/journey_course.json) é uma fixture técnica usada pelos testes, não um curso aprovado: seus novos áudios e imagens são caminhos ilustrativos e **não estão incluídos**. O catálogo demo de produção e seus prompts não foram alterados para adicionar personagens fictícios.
 
-Esses campos são opcionais e aditivos ao schema 2. Catálogos existentes, inclusive com apenas `exercise.audio`, continuam válidos. A persistência de progresso mantém seu formato e sua versão; a retomada é derivada das conclusões salvas, não de um novo cursor persistido. `minimumRepetitions` controla a execução de tipos textuais suportados; `timed`, `repetition` e `challenge` ainda não possuem executor.
+Esses campos formam o contrato atual do schema 2, ainda não publicado externamente. `audioGuidance` é a única representação de áudio de curso; não há parser alternativo nem migração de conteúdo. A persistência de progresso mantém seu formato e sua versão; a retomada é derivada das conclusões salvas, não de um novo cursor persistido. `minimumRepetitions` controla a execução de tipos textuais suportados; `timed`, `repetition` e `challenge` ainda não possuem executor.
 
 Mudanças incompatíveis exigem nova `schemaVersion`, estratégia de migração e testes. Pacotes externos futuros deverão definir manifesto, integridade/autenticidade, compatibilidade, isolamento de assets e política de atualização antes da implementação. Não presuma que JSON externo é confiável.
 

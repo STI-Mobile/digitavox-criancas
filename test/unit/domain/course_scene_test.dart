@@ -9,7 +9,7 @@ void main() {
     expect(course.scene!.characterId, 'aurora');
     expect(course.characters.length, 2);
     expect(
-      course.modules.first.scene!.audio!.assetPath,
+      course.modules.first.scene!.audioGuidance!.start.single.asset,
       'assets/audio/demo/preparation.wav',
     );
     final lesson = course.modules.first.lessons.first;
@@ -67,7 +67,7 @@ void main() {
       'text',
       <String, Object?>{},
       {'text': ''},
-      {'text': 'Hi', 'audio': 'bad'},
+      {'text': 'Hi', 'audioGuidance': 'bad'},
       {'text': 'Hi', 'characterId': 42},
     ]) {
       final json = journeyJson();

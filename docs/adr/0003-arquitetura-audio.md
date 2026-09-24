@@ -1,64 +1,69 @@
-# ADR 0003: arquitetura de áudio controlado pelo aplicativo
+# ADR 0003: arquitetura de Audio Guidance
 
 - Status: aceita
 - Data: 2026-09-22
+- Atualizada: 2026-09-24
 
 ## Contexto
 
-O curso Exploradores Espaciais terá falas gravadas de personagens, narrativa e instruções pedagógicas. O aplicativo também poderá sintetizar informações dinâmicas no futuro. Esses canais pertencem ao Digitavox, mas não substituem Flutter Semantics, VoiceOver ou TalkBack, que tornam a interface operável e compreensível.
+O aplicativo precisa executar fala gravada, TTS nativo, efeitos e música sem acoplar o Course Engine, ViewModels ou widgets a players e APIs de plataforma. O áudio controlado pelo aplicativo também não substitui Flutter Semantics, VoiceOver ou TalkBack.
 
-A primeira implementação precisa reproduzir um asset local, evitar sobreposição de falas, respeitar o ciclo de vida da tela e continuar funcional quando o áudio falhar. Ela não precisa de streaming, playlists, música, mixagem complexa ou TTS.
-
-## Modelo conceitual
-
-```text
-                         Digitavox
-              ┌─────────────┼─────────────┐
-              │             │             │
-        Content Audio   Dynamic Speech   Accessibility
-              │             │             │
-      assets gravados    TTS futuro      Semantics
-      narrativa/efeitos                  VoiceOver/TalkBack
-```
-
-- **Content Audio** é conteúdo controlado pelo app: personagens, narrativa, instruções gravadas e futuramente efeitos.
-- **Dynamic Speech** será reservado a valores e informações variáveis que não façam sentido pré-gravar. Nenhum TTS foi adicionado agora.
-- **Accessibility** permanece independente. Leitores de tela não são players narrativos e áudio do curso não autoriza remover semântica.
-
-## Alternativas consideradas
-
-- `SystemSound`: já atende aos cliques simples de acerto/erro, mas não reproduz assets narrativos nem oferece o ciclo de vida necessário.
-- Implementação nativa própria por MethodChannel: daria controle direto, porém duplicaria código iOS/Android e manutenção sem necessidade atual.
-- `just_audio`: é maduro e cobre assets, interrupções e sessão por `audio_session`, mas sua superfície inclui streaming, playlists, composição e reprodução avançada além do requisito atual.
-- `audioplayers`: oferece player único, assets, play/stop/dispose, eventos de conclusão, configuração de contexto e implementações iOS/Android com uma API menor.
+O conteúdo deve declarar intenção e ordem. A aplicação traduz eventos da jornada em cues genéricos. A infraestrutura escolhe e opera o mecanismo físico de reprodução. Falhas de áudio não podem impedir teclado, avaliação, conclusão, progresso ou acessibilidade.
 
 ## Decisão
 
-Usar `audioplayers` 6.8.1 atrás de `ContentAudioService`. Somente `AudioplayersContentAudioService`, na infraestrutura, importa o package. O conteúdo armazena apenas `ContentAudioReference` com um caminho sob `assets/audio/`; domínio, ViewModels e widgets não conhecem tipos do player.
+Adotar um único fluxo de áudio de curso:
 
-`AudioCoordinator` aplica a política inicial de uma fala de conteúdo por vez. Toda nova solicitação interrompe a anterior antes de iniciar, uma entrada válida interrompe a instrução e o descarte da tela solicita parada. O app raiz descarta o coordenador e o player. Não há prioridades, múltiplos canais ou mixer.
+```text
+Course Content
+      │
+      ▼
+Course Engine
+      │
+      ▼
+CourseAudioOrchestrator
+      │ AudioCue
+      ▼
+AudioGuidance
+      │
+      ▼
+AudioGuidanceCoordinator
+      │
+ ┌────┼────┐
+ ▼    ▼    ▼
+Speech SFX Music
+      │
+      ▼
+Platform Audio
+```
 
-Falhas esperadas do plugin, carregamento de asset e timeout são convertidas em `ContentAudioPlaybackException`. O coordenador registra a última falha e mantém o fluxo funcional; erros inesperados não são capturados indiscriminadamente.
+Course decides WHAT and WHEN. CourseAudioOrchestrator translates course events into AudioCue. AudioGuidance decides HOW.
 
-## Sessão de áudio
+O conteúdo usa exclusivamente `audioGuidance`, organizado pelos eventos `start`, `correctInput`, `incorrectInput` e `completed`. Cada evento contém uma sequência ordenada de `speech`, `sfx` e `music`. Speech aceita texto, asset opcional e speaker opcional; SFX e Music exigem asset. O conteúdo não declara engine TTS, voz nativa, player ou política de plataforma.
 
-- No iOS, usar `AVAudioSessionCategory.ambient`, que respeita o modo silencioso e permite mistura com outras sessões sem categoria exclusiva.
-- No Android, marcar o conteúdo como fala, usar saída de mídia, não solicitar foco de áudio e não manter o dispositivo acordado.
-- Usar a rota escolhida pelo sistema, sem forçar alto-falante ou fone.
-- Manter o `ReleaseMode.release` padrão, liberando recursos ao concluir, além de `stop` e `dispose` explícitos no ciclo de vida.
-- Não adicionar configuração nativa customizada. A coexistência real com leitores de tela deve ser observada antes de escolher ducking, foco ou interrupção de fala.
+`CourseJourneyEngine` seleciona o evento e a configuração da etapa. `CourseAudioOrchestrator` resolve `ContentAudioCue` em `AudioCue` e chama apenas o contrato `AudioGuidance`. `AudioGuidanceCoordinator` coordena sequência, cancelamento e fallback asset → TTS. O composition root injeta as implementações concretas.
 
-O plugin declara Swift Package Manager e é resolvido no target gerado do Flutter como `audioplayers_darwin`. Não foram introduzidos Podfile, Podfile.lock ou diretório Pods.
+## Infraestrutura e sessão de áudio
 
-## Detecção de acessibilidade
+- `audioplayers` fica restrito a `AudioplayersGuidancePlayer`, usado internamente para fala gravada, SFX e Music.
+- TTS usa `AVSpeechSynthesizer` no iOS e Android `TextToSpeech`, encapsulados por `PlatformTextToSpeechService` e seu MethodChannel.
+- O iOS usa `AVAudioSessionCategory.ambient`, respeitando o modo silencioso e permitindo mistura sem categoria exclusiva.
+- O Android usa saída de mídia e não mantém o dispositivo acordado.
+- A rota é escolhida pelo sistema; não se força alto-falante ou fone.
+- Swift Package Manager permanece como gerenciador nativo Apple; não há CocoaPods.
 
-Flutter expõe `AccessibilityFeatures.accessibleNavigation`, ativado por serviços que alteram o modelo de interação, como VoiceOver e TalkBack. `SystemAccessibilityStatus` encapsula essa leitura. O sinal não é usado para desligar áudio automaticamente e não deve ser tratado como identificação específica ou infalível de um leitor de tela.
+O `generation token` do coordenador impede continuações de uma sequência cancelada. O engine possui uma geração local para impedir que uma troca rápida de atividade inicie uma solicitação já obsoleta. Suspensão, saída da atividade e descarte cancelam a sequência.
 
-## Consequências e limitações
+## Acessibilidade
 
-- Conteúdo, coordenação e tecnologia do player evoluem separadamente.
-- Um futuro serviço de fala dinâmica poderá ser coordenado no mesmo ponto, sem ser criado antecipadamente nesta feature.
-- Instrução visual e semântica continua disponível quando o áudio está silencioso, ausente ou falha.
-- `audioplayers` traz implementações federadas e utilitários transitivos, incluindo `path_provider`, `http`, `synchronized` e `uuid`.
-- O asset atual é técnico e não define conteúdo pedagógico, personagem ou direção de voz.
-- Sobreposição, volume, rota, interrupções e foco ainda precisam de observação em dispositivos físicos com e sem VoiceOver/TalkBack.
+Semantics e leitores de tela permanecem independentes da narração controlada pelo app. Informação necessária à operação continua disponível visualmente e na árvore semântica mesmo quando o áudio está ausente, silencioso ou falha. Coexistência, foco, ducking e interrupções precisam de validação manual com VoiceOver e TalkBack em dispositivos físicos.
+
+## Consequências
+
+- Domínio e conteúdo descrevem intenção, sem conhecer tecnologia de reprodução.
+- Engine, sessão, ViewModels e widgets não importam players ou APIs TTS.
+- Texto visual e texto falado podem divergir sem acoplamento.
+- Um único coordenador aplica sequência e cancelamento para os canais de áudio.
+- Falhas esperadas são contidas na fronteira de Audio Guidance e não bloqueiam a jornada.
+- O Demo Course técnico valida asset, TTS, fallback, SFX, sequência e lifecycle sem definir pedagogia.
+- Prioridade avançada, mixer, foco e política de coexistência permanecem decisões futuras baseadas em testes reais.
