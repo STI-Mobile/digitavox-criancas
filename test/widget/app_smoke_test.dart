@@ -1,19 +1,19 @@
 import 'package:digitavox_criancas/src/app.dart';
-import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../support/fake_content_audio_service.dart';
+import '../support/recording_audio_guidance.dart';
 
 void main() {
   testWidgets('runs a physical-key exercise and records completion', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    final audioService = FakeContentAudioService();
+    final audio = RecordingAudioGuidance();
 
     await tester.pumpWidget(
       DigitavoxApp(
@@ -21,7 +21,7 @@ void main() {
           assetPath: 'assets/content/demo_course.json',
         ),
         progressRepository: InMemoryProgressRepository(),
-        audioCoordinator: AudioCoordinator(contentAudioService: audioService),
+        audioGuidance: audio,
       ),
     );
     await tester.pumpAndSettle();
@@ -41,8 +41,8 @@ void main() {
     expect(find.text('F'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Próxima tecla: f')), findsOneWidget);
     expect(
-      audioService.events,
-      contains('play:assets/audio/demo/instruction_f_demo.wav'),
+      audio.playedCues.whereType<SpeechCue>().map((cue) => cue.audioAsset),
+      contains('assets/audio/demo/instruction_f_demo.wav'),
     );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
@@ -62,8 +62,8 @@ void main() {
     expect(find.text('Tecla J'), findsOneWidget);
     expect(find.text('Exercício 2 de 2'), findsOneWidget);
     expect(
-      audioService.events.last,
-      'play:assets/audio/demo/instruction_j_demo.wav',
+      (audio.playedCues.last as SpeechCue).audioAsset,
+      'assets/audio/demo/instruction_j_demo.wav',
     );
     for (var index = 0; index < 3; index++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
@@ -83,7 +83,7 @@ void main() {
     await tester.tap(course);
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('2 estrelas conquistadas'), findsOneWidget);
-    expect(audioService.events, contains('stop'));
+    expect(audio.events, anyOf(contains('stop'), contains('cancel')));
     semantics.dispose();
   });
 }

@@ -1,22 +1,17 @@
-import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
-import 'package:digitavox_criancas/src/application/audio/content_audio_service.dart';
 import 'package:digitavox_criancas/src/application/exercise_session_view_model.dart';
-import 'package:digitavox_criancas/src/application/exercise_sound_feedback.dart';
 import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../../support/fake_content_audio_service.dart';
 
 void main() {
   test(
     'records an incorrect key and advances to the next expected position',
     () async {
       var completions = 0;
-      final feedback = _RecordingSoundFeedback();
+      final evaluations = <bool>[];
       final viewModel = _session(
         exercise: _sequence,
-        feedback: feedback,
         onCompleted: () async => completions++,
+        onInputEvaluated: (correct) async => evaluations.add(correct),
       );
       addTearDown(viewModel.dispose);
 
@@ -27,12 +22,13 @@ void main() {
       expect(viewModel.expectedCharacter, 'b');
       expect(viewModel.typedInput, 'x');
       expect(viewModel.announcement, contains('Continue com b'));
-      expect(feedback.incorrectCount, 1);
+      expect(evaluations, <bool>[false]);
       expect(completions, 0);
 
       await viewModel.handleInput('b');
       expect(viewModel.status, ExerciseSessionStatus.completed);
       expect(viewModel.accuracyPercent, 50);
+      expect(evaluations, <bool>[false, true]);
       expect(completions, 1);
     },
   );
@@ -124,27 +120,18 @@ void main() {
     expect(viewModel.announcement, 'Hora atual: 14 e 05.');
   });
 
-  test('starts audio and remains functional when playback fails', () async {
-    final service = FakeContentAudioService()
-      ..playFailure = const ContentAudioPlaybackException(
-        operation: 'iniciar reprodução',
-        cause: 'falha simulada',
-      );
-    final coordinator = AudioCoordinator(contentAudioService: service);
-    final viewModel = ExerciseSessionViewModel(
-      exercise: _exercise,
-      onCompleted: () async {},
-      soundFeedback: _RecordingSoundFeedback(),
-      audioCoordinator: coordinator,
+  test('reports input evaluation without knowing audio details', () async {
+    final evaluations = <bool>[];
+    final viewModel = _session(
+      onInputEvaluated: (correct) async => evaluations.add(correct),
     );
     addTearDown(viewModel.dispose);
 
-    await viewModel.start();
+    await viewModel.handleInput('x');
     await viewModel.handleInput('a');
 
-    expect(coordinator.lastFailure, isNotNull);
     expect(viewModel.status, ExerciseSessionStatus.completed);
-    expect(service.events, contains('stop'));
+    expect(evaluations, <bool>[false]);
   });
 }
 
@@ -154,9 +141,6 @@ const _exercise = Exercise(
   type: ExerciseType.key,
   prompt: 'Pressione A.',
   expectedInput: 'a',
-  audio: ContentAudioReference(
-    assetPath: 'assets/audio/demo/instruction_a_demo.wav',
-  ),
 );
 
 const _sequence = Exercise(
@@ -169,26 +153,12 @@ const _sequence = Exercise(
 
 ExerciseSessionViewModel _session({
   Exercise exercise = _exercise,
-  _RecordingSoundFeedback? feedback,
   Future<void> Function()? onCompleted,
+  Future<void> Function(bool correct)? onInputEvaluated,
   DateTime Function()? now,
 }) => ExerciseSessionViewModel(
   exercise: exercise,
   onCompleted: onCompleted ?? () async {},
-  soundFeedback: feedback ?? _RecordingSoundFeedback(),
-  audioCoordinator: AudioCoordinator(
-    contentAudioService: FakeContentAudioService(),
-  ),
+  onInputEvaluated: onInputEvaluated ?? (_) async {},
   now: now,
 );
-
-final class _RecordingSoundFeedback implements ExerciseSoundFeedback {
-  int correctCount = 0;
-  int incorrectCount = 0;
-
-  @override
-  Future<void> playCorrect() async => correctCount++;
-
-  @override
-  Future<void> playIncorrect() async => incorrectCount++;
-}

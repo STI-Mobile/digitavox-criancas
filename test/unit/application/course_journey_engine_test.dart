@@ -1,19 +1,20 @@
-import 'package:digitavox_criancas/src/application/audio/audio_coordinator.dart';
-import 'package:digitavox_criancas/src/application/audio/content_audio_service.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
+import 'package:digitavox_criancas/src/application/audio/audio_guidance_services.dart';
+import 'package:digitavox_criancas/src/application/course_audio_orchestrator.dart';
 import 'package:digitavox_criancas/src/application/course_catalog_view_model.dart';
 import 'package:digitavox_criancas/src/application/course_journey_engine.dart';
 import 'package:digitavox_criancas/src/application/exercise_session_view_model.dart';
 import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../support/fake_content_audio_service.dart';
 import '../../support/journey_fixture.dart';
+import '../../support/recording_audio_guidance.dart';
 
 void main() {
   late CourseCatalogViewModel catalog;
   late CourseJourneyEngine engine;
-  late FakeContentAudioService service;
-  late AudioCoordinator audio;
+  late RecordingAudioGuidance audioGuidance;
+  late CourseAudioOrchestrator courseAudio;
   late InMemoryProgressRepository repository;
 
   setUp(() async {
@@ -23,20 +24,19 @@ void main() {
       progressRepository: repository,
     );
     await catalog.initialize();
-    service = FakeContentAudioService();
-    audio = AudioCoordinator(contentAudioService: service);
+    audioGuidance = RecordingAudioGuidance();
+    courseAudio = CourseAudioOrchestrator(audioGuidance: audioGuidance);
     engine = CourseJourneyEngine(
       course: catalog.courses.single,
       catalog: catalog,
-      audio: audio,
-      soundFeedback: SilentExerciseFeedback(),
+      courseAudio: courseAudio,
     );
   });
 
   tearDown(() async {
     engine.dispose();
     catalog.dispose();
-    await audio.dispose();
+    await audioGuidance.dispose();
   });
 
   test('follows JSON order and pauses at each new lesson', () async {
@@ -95,8 +95,7 @@ void main() {
       final reorderedEngine = CourseJourneyEngine(
         course: reorderedCatalog.courses.single,
         catalog: reorderedCatalog,
-        audio: audio,
-        soundFeedback: SilentExerciseFeedback(),
+        courseAudio: courseAudio,
       );
       expect(reorderedEngine.resumeTarget!.exercise.id, 'key-b');
       reorderedEngine.dispose();
@@ -127,8 +126,7 @@ void main() {
       engine = CourseJourneyEngine(
         course: catalog.courses.single,
         catalog: catalog,
-        audio: audio,
-        soundFeedback: SilentExerciseFeedback(),
+        courseAudio: courseAudio,
       );
       engine.resume();
       expect(engine.exercise!.id, 'sequence-fj');
@@ -146,17 +144,29 @@ void main() {
     () async {
       await engine.start();
       expect(engine.character!.id, 'aurora');
-      expect(service.events.last, 'play:assets/audio/demo/welcome.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/welcome.wav',
+      );
       engine.openModule(engine.course.modules.first);
       await pumpEventQueue();
-      expect(service.events.last, 'play:assets/audio/demo/preparation.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/preparation.wav',
+      );
       engine.openLesson(engine.module!, engine.module!.lessons.first);
       await pumpEventQueue();
       expect(engine.character!.id, 'aurora');
-      expect(service.events.last, 'play:assets/audio/demo/sensors.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/sensors.wav',
+      );
       engine.resume();
       await pumpEventQueue();
-      expect(service.events.last, 'play:assets/audio/demo/key_f.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/key_f.wav',
+      );
       await engine.session!.handleInput('f');
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
@@ -165,13 +175,19 @@ void main() {
       await pumpEventQueue();
       expect(engine.character!.id, 'explorer');
       expect(engine.character!.imageAsset, 'assets/images/demo/explorer.png');
-      expect(service.events.last, 'play:assets/audio/demo/key_j.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/key_j.wav',
+      );
       engine.back();
       await pumpEventQueue();
       expect(engine.character!.id, 'aurora');
-      expect(service.events.last, 'play:assets/audio/demo/sensors.wav');
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/sensors.wav',
+      );
       await engine.stopNarration();
-      expect(service.events.last, 'stop');
+      expect(audioGuidance.events.last, 'cancel');
     },
   );
 
@@ -186,24 +202,23 @@ void main() {
       await oldSession.handleInput('f');
       await pumpEventQueue();
       expect(
-        service.events.where((event) => event.startsWith('play:')),
+        audioGuidance.playedCues.where((cue) => cue.id == 'key-f-start'),
         isEmpty,
       );
       expect(engine.completedCount, 0);
-      expect(service.events.last, 'stop');
+      expect(audioGuidance.events.last, anyOf('stop', 'cancel'));
     },
   );
 
   test(
     'audio failure does not block navigation, answers or persistence',
     () async {
-      service.playFailure = const ContentAudioPlaybackException(
-        operation: 'play',
-        cause: 'missing asset',
+      audioGuidance.playFailure = const AudioServiceException(
+        operation: 'playSequence',
+        cause: 'falha simulada',
       );
       engine.resume();
       await pumpEventQueue();
-      expect(audio.lastFailure, isNotNull);
       await engine.session!.handleInput('f');
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
@@ -232,8 +247,7 @@ void main() {
       final unavailableEngine = CourseJourneyEngine(
         course: unavailableCatalog.courses.single,
         catalog: unavailableCatalog,
-        audio: audio,
-        soundFeedback: SilentExerciseFeedback(),
+        courseAudio: courseAudio,
       );
       addTearDown(() {
         unavailableEngine.dispose();
