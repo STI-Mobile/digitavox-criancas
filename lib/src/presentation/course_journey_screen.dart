@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../application/course_journey_engine.dart';
 import 'course_navigation_tile.dart';
@@ -10,99 +11,117 @@ final class CourseJourneyScreen extends StatelessWidget {
 
   final CourseJourneyEngine engine;
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        engine.canGoBack) {
+      engine.back();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: engine,
-    builder: (context, _) => PopScope(
-      canPop: !engine.canGoBack,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) engine.back();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: engine.canGoBack
-              ? IconButton(
-                  onPressed: engine.back,
-                  tooltip: switch (engine.stage) {
-                    JourneyStage.exercise => 'Voltar à lição',
-                    JourneyStage.lesson => 'Voltar ao módulo',
-                    _ => 'Voltar ao curso',
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                )
-              : null,
-          title: Text(switch (engine.stage) {
-            JourneyStage.course => 'Digitavox',
-            JourneyStage.module => 'Módulo',
-            JourneyStage.lesson => 'Lição',
-            JourneyStage.exercise => 'Exercício',
-          }),
-        ),
-        body: SafeArea(
-          child: Semantics(
-            key: ValueKey(engine.locationKey),
-            scopesRoute: true,
-            namesRoute: true,
-            label: engine.title,
-            explicitChildNodes: true,
-            child: FocusTraversalGroup(
-              policy: ReadingOrderTraversalPolicy(),
-              child: ListView(
-                key: PageStorageKey(engine.locationKey),
-                padding: const EdgeInsets.all(20),
-                children: [
-                  if (engine.canGoBack) ...[
-                    Text(
-                      [
-                        engine.course.title,
-                        if (engine.lesson != null) engine.module!.title,
-                        if (engine.exercise != null) engine.lesson!.title,
-                      ].join(' · '),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      engine.title,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  CourseScene(scene: engine.scene, character: engine.character),
-                  if (engine.currentAudio != null) ...[
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: engine.replayNarration,
-                          icon: const Icon(Icons.volume_up_outlined),
-                          label: const Text('Ouvir novamente'),
-                        ),
-                        TextButton(
-                          onPressed: engine.stopNarration,
-                          child: const Text('Parar áudio'),
-                        ),
-                      ],
+    builder: (context, _) => Focus(
+      key: ValueKey('keyboard-${engine.locationKey}'),
+      autofocus: engine.stage != JourneyStage.exercise,
+      onKeyEvent: _handleKeyEvent,
+      child: PopScope(
+        canPop: !engine.canGoBack,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) engine.back();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: engine.canGoBack
+                ? IconButton(
+                    onPressed: engine.back,
+                    tooltip: switch (engine.stage) {
+                      JourneyStage.exercise => 'Voltar à lição',
+                      JourneyStage.lesson => 'Voltar ao módulo',
+                      _ => 'Voltar ao curso',
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                  )
+                : null,
+            title: Text(switch (engine.stage) {
+              JourneyStage.course => 'Digitavox',
+              JourneyStage.module => 'Módulo',
+              JourneyStage.lesson => 'Lição',
+              JourneyStage.exercise => 'Exercício',
+            }),
+          ),
+          body: SafeArea(
+            child: Semantics(
+              key: ValueKey(engine.locationKey),
+              scopesRoute: true,
+              namesRoute: true,
+              label: engine.title,
+              explicitChildNodes: true,
+              child: FocusTraversalGroup(
+                policy: ReadingOrderTraversalPolicy(),
+                child: ListView(
+                  key: PageStorageKey(engine.locationKey),
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    if (engine.canGoBack) ...[
+                      Text(
+                        [
+                          engine.course.title,
+                          if (engine.lesson != null) engine.module!.title,
+                          if (engine.exercise != null) engine.lesson!.title,
+                        ].join(' · '),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        engine.title,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                  ],
-                  ...switch (engine.stage) {
-                    JourneyStage.course => _course(),
-                    JourneyStage.module => _module(),
-                    JourneyStage.lesson => _lesson(),
-                    JourneyStage.exercise => [
-                      Text(
-                        'Exercício ${engine.lesson!.exercises.indexOf(engine.exercise!) + 1} de ${engine.lesson!.exercises.length}',
+                    CourseScene(
+                      scene: engine.scene,
+                      character: engine.character,
+                    ),
+                    if (engine.currentAudio != null) ...[
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: engine.replayNarration,
+                            icon: const Icon(Icons.volume_up_outlined),
+                            label: const Text('Ouvir novamente'),
+                          ),
+                          TextButton(
+                            onPressed: engine.stopNarration,
+                            child: const Text('Parar áudio'),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
-                      ExerciseScreen(
-                        key: ValueKey(engine.exercise),
-                        engine: engine,
-                      ),
                     ],
-                  },
-                ],
+                    ...switch (engine.stage) {
+                      JourneyStage.course => _course(),
+                      JourneyStage.module => _module(),
+                      JourneyStage.lesson => _lesson(),
+                      JourneyStage.exercise => [
+                        Text(
+                          'Exercício ${engine.lesson!.exercises.indexOf(engine.exercise!) + 1} de ${engine.lesson!.exercises.length}',
+                        ),
+                        const SizedBox(height: 16),
+                        ExerciseScreen(
+                          key: ValueKey(engine.exercise),
+                          engine: engine,
+                        ),
+                      ],
+                    },
+                  ],
+                ),
               ),
             ),
           ),

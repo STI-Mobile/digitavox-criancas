@@ -38,6 +38,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
   Lesson? _lesson;
   Exercise? _exercise;
   ExerciseSessionViewModel? _session;
+  ExerciseSessionViewModel? _scheduledAdvance;
   bool _disposed = false;
 
   JourneyStage get stage => _stage;
@@ -84,8 +85,13 @@ final class CourseJourneyEngine extends ChangeNotifier {
     }
   }
 
-  bool isAvailable(Exercise exercise) =>
-      exercise.type == ExerciseType.key && exercise.expectedInput != null;
+  bool isAvailable(Exercise exercise) => switch (exercise.type) {
+    ExerciseType.key ||
+    ExerciseType.keySequence ||
+    ExerciseType.word ||
+    ExerciseType.phrase => exercise.expectedInput?.isNotEmpty == true,
+    _ => false,
+  };
 
   bool isCompleted(Lesson lesson, Exercise exercise) =>
       catalog.isExerciseCompleted(
@@ -255,7 +261,18 @@ final class CourseJourneyEngine extends ChangeNotifier {
   }
 
   void _changed() {
-    if (!_disposed) notifyListeners();
+    if (_disposed) return;
+    final session = _session;
+    if (session?.status == ExerciseSessionStatus.completed &&
+        !identical(_scheduledAdvance, session)) {
+      _scheduledAdvance = session;
+      scheduleMicrotask(() {
+        if (!_disposed && identical(_session, session)) {
+          continueAfterExercise();
+        }
+      });
+    }
+    notifyListeners();
   }
 
   @override
