@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 2,
+  "courses": [
+    {
+      "id": "exploradores-espaciais",
+      "title": "Exploradores Espaciais",
+      "version": "1.0.0",
+      "isDemo": false,
+      "theme": "space",
+      "characters": [
+        {
+          "id": "stella",
+          "name": "Comandante Stella",
+          "imageAsset": "assets/images/space/module1/stella.png",
+          "imageDescription": "Comandante Stella, guia humana da Academia Galáctica."
+        },
+        {
+          "id": "zero1",
+          "name": "ZERO-1",
+          "imageAsset": "assets/images/space/module1/zero1.png",
+          "imageDescription": "ZERO-1, computador de bordo robótico e simpático da nave Aurora."
+        },
+        {
+          "id": "aurora",
+          "name": "Aurora",
+          "imageAsset": "assets/images/space/module1/aurora.png",
+          "imageDescription": "Nave-escola Aurora com seu console de navegação espacial."
+        },
+        {
+          "id": "scene-c0",
+          "name": "Aurora em emergência",
+          "imageAsset": "assets/images/space/module1/c0_abertura.png",
+          "imageDescription": "Aurora apagada em modo de emergência."
+        },
+        {
+          "id": "scene-c1",
+          "name": "Sensores F e J",
+          "imageAsset": "assets/images/space/module1/c1_despertar_sensores.png",
+          "imageDescription": "Console destacando as marcas táteis das teclas F e J."
+        },
+        {
+          "id": "scene-c2",
+          "name": "Asa esquerda",
+          "imageAsset": "assets/images/space/module1/c2_asa_esquerda.png",
+          "imageDescription": "Asa esquerda da Aurora energizada."
+        },
+        {
+          "id": "scene-c3",
+          "name": "Asa direita",
+          "imageAsset": "assets/images/space/module1/c3_asa_direita.png",
+          "imageDescription": "As duas asas da Aurora energizadas."
+        },
+        {
+          "id": "scene-c4",
+          "name": "Sincronização",
+          "imageAsset": "assets/images/space/module1/c4_sincronizacao.png",
+          "imageDescription": "Asas da Aurora sincronizadas e linha base do teclado."
+        },
+        {
+          "id": "scene-c5",
+          "name": "Banco de palavras I",
+          "imageAsset": "assets/images/space/module1/c5_palavras_energia_1.png",
+          "imageDescription": "Banco inicial de palavras de energia."
+        },
+        {
+          "id": "scene-c6",
+          "name": "Banco de palavras II",
+          "imageAsset": "assets/images/space/module1/c6_palavras_energia_2.png",
+          "imageDescription": "Banco completo de palavras de energia."
+        },
+        {
+          "id": "scene-c7",
+          "name": "Transmissão",
+          "imageAsset": "assets/images/space/module1/c7_mensagem_base.png",
+          "imageDescription": "Aurora transmitindo mensagem para a base."
+        },
+        {
+          "id": "scene-c8",
+          "name": "Prova do Cadete",
+          "imageAsset": "assets/images/space/module1/c8_prova_cadete.png",
+          "imageDescription": "Console da Aurora pronto para o protocolo de decolagem."
+        },
+        {
+          "id": "scene-c9-launch",
+          "name": "Decolagem",
+          "imageAsset": "assets/images/space/module1/c9_decolagem.png",
+          "imageDescription": "Aurora decolando após a aprovação do protocolo."
+        },
+        {
+          "id": "scene-c9-aliens",
+          "name": "Aliens resgatados",
+          "imageAsset": "assets/images/space/module1/c9_aliens.png",
+          "imageDescription": "Blib-Blub, Zorp e Nebulon no hangar da Aurora."
+        },
+        {
+          "id": "scene-c9-badge",
+          "name": "Cadete de Bronze",
+          "imageAsset": "assets/images/space/module1/c9_distintivo_bronze.png",
+          "imageDescription": "Distintivo de Cadete de Bronze concedido pela Academia."
+        },
+        {
+          "id": "scene-c10",
+          "name": "Corrida de Energia",
+          "imageAsset": "assets/images/space/module1/c10_corrida_energia.png",
+          "imageDescription": "Pista espacial da Corrida de Energia."
+        }
+      ],
+      "scene": {
+        "text": "Uma tempestade solar varreu a galáxia e espalhou quinze aliens amigáveis para longe de casa. A Academia Galáctica lançou a Operação Grande Resgate, e toda comunicação espacial passa pelo console de navegação: o teclado. Você chegou à Academia no dia em que a tempestade desligou a nossa nave-escola, a Aurora. Eu sou a Comandante Stella, e preciso de um par de mãos novas. Bem-vindo a bordo, cadete.",
+        "characterId": "scene-c0",
+        "audioGuidance": {
+          "start": [
+            {
+              "id": "m1c0-stella",
+              "type": "speech",
+              "text": "Uma tempestade solar varreu a galáxia e espalhou quinze aliens amigáveis para longe de casa. A Academia Galáctica lançou a Operação Grande Resgate, e toda comunicação espacial passa pelo console de navegação: o teclado. Você chegou à Academia no dia em que a tempestade desligou a nossa nave-escola, a Aurora. Eu sou a Comandante Stella, e preciso de um par de mãos novas. Bem-vindo a bordo, cadete."
+            },
+            {
+              "id": "m1c0-zero1",
+              "type": "speech",
+              "text": "Bip! ZERO-1 na escuta, computador de bordo da Aurora. Digite as teclas com toques suaves e precisos, sem força e sem deixar a tecla pressionada. Se eu apitar, foi tecla errada: siga em frente, não tente apagar. Precisa de ajuda? Tecle F1. Para eu soletrar o que falta, F3. Para repetir o exercício, F7."
+            }
+          ]
+        }
+      },
+      "modules": [
+        {
+          "id": "modulo-1-nave-adormecida",
+          "title": "Módulo 1 · A Nave Adormecida",
+          "scene": {
+            "text": "Reative a nave-escola Aurora usando a linha base do teclado.",
+            "characterId": "aurora"
+          },
+          "lessons": [
+            {
+              "id": "m1-0-despertar",
+              "title": "Missão 1.0 · O despertar da Aurora",
+              "scene": {
+                "text": "Cadete, que bom ter você a bordo. Eu sou a Comandante Stella, e esta é a Aurora, a nave-escola da Academia Galáctica. A tempestade solar desligou quase tudo aqui dentro. Antes de reativar a nave, você precisa conhecer o console de navegação. Deslize os dedos pela linha do meio do teclado até sentir duas marcas em relevo. Encontrou? São as teclas F e J, os pontos de partida de toda viagem.",
+                "characterId": "scene-c1",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c1-stella",
+                      "type": "speech",
+                      "text": "Cadete, que bom ter você a bordo. Eu sou a Comandante Stella, e esta é a Aurora, a nave-escola da Academia Galáctica. A tempestade solar desligou quase tudo aqui dentro. Antes de reativar a nave, você precisa conhecer o console de navegação. Deslize os dedos pela linha do meio do teclado até sentir duas marcas em relevo. Encontrou? São as teclas F e J, os pontos de partida de toda viagem."
+                    },
+                    {
+                      "id": "m1c1-zero1",
+                      "type": "speech",
+                      "text": "Bip! ZERO-1 na escuta. Indicador esquerdo no F, indicador direito no J. Os outros dedos descansam nas teclas vizinhas da mesma linha. Para testar os sensores do console, digite F e J quando eu pedir."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c1-fj",
+                  "title": "F J",
+                  "type": "keySequence",
+                  "prompt": "Digite F e J.",
+                  "expectedInput": "fj",
+                  "minimumRepetitions": 10
+                },
+                {
+                  "id": "m1c1-jf",
+                  "title": "J F",
+                  "type": "keySequence",
+                  "prompt": "Digite J e F.",
+                  "expectedInput": "jf",
+                  "minimumRepetitions": 10
+                }
+              ]
+            },
+            {
+              "id": "m1-1-asa-esquerda",
+              "title": "Missão 1.1 · Códigos da asa esquerda",
+              "scene": {
+                "text": "A asa esquerda da Aurora continua apagada. O código de energia dela usa as cinco teclas da sua mão esquerda. Cada vez que você digita o código completo, um propulsor acende. Estou vendo daqui da ponte: capriche, cadete.",
+                "characterId": "scene-c2",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c2-stella",
+                      "type": "speech",
+                      "text": "A asa esquerda da Aurora continua apagada. O código de energia dela usa as cinco teclas da sua mão esquerda. Cada vez que você digita o código completo, um propulsor acende. Estou vendo daqui da ponte: capriche, cadete."
+                    },
+                    {
+                      "id": "m1c2-zero1",
+                      "type": "speech",
+                      "text": "Código da asa esquerda: A, S, D, F, G. Mínimo no A, anelar no S, médio no D, indicador no F; o G também é do indicador, um passo à direita. Depois da última letra, barra de espaço com o polegar direito."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c2-asdfg",
+                  "title": "Código esquerdo",
+                  "type": "keySequence",
+                  "prompt": "Digite A S D F G.",
+                  "expectedInput": "asdfg",
+                  "minimumRepetitions": 12
+                },
+                {
+                  "id": "m1c2-gfdsa",
+                  "title": "Código esquerdo reverso",
+                  "type": "keySequence",
+                  "prompt": "Digite G F D S A.",
+                  "expectedInput": "gfdsa",
+                  "minimumRepetitions": 12
+                }
+              ]
+            },
+            {
+              "id": "m1-2-asa-direita",
+              "title": "Missão 1.2 · Códigos da asa direita",
+              "scene": {
+                "text": "Asa esquerda brilhando! Agora a direita. O código dela usa as cinco teclas da sua mão direita, incluindo uma tecla que quase ninguém conhece pelo tato: o cê-cedilha, no cantinho, com o dedo mínimo. Poucos cadetes dominam essa tecla logo no primeiro dia.",
+                "characterId": "scene-c3",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c3-stella",
+                      "type": "speech",
+                      "text": "Asa esquerda brilhando! Agora a direita. O código dela usa as cinco teclas da sua mão direita, incluindo uma tecla que quase ninguém conhece pelo tato: o cê-cedilha, no cantinho, com o dedo mínimo. Poucos cadetes dominam essa tecla logo no primeiro dia."
+                    },
+                    {
+                      "id": "m1c3-zero1",
+                      "type": "speech",
+                      "text": "Código da asa direita: H, J, K, L, cê-cedilha. O H é do indicador, um passo à esquerda do J. Depois da última letra, barra de espaço com o polegar esquerdo."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c3-hjklc",
+                  "title": "Código direito",
+                  "type": "keySequence",
+                  "prompt": "Digite H J K L cê-cedilha.",
+                  "expectedInput": "hjklç",
+                  "minimumRepetitions": 12
+                },
+                {
+                  "id": "m1c3-clkjh",
+                  "title": "Código direito reverso",
+                  "type": "keySequence",
+                  "prompt": "Digite cê-cedilha L K J H.",
+                  "expectedInput": "çlkjh",
+                  "minimumRepetitions": 12
+                }
+              ]
+            },
+            {
+              "id": "m1-3-sincronizacao",
+              "title": "Missão 1.3 · Sincronização das asas",
+              "scene": {
+                "text": "As duas asas têm energia, mas estão fora de ritmo. Se uma empurra mais que a outra, a Aurora voa em círculos. Digite os dois códigos em sequência, sem pressa: sincronia vale mais que velocidade.",
+                "characterId": "scene-c4",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c4-stella",
+                      "type": "speech",
+                      "text": "As duas asas têm energia, mas estão fora de ritmo. Se uma empurra mais que a outra, a Aurora voa em círculos. Digite os dois códigos em sequência, sem pressa: sincronia vale mais que velocidade."
+                    },
+                    {
+                      "id": "m1c4-zero1",
+                      "type": "speech",
+                      "text": "Sequência de sincronização: código esquerdo, espaço, código direito. Depois, os dois de trás para frente. Dica: volte os indicadores para F e J sempre que se perder. Para terminar, um reparo fino: as teclas G e H são as únicas sem dedo morador. Treine a ponte dos indicadores comigo: F, G, F, espaço, J, H, J."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c4-sync-forward",
+                  "title": "Sincronização direta",
+                  "type": "keySequence",
+                  "prompt": "Digite os códigos das duas asas.",
+                  "expectedInput": "asdfg hjklç",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c4-sync-reverse",
+                  "title": "Sincronização reversa",
+                  "type": "keySequence",
+                  "prompt": "Digite os códigos ao contrário.",
+                  "expectedInput": "gfdsa çlkjh",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c4-bridge",
+                  "title": "Ponte dos indicadores",
+                  "type": "keySequence",
+                  "prompt": "Digite F G F, espaço, J H J.",
+                  "expectedInput": "fgf jhj",
+                  "minimumRepetitions": 6
+                }
+              ]
+            },
+            {
+              "id": "m1-4-palavras-i",
+              "title": "Missão 1.4 · Palavras de energia I",
+              "scene": {
+                "text": "Cadete, os códigos acordaram um sistema antigo da Aurora: o banco de palavras de energia. São palavras pequenas, mas estão em quase toda frase da língua portuguesa. Com elas, a nave começa a formar pensamentos.",
+                "characterId": "scene-c5",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c5-stella",
+                      "type": "speech",
+                      "text": "Cadete, os códigos acordaram um sistema antigo da Aurora: o banco de palavras de energia. São palavras pequenas, mas estão em quase toda frase da língua portuguesa. Com elas, a nave começa a formar pensamentos."
+                    },
+                    {
+                      "id": "m1c5-zero1",
+                      "type": "speech",
+                      "text": "Agora eu falo a palavra e você digita, sem soletrar. Palavras de hoje: a, as, da, das. Todas moram na sua linha base. Espaço depois de cada palavra. Se tiver dúvida de uma letra, tecle F3 e eu soletro."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c5-a-as",
+                  "title": "A e AS",
+                  "type": "phrase",
+                  "prompt": "Digite: a as.",
+                  "expectedInput": "a as",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c5-da-das",
+                  "title": "DA e DAS",
+                  "type": "phrase",
+                  "prompt": "Digite: da das.",
+                  "expectedInput": "da das",
+                  "minimumRepetitions": 8
+                }
+              ]
+            },
+            {
+              "id": "m1-5-palavras-ii",
+              "title": "Missão 1.5 · Palavras de energia II",
+              "scene": {
+                "text": "O banco de energia quer palavras maiores. Repare: asas é a palavra favorita da Aurora, por motivos óbvios.",
+                "characterId": "scene-c6",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c6-stella",
+                      "type": "speech",
+                      "text": "O banco de energia quer palavras maiores. Repare: asas é a palavra favorita da Aurora, por motivos óbvios."
+                    },
+                    {
+                      "id": "m1c6-zero1",
+                      "type": "speech",
+                      "text": "Palavras de hoje: ah, fala, sala, asas. Duas mãos trabalhando juntas. Se tiver dúvida de uma letra, tecle F3 e eu soletro."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c6-ah",
+                  "title": "AH",
+                  "type": "word",
+                  "prompt": "Digite ah.",
+                  "expectedInput": "ah",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c6-fala",
+                  "title": "FALA",
+                  "type": "word",
+                  "prompt": "Digite fala.",
+                  "expectedInput": "fala",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c6-sala",
+                  "title": "SALA",
+                  "type": "word",
+                  "prompt": "Digite sala.",
+                  "expectedInput": "sala",
+                  "minimumRepetitions": 8
+                },
+                {
+                  "id": "m1c6-asas",
+                  "title": "ASAS",
+                  "type": "word",
+                  "prompt": "Digite asas.",
+                  "expectedInput": "asas",
+                  "minimumRepetitions": 8
+                }
+              ]
+            },
+            {
+              "id": "m1-6-mensagem",
+              "title": "Missão 1.6 · Mensagem para a base",
+              "scene": {
+                "text": "A Academia quer notícias nossas. Vamos transmitir as primeiras mensagens da Aurora reativada. São curtas, mas são as primeiras palavras que a base vai ouvir de você, cadete.",
+                "characterId": "scene-c7",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c7-stella",
+                      "type": "speech",
+                      "text": "A Academia quer notícias nossas. Vamos transmitir as primeiras mensagens da Aurora reativada. São curtas, mas são as primeiras palavras que a base vai ouvir de você, cadete."
+                    },
+                    {
+                      "id": "m1c7-zero1",
+                      "type": "speech",
+                      "text": "Mensagem tem duas palavras e um espaço no meio. Eu falo a mensagem completa, você digita palavra por palavra. Barra de espaço também no final, para transmitir."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c7-a-sala",
+                  "title": "A sala",
+                  "type": "phrase",
+                  "prompt": "Digite a sala.",
+                  "expectedInput": "a sala",
+                  "minimumRepetitions": 6
+                },
+                {
+                  "id": "m1c7-as-asas",
+                  "title": "As asas",
+                  "type": "phrase",
+                  "prompt": "Digite as asas.",
+                  "expectedInput": "as asas",
+                  "minimumRepetitions": 6
+                },
+                {
+                  "id": "m1c7-a-fala",
+                  "title": "A fala",
+                  "type": "phrase",
+                  "prompt": "Digite a fala.",
+                  "expectedInput": "a fala",
+                  "minimumRepetitions": 6
+                },
+                {
+                  "id": "m1c7-da-sala",
+                  "title": "Da sala",
+                  "type": "phrase",
+                  "prompt": "Digite da sala.",
+                  "expectedInput": "da sala",
+                  "minimumRepetitions": 6
+                },
+                {
+                  "id": "m1c7-das-asas",
+                  "title": "Das asas",
+                  "type": "phrase",
+                  "prompt": "Digite das asas.",
+                  "expectedInput": "das asas",
+                  "minimumRepetitions": 6
+                }
+              ]
+            },
+            {
+              "id": "m1-7a-prova-codigo",
+              "title": "Missão 1.7A · Prova do Cadete — código",
+              "scene": {
+                "text": "Chegou a hora, cadete. A Prova do Cadete mistura tudo o que você aprendeu: códigos das asas e mensagens de energia. Se o console responder bem, a Aurora decola hoje. Estou orgulhosa de você. Vamos.",
+                "characterId": "scene-c8",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c8-stella",
+                      "type": "speech",
+                      "text": "Chegou a hora, cadete. A Prova do Cadete mistura tudo o que você aprendeu: códigos das asas e mensagens de energia. Se o console responder bem, a Aurora decola hoje. Estou orgulhosa de você. Vamos."
+                    },
+                    {
+                      "id": "m1c8-zero1",
+                      "type": "speech",
+                      "text": "Protocolo de decolagem carregado. Sequência mista, atenção ao que eu falar: pode ser código soletrado ou mensagem inteira. Boa sorte, cadete. Bip!"
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c8-code",
+                  "title": "Código da prova",
+                  "type": "keySequence",
+                  "prompt": "Digite o código da prova.",
+                  "expectedInput": "asdfg çlkjh",
+                  "minimumRepetitions": 5
+                }
+              ]
+            },
+            {
+              "id": "m1-7b-prova-mensagens",
+              "title": "Missão 1.7B · Prova do Cadete — mensagens",
+              "scene": {
+                "text": "Complete as mensagens finais do protocolo de decolagem.",
+                "characterId": "scene-c8"
+              },
+              "exercises": [
+                {
+                  "id": "m1c8-a-fala",
+                  "title": "Mensagem da prova",
+                  "type": "phrase",
+                  "prompt": "Digite a fala.",
+                  "expectedInput": "a fala",
+                  "minimumRepetitions": 5
+                },
+                {
+                  "id": "m1c8-as-asas-da-sala",
+                  "title": "Mensagem final da prova",
+                  "type": "phrase",
+                  "prompt": "Digite as asas da sala.",
+                  "expectedInput": "as asas da sala",
+                  "minimumRepetitions": 5
+                }
+              ]
+            },
+            {
+              "id": "m1-8-cerimonia",
+              "title": "Cerimônia da decolagem",
+              "scene": {
+                "text": "Cadete, protocolo aprovado! Motores... acionar. Sinta o chão vibrar: a Aurora está decolando pela primeira vez desde a tempestade. E tem mais uma surpresa. Quando os sistemas voltaram, os sensores encontraram três passageiros escondidos no hangar: três aliens que se abrigaram aqui durante a tempestade. Eles ainda não falam a nossa língua, o Tradutor Galáctico segue desligado, mas cada um tem uma voz própria. Ouça.",
+                "characterId": "scene-c9-launch",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c9-stella-a",
+                      "type": "speech",
+                      "text": "Cadete, protocolo aprovado! Motores... acionar. Sinta o chão vibrar: a Aurora está decolando pela primeira vez desde a tempestade. E tem mais uma surpresa. Quando os sistemas voltaram, os sensores encontraram três passageiros escondidos no hangar: três aliens que se abrigaram aqui durante a tempestade. Eles ainda não falam a nossa língua, o Tradutor Galáctico segue desligado, mas cada um tem uma voz própria. Ouça."
+                    },
+                    {
+                      "id": "m1c9-stella-b",
+                      "type": "speech",
+                      "text": "Blib-Blub, Zorp e Nebulon: os três primeiros resgatados da Operação Grande Resgate, salvos por você. Pelo seu desempenho, a Academia concede o distintivo de Cadete de Bronze. No próximo módulo, vamos ligar o Tradutor Galáctico e finalmente entender o que eles têm para contar. Descanse, cadete. Você merece."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c9-confirmacao",
+                  "title": "Cerimônia concluída",
+                  "type": "key",
+                  "prompt": "Pressione espaço para continuar após a cerimônia.",
+                  "expectedInput": " ",
+                  "minimumRepetitions": 1
+                }
+              ]
+            },
+            {
+              "id": "m1-9-corrida",
+              "title": "Minijogo · Corrida de Energia",
+              "scene": {
+                "text": "Última chamada antes da viagem: a Corrida de Energia! Todas as palavras do banco, uma atrás da outra, no ritmo dos propulsores. Mostre para a galáxia a velocidade de um Cadete de Bronze.",
+                "characterId": "scene-c10",
+                "audioGuidance": {
+                  "start": [
+                    {
+                      "id": "m1c10-stella",
+                      "type": "speech",
+                      "text": "Última chamada antes da viagem: a Corrida de Energia! Todas as palavras do banco, uma atrás da outra, no ritmo dos propulsores. Mostre para a galáxia a velocidade de um Cadete de Bronze."
+                    }
+                  ]
+                }
+              },
+              "exercises": [
+                {
+                  "id": "m1c10-corrida",
+                  "title": "Corrida de Energia",
+                  "type": "phrase",
+                  "prompt": "Digite todas as palavras do banco.",
+                  "expectedInput": "a as da das ah fala sala asas",
+                  "minimumRepetitions": 1,
+                  "timeLimitSeconds": 150
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
