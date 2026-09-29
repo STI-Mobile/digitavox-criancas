@@ -25,6 +25,9 @@ final class CourseCatalogViewModel extends ChangeNotifier {
   StudentProgress get progress => _progress;
   String? get errorMessage => _errorMessage;
 
+  int get failedLessonsCount => _progress.failedLessonsCount;
+
+
   Future<void> initialize() async {
     _status = CourseCatalogStatus.loading;
     _errorMessage = null;
@@ -55,6 +58,7 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     required String courseId,
     required String lessonId,
     required String exerciseId,
+    int accuracyPercent = 100,
   }) async {
     if (_status != CourseCatalogStatus.ready) {
       throw StateError('O catálogo ainda não está pronto.');
@@ -71,6 +75,7 @@ final class CourseCatalogViewModel extends ChangeNotifier {
       courseId: courseId,
       lessonId: lessonId,
       exerciseId: exerciseId,
+      accuracyPercent: accuracyPercent,
     );
     await progressRepository.save(_progress);
     notifyListeners();
@@ -88,4 +93,5 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     await progressRepository.save(_progress);
     notifyListeners();
   }
+
 }

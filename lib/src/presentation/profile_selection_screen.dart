@@ -91,11 +91,7 @@ final class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
         _profiles = [..._profiles, profile];
       });
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          widget.onProfileSelected(profile);
-        }
-      });
+      
     } on ArgumentError catch (error) {
       if (!mounted) return;
 

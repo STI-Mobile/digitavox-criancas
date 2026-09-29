@@ -44,12 +44,22 @@ final class LessonProgress {
   const LessonProgress({
     this.completedExerciseIds = const <String>{},
     this.stars = 0,
+    this.tries = 0,
+    this.failedAttempts = 0,
   });
+
+  static const int passingAccuracyPercent = 90;
 
   final Set<String> completedExerciseIds;
   final int stars;
+  final int tries;
+  final int failedAttempts;
 
-  LessonProgress completeExercise(String exerciseId, {int earnedStars = 1}) {
+  LessonProgress completeExercise(
+    String exerciseId, {
+    int earnedStars = 1,
+    int accuracyPercent = 100,
+  }) {
     if (exerciseId.trim().isEmpty) {
       throw ArgumentError.value(exerciseId, 'exerciseId', 'não pode ser vazio');
     }
@@ -60,14 +70,27 @@ final class LessonProgress {
         'não pode ser negativo',
       );
     }
+    if (accuracyPercent < 0 || accuracyPercent > 100) {
+      throw ArgumentError.value(
+        accuracyPercent,
+        'accuracyPercent',
+        'deve estar entre 0 e 100',
+      );
+    }
 
     final alreadyCompleted = completedExerciseIds.contains(exerciseId);
+
     return LessonProgress(
       completedExerciseIds: Set.unmodifiable({
         ...completedExerciseIds,
         exerciseId,
       }),
       stars: alreadyCompleted ? stars : stars + earnedStars,
+      tries: tries,
+      failedAttempts: failedAttempts +
+          (!alreadyCompleted && accuracyPercent < passingAccuracyPercent
+              ? 1
+              : 0),
     );
   }
 }
@@ -84,6 +107,7 @@ final class CourseProgress {
     required String lessonId,
     required String exerciseId,
     int earnedStars = 1,
+    int accuracyPercent = 100,
   }) {
     final currentLesson = lessons[lessonId] ?? const LessonProgress();
     return CourseProgress(
@@ -92,6 +116,7 @@ final class CourseProgress {
         lessonId: currentLesson.completeExercise(
           exerciseId,
           earnedStars: earnedStars,
+          accuracyPercent: accuracyPercent,
         ),
       }),
     );
@@ -110,6 +135,13 @@ final class StudentProgress {
   int get totalStars =>
       courses.values.fold(0, (total, course) => total + course.stars);
 
+  int get failedLessonsCount => courses.values.fold(
+    0,
+    (total, course) =>
+        total +
+        course.lessons.values.where((lesson) => lesson.failedAttempts > 0).length,
+  );
+
   StudentProgress copyWith({
     Map<String, CourseProgress>? courses,
     AppSettings? settings,
@@ -123,6 +155,7 @@ final class StudentProgress {
     required String lessonId,
     required String exerciseId,
     int earnedStars = 1,
+    int accuracyPercent = 100,
   }) {
     final currentCourse = courses[courseId] ?? const CourseProgress();
     return StudentProgress(
@@ -132,6 +165,7 @@ final class StudentProgress {
           lessonId: lessonId,
           exerciseId: exerciseId,
           earnedStars: earnedStars,
+          accuracyPercent: accuracyPercent,
         ),
       }),
       settings: settings,
