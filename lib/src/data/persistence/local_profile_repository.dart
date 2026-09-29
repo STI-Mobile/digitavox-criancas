@@ -51,10 +51,11 @@ final class LocalProfileRepository implements ProfileRepository {
     );
 
     await profilesStore.write(
-      jsonEncode([
-        profiles.map((item) => {'id': item.id, 'name': item.name}),
-        {'id': profile.id, 'name': profile.name},
-      ]),
+      jsonEncode(
+        [...profiles, profile]
+            .map((item) => {'id': item.id, 'name': item.name})
+            .toList(growable: false),
+      ),
     );
 
     return profile;
@@ -68,10 +69,11 @@ final class LocalProfileRepository implements ProfileRepository {
         .toList(growable: false);
 
     await profilesStore.write(
-      jsonEncode([
-        for (final profile in remaining)
-          {'id': profile.id, 'name': profile.name},
-      ]),
+      jsonEncode(
+        remaining
+            .map((item) => {'id': item.id, 'name': item.name})
+            .toList(growable: false),
+      ),
     );
   }
 
