@@ -25,7 +25,7 @@ final class CourseCatalogViewModel extends ChangeNotifier {
   StudentProgress get progress => _progress;
   String? get errorMessage => _errorMessage;
 
-  int get failedLessonsCount => _progress.failedLessonsCount;
+  Map<String,int> get failedAttempts => _progress.failedAttempts;
 
 
   Future<void> initialize() async {

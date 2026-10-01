@@ -10,7 +10,7 @@ void main() {
       final evaluations = <bool>[];
       final viewModel = _session(
         exercise: _sequence,
-        onCompleted: () async => completions++,
+        onCompleted: (_) async => completions++,
         onInputEvaluated: (correct) async => evaluations.add(correct),
       );
       addTearDown(viewModel.dispose);
@@ -67,7 +67,7 @@ void main() {
         expectedInput: 'a',
         minimumRepetitions: 3,
       ),
-      onCompleted: () async => completions++,
+      onCompleted: (_) async => completions++,
     );
     addTearDown(viewModel.dispose);
 
@@ -153,12 +153,14 @@ const _sequence = Exercise(
 
 ExerciseSessionViewModel _session({
   Exercise exercise = _exercise,
-  Future<void> Function()? onCompleted,
+  Future<void> Function(int accuracyPercent)? onCompleted,
   Future<void> Function(bool correct)? onInputEvaluated,
   DateTime Function()? now,
-}) => ExerciseSessionViewModel(
-  exercise: exercise,
-  onCompleted: onCompleted ?? () async {},
-  onInputEvaluated: onInputEvaluated ?? (_) async {},
-  now: now,
-);
+}) =>
+    ExerciseSessionViewModel(
+      exercise: exercise,
+      onCompleted: onCompleted ?? (_) async {},
+      onInputEvaluated: onInputEvaluated ?? (_) async {},
+      now: now,
+      failedAttempts: {},
+    );

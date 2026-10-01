@@ -30,7 +30,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     required this.exercise,
     required this.onCompleted,
     required this.onInputEvaluated,
-    required this.failedLessonsCount,
+    required this.failedAttempts,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        _expectedCharacters =
@@ -68,7 +68,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   var _isCompleting = false;
   var _isDisposed = false;
   Map<String,int> errorDistribution = {};
-  final int Function() failedLessonsCount;
+  final Map<String,int> failedAttempts;
 
   ExerciseSessionStatus get status => _status;
   String? get lastInput => _lastInput;
@@ -217,7 +217,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
             'Letras por minuto: ${(totalInputs/elapsed.inSeconds)*60}\n'
             'Letras aaa minuto: ${(_correctInputs)}\n'
             'Distribuição de erros: ${errorDistributionString(errorDistribution)}\n'
-            'Tentativas: ${failedLessonsCount()}';
+            'Tentativas: ${(failedAttempts[exercise.id] == null) ? "0" : failedAttempts[exercise.id]}';
           
     }
     notifyListeners();

@@ -78,12 +78,10 @@ final class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
         ],
       ),
     );
-    print("\n\n\n\n\n\n\n\n\n$name\n\n\n\n\n\n\n\n\n");
     if (!mounted || name == null || name.trim().isEmpty) return;
 
     try {
       final profile = await widget.profileRepository.createProfile(name);
-      print("\n\n\n\n\n\n\n\n\n" + name +"\n\n\n\n\n\n\n\n\n");
 
       if (!mounted) return;
 

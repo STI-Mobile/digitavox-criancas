@@ -45,7 +45,7 @@ final class LessonProgress {
     this.completedExerciseIds = const <String>{},
     this.stars = 0,
     this.tries = 0,
-    this.failedAttempts = 0,
+    this.failedAttempts = const <String, int>{},
   });
 
   static const int passingAccuracyPercent = 90;
@@ -53,7 +53,7 @@ final class LessonProgress {
   final Set<String> completedExerciseIds;
   final int stars;
   final int tries;
-  final int failedAttempts;
+  final Map<String, int> failedAttempts;
 
   LessonProgress completeExercise(
     String exerciseId, {
@@ -79,18 +79,24 @@ final class LessonProgress {
     }
 
     final alreadyCompleted = completedExerciseIds.contains(exerciseId);
+    final isPassingScore = accuracyPercent >= passingAccuracyPercent;
+
+    final nextFailedAttempts = Map<String, int>.from(failedAttempts);
+
+    if (!alreadyCompleted && !isPassingScore) {
+      nextFailedAttempts[exerciseId] =
+          (nextFailedAttempts[exerciseId] ?? 0) + 1;
+    }
+
+    final nextCompleted = Set<String>.from(completedExerciseIds)..add(exerciseId);
 
     return LessonProgress(
-      completedExerciseIds: Set.unmodifiable({
-        ...completedExerciseIds,
-        exerciseId,
-      }),
-      stars: alreadyCompleted ? stars : stars + earnedStars,
-      tries: tries,
-      failedAttempts: failedAttempts +
-          (!alreadyCompleted && accuracyPercent < passingAccuracyPercent
-              ? 1
-              : 0),
+      completedExerciseIds: Set.unmodifiable(nextCompleted),
+      stars: alreadyCompleted
+          ? stars
+          : stars + (isPassingScore ? earnedStars : 0),
+      tries: alreadyCompleted ? tries : tries + 1,
+      failedAttempts: nextFailedAttempts,
     );
   }
 }
@@ -135,12 +141,22 @@ final class StudentProgress {
   int get totalStars =>
       courses.values.fold(0, (total, course) => total + course.stars);
 
-  int get failedLessonsCount => courses.values.fold(
-    0,
-    (total, course) =>
-        total +
-        course.lessons.values.where((lesson) => lesson.failedAttempts > 0).length,
-  );
+  Map<String, int> get failedAttempts {
+    final aggregated = <String, int>{};
+
+    for (final course in courses.values) {
+      for (final lesson in course.lessons.values) {
+        for (final entry in lesson.failedAttempts.entries) {
+          final exerciseId = entry.key;
+          final attempts = entry.value;
+
+          aggregated[exerciseId] = (aggregated[exerciseId] ?? 0) + attempts;
+        }
+      }
+    }
+
+    return aggregated;
+  }
 
   StudentProgress copyWith({
     Map<String, CourseProgress>? courses,

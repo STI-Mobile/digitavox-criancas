@@ -274,7 +274,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
               ? CourseAudioEvent.correctInput
               : CourseAudioEvent.incorrectInput,
         ),
-        failedLessonsCount: () => catalog.failedLessonsCount
+        failedAttempts: catalog.failedAttempts,
       )..addListener(_changed);
     }
     final audioGeneration = ++_audioRequestGeneration;
