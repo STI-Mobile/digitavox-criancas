@@ -36,8 +36,6 @@ flutter:
           weight: 700
 
   assets:
-    - assets/content/demo_course.json
-    - assets/content/integration_demo_course.json
-    - assets/audio/demo/instruction_a_demo.wav
-    - assets/audio/demo/technical_signal_demo.wav
-    - assets/images/demo/
+    - assets/content/
+    - assets/images/space/module1/
+    - assets/audio/demo/

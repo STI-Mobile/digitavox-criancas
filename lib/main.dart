@@ -23,7 +23,7 @@ void main() {
       courseCatalog: const DevelopmentCourseCatalog(
         enabled: kDebugMode,
         demoCatalog: AssetCourseCatalog(
-          assetPath: 'assets/content/integration_demo_course.json',
+          assetPath: 'assets/content/exploradores_espaciais.json',
         ),
       ),
       profileRepository: LocalProfileRepository(
