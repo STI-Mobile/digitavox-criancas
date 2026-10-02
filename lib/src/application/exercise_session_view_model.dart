@@ -215,7 +215,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
             'Acertos: $accuracyPercent por cento. \n'
             '$_correctInputs teclas corretas e $_incorrectInputs incorretas. \n'
             'Letras por minuto: ${(totalInputs/elapsed.inSeconds)*60}\n'
-            'Letras aaa minuto: ${(_correctInputs)}\n'
             'Distribuição de erros: ${errorDistributionString(errorDistribution)}\n'
             'Tentativas: ${(failedAttempts[exercise.id] == null) ? "0" : failedAttempts[exercise.id]}';
           

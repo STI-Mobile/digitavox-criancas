@@ -82,21 +82,26 @@ final class LessonProgress {
     final isPassingScore = accuracyPercent >= passingAccuracyPercent;
 
     final nextFailedAttempts = Map<String, int>.from(failedAttempts);
-
-    if (!alreadyCompleted && !isPassingScore) {
-      nextFailedAttempts[exerciseId] =
-          (nextFailedAttempts[exerciseId] ?? 0) + 1;
+    final nextCompleted = Set<String>.from(completedExerciseIds);
+    if (!alreadyCompleted ) {
+      if(!isPassingScore) {
+        nextFailedAttempts[exerciseId] =(nextFailedAttempts[exerciseId] ?? 0) + 1;
+      }
+      else
+      {
+        nextCompleted.add(exerciseId);
+      }
     }
 
-    final nextCompleted = Set<String>.from(completedExerciseIds)..add(exerciseId);
+    
 
     return LessonProgress(
-      completedExerciseIds: Set.unmodifiable(nextCompleted),
+      completedExerciseIds: nextCompleted ,
       stars: alreadyCompleted
           ? stars
           : stars + (isPassingScore ? earnedStars : 0),
       tries: alreadyCompleted ? tries : tries + 1,
-      failedAttempts: nextFailedAttempts,
+      failedAttempts: failedAttempts,
     );
   }
 }
