@@ -256,11 +256,12 @@ final class CourseJourneyEngine extends ChangeNotifier {
     if (exercise != null && lesson != null) {
       _session = ExerciseSessionViewModel(
         exercise: exercise,
-        onCompleted: () async {
+        onCompleted: (accuracyPercent) async {
           await catalog.completeExercise(
             courseId: course.id,
             lessonId: lesson.id,
             exerciseId: exercise.id,
+            accuracyPercent: accuracyPercent,
           );
           await courseAudio.play(
             currentAudioConfiguration,
@@ -273,6 +274,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
               ? CourseAudioEvent.correctInput
               : CourseAudioEvent.incorrectInput,
         ),
+        failedAttempts: catalog.failedAttempts,
       )..addListener(_changed);
     }
     final audioGeneration = ++_audioRequestGeneration;

@@ -30,6 +30,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     required this.exercise,
     required this.onCompleted,
     required this.onInputEvaluated,
+    required this.failedAttempts,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        _expectedCharacters =
@@ -47,7 +48,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   static const int excessiveErrorsThreshold = 4;
 
   final Exercise exercise;
-  final Future<void> Function() onCompleted;
+  final Future<void> Function(int accuracyPercent) onCompleted;
   final Future<void> Function(bool correct) onInputEvaluated;
   final DateTime Function() _now;
   final List<int> _expectedCharacters;
@@ -66,6 +67,8 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   var _helpVisible = false;
   var _isCompleting = false;
   var _isDisposed = false;
+  Map<String,int> errorDistribution = {};
+  final Map<String,int> failedAttempts;
 
   ExerciseSessionStatus get status => _status;
   String? get lastInput => _lastInput;
@@ -77,6 +80,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   int get totalRepetitions => exercise.minimumRepetitions ?? 1;
   int get correctInputs => _correctInputs;
   int get incorrectInputs => _incorrectInputs;
+  int get totalInputs => _correctInputs + _incorrectInputs;
   int get consecutiveErrors => _consecutiveErrors;
   bool get helpVisible => _helpVisible;
   bool get hasPendingInput => _inputIndex < _expectedCharacters.length;
@@ -92,8 +96,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
       String.fromCharCodes(_expectedCharacters.skip(_inputIndex));
 
   int get accuracyPercent {
-    final total = _correctInputs + _incorrectInputs;
-    return total == 0 ? 100 : (_correctInputs * 100 / total).floor();
+    return (totalInputs == 0) ? 20 : ((_correctInputs * 100) / totalInputs).toInt();
   }
 
   Future<void> handleInput(String? input) async {
@@ -121,6 +124,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     } else {
       _incorrectInputs++;
       _consecutiveErrors++;
+      errorDistribution[input] = (errorDistribution[input] == null) ? 1 : errorDistribution[input]! + 1 ; 
       _status = ExerciseSessionStatus.incorrectAnswer;
       _announcement = _inputIndex < _expectedCharacters.length
           ? 'Tecla ${_spoken(input)} incorreta. Era ${_spoken(expected)}. '
@@ -158,7 +162,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     notifyListeners();
     await inputFeedback;
     if (_isDisposed) return;
-    await onCompleted();
+    await onCompleted(accuracyPercent);
     _isCompleting = false;
     if (_isDisposed) return;
     _stopwatch.stop();
@@ -207,9 +211,13 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
             'Hora atual: ${_twoDigits(current.hour)} e ${_twoDigits(current.minute)}.';
       case ExerciseShortcut.statistics:
         _announcement =
-            'Tempo decorrido: ${_formatDuration(elapsed)}. '
-            'Acertos: $accuracyPercent por cento. '
-            '$_correctInputs teclas corretas e $_incorrectInputs incorretas.';
+            'Tempo decorrido: ${_formatDuration(elapsed)}. \n '
+            'Acertos: $accuracyPercent por cento. \n'
+            '$_correctInputs teclas corretas e $_incorrectInputs incorretas. \n'
+            'Letras por minuto: ${(totalInputs/elapsed.inSeconds)*60}\n'
+            'Distribuição de erros: ${errorDistributionString(errorDistribution)}\n'
+            'Tentativas: ${(failedAttempts[exercise.id] == null) ? "0" : failedAttempts[exercise.id]}';
+          
     }
     notifyListeners();
   }
@@ -236,4 +244,15 @@ String _formatDuration(Duration duration) {
   final minutes = duration.inMinutes;
   final seconds = duration.inSeconds.remainder(60);
   return '$minutes minutos e $seconds segundos';
+}
+
+String errorDistributionString(Map<String,int> errorDistribution){
+    String errorDist = '';
+    if(errorDistribution.isNotEmpty) {
+      errorDistribution.forEach((input,errors){
+        errorDist += '$input: $errors';
+      });
+      return errorDist;
+    }
+    return 'Sem erros';
 }

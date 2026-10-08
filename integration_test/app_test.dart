@@ -1,6 +1,6 @@
+
 import 'package:digitavox_criancas/src/app.dart';
-import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
-import 'package:digitavox_criancas/src/data/persistence/local_progress_repository.dart';
+import 'package:digitavox_criancas/src/data/persistence/local_profile_repository.dart';
 import 'package:digitavox_criancas/src/data/persistence/shared_preferences_progress_store.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:flutter/material.dart';
@@ -13,14 +13,21 @@ import '../test/support/recording_audio_guidance.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
+final profileStore = SharedPreferencesProgressStore(
+    storageKey: 'digitavox.profiles',
+  );
   testWidgets('loads the bundled demo catalog', (tester) async {
     await tester.pumpWidget(
       DigitavoxApp(
         courseCatalog: const AssetCourseCatalog(
           assetPath: 'assets/content/demo_course.json',
         ),
-        progressRepository: InMemoryProgressRepository(),
+        profileRepository: LocalProfileRepository(
+        profilesStore: profileStore,
+        progressStoreFor: (profileId) => SharedPreferencesProgressStore(
+          storageKey: 'digitavox.progress.$profileId',
+        ),
+      ),
         audioGuidance: RecordingAudioGuidance(),
       ),
     );
@@ -33,15 +40,15 @@ void main() {
   testWidgets('restores progress after recreating the app', (tester) async {
     final preferences = SharedPreferencesAsync();
     final previousDocument = await preferences.getString(
-      SharedPreferencesProgressStore.storageKey,
+      profileStore.storageKey,
     );
-    await preferences.remove(SharedPreferencesProgressStore.storageKey);
+    await preferences.remove(profileStore.storageKey);
     addTearDown(() async {
       if (previousDocument == null) {
-        await preferences.remove(SharedPreferencesProgressStore.storageKey);
+        await preferences.remove(profileStore.storageKey);
       } else {
         await preferences.setString(
-          SharedPreferencesProgressStore.storageKey,
+          profileStore.storageKey,
           previousDocument,
         );
       }
@@ -83,13 +90,19 @@ void main() {
 }
 
 DigitavoxApp _persistentApp(SharedPreferencesAsync preferences) {
+  final profileStore = SharedPreferencesProgressStore(
+    storageKey: 'digitavox.profiles',
+  );
   return DigitavoxApp(
     courseCatalog: const AssetCourseCatalog(
       assetPath: 'assets/content/demo_course.json',
     ),
-    progressRepository: LocalProgressRepository(
-      store: SharedPreferencesProgressStore(preferences: preferences),
-    ),
+    profileRepository: LocalProfileRepository(
+        profilesStore: profileStore,
+        progressStoreFor: (profileId) => SharedPreferencesProgressStore(
+          storageKey: 'digitavox.progress.$profileId',
+        ),
+      ),
     audioGuidance: RecordingAudioGuidance(),
   );
 }

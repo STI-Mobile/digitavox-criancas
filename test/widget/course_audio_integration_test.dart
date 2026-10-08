@@ -1,6 +1,7 @@
 import 'package:digitavox_criancas/src/app.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
-import 'package:digitavox_criancas/src/data/persistence/in_memory_progress_repository.dart';
+import 'package:digitavox_criancas/src/data/persistence/local_profile_repository.dart';
+import 'package:digitavox_criancas/src/data/persistence/shared_preferences_progress_store.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,12 +14,20 @@ void main() {
     tester,
   ) async {
     final audio = RecordingAudioGuidance();
+    final profileStore = SharedPreferencesProgressStore(
+    storageKey: 'digitavox.profiles',
+  );
     await tester.pumpWidget(
       DigitavoxApp(
         courseCatalog: const AssetCourseCatalog(
           assetPath: 'assets/content/integration_demo_course.json',
         ),
-        progressRepository: InMemoryProgressRepository(),
+        profileRepository: LocalProfileRepository(
+        profilesStore: profileStore,
+        progressStoreFor: (profileId) => SharedPreferencesProgressStore(
+          storageKey: 'digitavox.progress.$profileId',
+        ),
+      ),
         audioGuidance: audio,
       ),
     );
