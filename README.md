@@ -40,6 +40,8 @@ O comando valida formatação, análise estática com warnings fatais e testes u
 | `make test-integration` | Rodar integração em um dispositivo disponível |
 | `make coverage` | Gerar `coverage/lcov.info` |
 | `make build-android` | Gerar APK Android de debug |
+| `make build-android-beta` | Gerar AAB Android beta assinado |
+| `make build-ios-beta` | Gerar IPA iOS beta assinado |
 | `make check` | Executar a validação principal local |
 
 ## Organização
@@ -62,6 +64,7 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 - [Acessibilidade](docs/accessibility.md)
 - [Modelo de conteúdo](docs/content-model.md)
 - [Estratégia de testes](docs/testing.md)
+- [Distribuição beta](docs/beta-distribution.md)
 - [ADR 0001: Flutter + MVVM](docs/adr/0001-flutter-mvvm.md)
 - [ADR 0002: persistência local do progresso](docs/adr/0002-persistencia-local-progresso.md)
 - [ADR 0003: arquitetura de áudio](docs/adr/0003-arquitetura-audio.md)
@@ -71,4 +74,4 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 
 ## Estado atual
 
-Em debug, o app carrega um Demo Course técnico que usa o mesmo parser, engine, ViewModels e progresso da jornada normal. A configuração declarativa produz Speech e SFX via Course Audio Orchestration, incluindo asset, fallback TTS, sequenciamento e cancelamento. Em release, o catálogo técnico fica desabilitado. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.
+Em debug e beta, o app carrega um Demo Course técnico que usa o mesmo parser, engine, ViewModels e progresso da jornada normal. O build beta é um release assinado com `APP_ENV=beta` e mantém o aviso DEMO; ele existe somente para testes. Em release de produção, o catálogo técnico fica desabilitado. A configuração declarativa produz Speech e SFX via Course Audio Orchestration, incluindo asset, fallback TTS, sequenciamento e cancelamento. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.

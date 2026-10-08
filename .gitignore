@@ -37,3 +37,6 @@ ios/.symlinks/
 ios/**/DerivedData/
 ios/**/xcuserdata/
 ios/Runner/GeneratedPluginRegistrant.*
+*.p12
+*.mobileprovision
+AuthKey_*.p8

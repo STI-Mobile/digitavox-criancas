@@ -1,0 +1,130 @@
+name: Beta distribution
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android - Play Internal Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: beta-distribution
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Bootstrap
+        run: make bootstrap
+
+      - name: Validate
+        run: make check
+
+      - name: Restore Android signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          keystore_path="$RUNNER_TEMP/digitavox-upload.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          cat > android/key.properties <<EOF
+          storeFile=$keystore_path
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build Android beta bundle
+        run: make build-android-beta BUILD_NUMBER="${{ github.run_number }}"
+
+      - name: Publish to Google Play Internal Testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: br.org.digitavox.digitavox_criancas
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          tracks: internal
+          status: completed
+          releaseName: beta-${{ github.run_number }}
+
+  ios:
+    name: iOS - TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 45
+    environment: beta-distribution
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Bootstrap
+        run: make bootstrap
+
+      - name: Validate
+        run: make check
+
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD }}
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.APPSTORE_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          test -n "$PROFILE_BASE64"
+          profile_path="$RUNNER_TEMP/digitavox.mobileprovision"
+          printf '%s' "$PROFILE_BASE64" | base64 -D > "$profile_path"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          uuid="$(security cms -D -i "$profile_path" | plutil -extract UUID raw -)"
+          cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+
+      - name: Build iOS beta archive
+        run: make build-ios-beta BUILD_NUMBER="${{ github.run_number }}"
+
+      - name: Locate IPA
+        id: ipa
+        run: |
+          ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
+          test -n "$ipa_path"
+          echo "path=$ipa_path" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to TestFlight
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: ${{ steps.ipa.outputs.path }}
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          wait-for-processing: true

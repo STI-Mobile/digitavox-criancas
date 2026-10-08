@@ -196,7 +196,20 @@ abstract final class DvxAppTheme {
   }
 
   static Color _contrasting(Color color) =>
-      ThemeData.estimateBrightnessForColor(color) == Brightness.dark
-      ? Colors.white
-      : Colors.black;
+      _contrastRatio(Colors.black, color) >= _contrastRatio(Colors.white, color)
+      ? Colors.black
+      : Colors.white;
+
+  static double _contrastRatio(Color first, Color second) {
+    final firstLuminance = first.computeLuminance();
+    final secondLuminance = second.computeLuminance();
+    final lighter = firstLuminance > secondLuminance
+        ? firstLuminance
+        : secondLuminance;
+    final darker = firstLuminance > secondLuminance
+        ? secondLuminance
+        : firstLuminance;
+
+    return (lighter + 0.05) / (darker + 0.05);
+  }
 }
