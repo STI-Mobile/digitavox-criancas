@@ -108,6 +108,20 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       animation: _viewModel,
       builder: (context, _) {
         if (_viewModel.status == ExerciseSessionStatus.completed) {
+          if (widget.engine.currentLessonAttemptFinished &&
+              !widget.engine.currentLessonCompleted) {
+            return _ExerciseOutcome(
+              title: 'Lição ainda não concluída',
+              message:
+                  'Você ainda não conquistou estrelas nesta lição. '
+                  'Tente novamente para concluí-la.',
+              actionLabel: 'Tentar lição novamente',
+              onContinue: () async {
+                widget.engine.retryCurrentLesson();
+              },
+              onNarrate: widget.engine.courseAudio.speakText,
+            );
+          }
           if (widget.engine.currentLessonCompleted) {
             final hasNextLesson = widget.engine.nextTarget != null;
             return LessonCompletionScreen(
@@ -227,12 +241,14 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
 
 final class _ExerciseOutcome extends StatefulWidget {
   const _ExerciseOutcome({
+    this.title = 'Exercício concluído!',
     required this.message,
     required this.actionLabel,
     required this.onContinue,
     required this.onNarrate,
   });
 
+  final String title;
   final String message;
   final String actionLabel;
   final Future<void> Function() onContinue;
@@ -286,7 +302,7 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
               Semantics(
                 header: true,
                 child: Text(
-                  'Exercício concluído!',
+                  widget.title,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium,
                 ),

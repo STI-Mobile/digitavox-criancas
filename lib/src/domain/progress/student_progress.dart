@@ -57,25 +57,33 @@ final class LessonProgress {
   final int timeElapsed;
   final int totalInputs;
 
-
   double? get averageAccuracyPercent {
     if (exerciseAccuracies.isEmpty) return null;
     int totalAcc = 0;
-    exerciseAccuracies.forEach((key,value){
+    exerciseAccuracies.forEach((key, value) {
       totalAcc += value;
     });
-    return totalAcc/exerciseAccuracies.length;
+    return totalAcc / exerciseAccuracies.length;
   }
-
 
   int starsForAccuracy(int lessonAccuracyPercent, int lessonSecChar) {
     final average = averageAccuracyPercent;
     if (average == null) return 0;
-    if (average <= lessonAccuracyPercent || totalInputs/timeElapsed > lessonSecChar) return 0;
+    if (average <= lessonAccuracyPercent ||
+        totalInputs / timeElapsed > lessonSecChar) {
+      return 0;
+    }
     if (average == 100) return 3;
     if (average > 95) return 2;
     return 1;
   }
+
+  LessonProgress clearAttemptResults() => LessonProgress(
+    stars: stars,
+    tries: tries,
+    timeElapsed: timeElapsed,
+    totalInputs: totalInputs,
+  );
 
   LessonProgress startAttempt() => LessonProgress(
     completedExerciseIds: completedExerciseIds,
@@ -128,7 +136,10 @@ final class LessonProgress {
         allExerciseIds.every(nextAccuracies.containsKey);
     if (!hasCompletedLesson || !hasAllAccuracies) return updatedProgress;
 
-    final lessonStars = updatedProgress.starsForAccuracy(lessonAccuracyPercent, secChar);
+    final lessonStars = updatedProgress.starsForAccuracy(
+      lessonAccuracyPercent,
+      secChar,
+    );
     return LessonProgress(
       completedExerciseIds: updatedProgress.completedExerciseIds,
       stars: lessonStars > stars ? lessonStars : stars,
@@ -156,13 +167,24 @@ final class CourseProgress {
     );
   }
 
+  CourseProgress clearLessonAttemptResults({required String lessonId}) {
+    final lesson = lessons[lessonId];
+    if (lesson == null) return this;
+    return CourseProgress(
+      lessons: Map.unmodifiable({
+        ...lessons,
+        lessonId: lesson.clearAttemptResults(),
+      }),
+    );
+  }
+
   CourseProgress recordExerciseResult({
     required String lessonId,
     required String exerciseId,
     required int accuracyPercent,
     required int lessonAccuracyPercent,
     required Iterable<String> lessonExerciseIds,
-    required int secChar
+    required int secChar,
   }) {
     final currentLesson = lessons[lessonId] ?? const LessonProgress();
     return CourseProgress(
@@ -172,7 +194,8 @@ final class CourseProgress {
           exerciseId,
           accuracyPercent: accuracyPercent,
           lessonAccuracyPercent: lessonAccuracyPercent,
-          lessonExerciseIds: lessonExerciseIds, secChar: secChar,
+          lessonExerciseIds: lessonExerciseIds,
+          secChar: secChar,
         ),
       }),
     );
@@ -213,6 +236,21 @@ final class StudentProgress {
     );
   }
 
+  StudentProgress clearLessonAttemptResults({
+    required String courseId,
+    required String lessonId,
+  }) {
+    final currentCourse = courses[courseId];
+    if (currentCourse == null) return this;
+    return StudentProgress(
+      courses: Map.unmodifiable({
+        ...courses,
+        courseId: currentCourse.clearLessonAttemptResults(lessonId: lessonId),
+      }),
+      settings: settings,
+    );
+  }
+
   StudentProgress recordExerciseResult({
     required String courseId,
     required String lessonId,
@@ -220,7 +258,7 @@ final class StudentProgress {
     required int accuracyPercent,
     required int lessonAccuracyPercent,
     required Iterable<String> lessonExerciseIds,
-    required int secChar
+    required int secChar,
   }) {
     final currentCourse = courses[courseId] ?? const CourseProgress();
     return StudentProgress(
@@ -232,7 +270,7 @@ final class StudentProgress {
           accuracyPercent: accuracyPercent,
           lessonAccuracyPercent: lessonAccuracyPercent,
           lessonExerciseIds: lessonExerciseIds,
-          secChar: secChar
+          secChar: secChar,
         ),
       }),
       settings: settings,

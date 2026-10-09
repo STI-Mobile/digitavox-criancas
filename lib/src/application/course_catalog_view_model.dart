@@ -71,6 +71,27 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     return lessonTries(courseId: courseId, lessonId: lessonId);
   }
 
+  Future<void> clearLessonAttemptResults({
+    required String courseId,
+    required String lessonId,
+  }) async {
+    if (_status != CourseCatalogStatus.ready) {
+      throw StateError('O catálogo ainda não está pronto.');
+    }
+    final currentLesson = _progress.courses[courseId]?.lessons[lessonId];
+    if (currentLesson == null ||
+        (currentLesson.completedExerciseIds.isEmpty &&
+            currentLesson.exerciseAccuracies.isEmpty)) {
+      return;
+    }
+    _progress = _progress.clearLessonAttemptResults(
+      courseId: courseId,
+      lessonId: lessonId,
+    );
+    await progressRepository.save(_progress);
+    notifyListeners();
+  }
+
   Future<void> recordExerciseResult({
     required String courseId,
     required String lessonId,
@@ -96,7 +117,7 @@ final class CourseCatalogViewModel extends ChangeNotifier {
       accuracyPercent: accuracyPercent,
       lessonAccuracyPercent: lessonAccuracyPercent,
       lessonExerciseIds: lessonExerciseIds,
-      secChar: secChar
+      secChar: secChar,
     );
     await progressRepository.save(_progress);
     notifyListeners();

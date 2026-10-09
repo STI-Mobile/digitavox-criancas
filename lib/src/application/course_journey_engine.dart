@@ -113,7 +113,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
       .where((exercise) => isCompleted(lesson, exercise))
       .length;
 
-  bool get currentLessonCompleted {
+  bool get currentLessonAttemptFinished {
     final currentLesson = _lesson;
     final currentSession = _session;
     return currentSession?.status == ExerciseSessionStatus.completed &&
@@ -122,6 +122,9 @@ final class CourseJourneyEngine extends ChangeNotifier {
           (exercise) => _attemptExerciseIds.contains(exercise.id),
         );
   }
+
+  bool get currentLessonCompleted =>
+      currentLessonAttemptFinished && currentLessonStars > 0;
 
   double get currentLessonAverageAccuracy {
     final currentLesson = _lesson;
@@ -139,7 +142,11 @@ final class CourseJourneyEngine extends ChangeNotifier {
     if (currentLesson == null) return 0;
     final lessonProgress =
         catalog.progress.courses[course.id]?.lessons[currentLesson.id];
-    return lessonProgress?.starsForAccuracy(currentLesson.accuracy,currentLesson.secChar) ?? 0;
+    return lessonProgress?.starsForAccuracy(
+          currentLesson.accuracy,
+          currentLesson.secChar,
+        ) ??
+        0;
   }
 
   int get currentLessonTries =>
@@ -280,6 +287,22 @@ final class CourseJourneyEngine extends ChangeNotifier {
     }
   }
 
+  void retryCurrentLesson() {
+    final module = _module;
+    final lesson = _lesson;
+    if (!currentLessonAttemptFinished ||
+        currentLessonCompleted ||
+        module == null ||
+        lesson == null) {
+      return;
+    }
+    final firstExercise = lesson.exercises.where(isAvailable).firstOrNull;
+    if (firstExercise == null) return;
+    _attemptExerciseIds = <String>{};
+    _hasStartedLessonAttempt = false;
+    openExercise(module, lesson, firstExercise);
+  }
+
   void retryCurrentExercise() {
     final module = _module;
     final lesson = _lesson;
@@ -365,8 +388,17 @@ final class CourseJourneyEngine extends ChangeNotifier {
             accuracyPercent: accuracyPercent,
             lessonAccuracyPercent: lesson.accuracy,
             lessonExerciseIds: lesson.exercises.map((item) => item.id),
-            secChar: lesson.secChar
+            secChar: lesson.secChar,
           );
+          if (lesson.exercises.every(
+                (item) => _attemptExerciseIds.contains(item.id),
+              ) &&
+              currentLessonStars == 0) {
+            await catalog.clearLessonAttemptResults(
+              courseId: course.id,
+              lessonId: lesson.id,
+            );
+          }
           await courseAudio.play(
             currentAudioConfiguration,
             CourseAudioEvent.completed,

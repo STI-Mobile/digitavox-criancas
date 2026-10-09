@@ -102,46 +102,46 @@ void main() {
     },
   );
 
-  testWidgets(
-    'completes a low-accuracy lesson with no earned stars and shows its stats',
-    (tester) async {
-      await _pumpDemo(tester, repository: _createRepository());
-      await tester.tap(find.text('Começar curso'));
-      await tester.pumpAndSettle();
+  testWidgets('requires retrying a lesson when its accuracy earns no stars', (
+    tester,
+  ) async {
+    await _pumpDemo(tester, repository: _createRepository());
+    await tester.tap(find.text('Começar curso'));
+    await tester.pumpAndSettle();
 
-      for (final key in <(LogicalKeyboardKey, String)>[
-        (LogicalKeyboardKey.keyF, 'f'),
-        (LogicalKeyboardKey.keyX, 'x'),
-        (LogicalKeyboardKey.keyF, 'f'),
-      ]) {
-        await tester.sendKeyEvent(key.$1, character: key.$2);
-        await tester.pump();
-      }
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Próximo exercício'));
-      await tester.pumpAndSettle();
+    for (final key in <(LogicalKeyboardKey, String)>[
+      (LogicalKeyboardKey.keyF, 'f'),
+      (LogicalKeyboardKey.keyX, 'x'),
+      (LogicalKeyboardKey.keyF, 'f'),
+    ]) {
+      await tester.sendKeyEvent(key.$1, character: key.$2);
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Próximo exercício'));
+    await tester.pumpAndSettle();
 
-      for (final key in <(LogicalKeyboardKey, String)>[
-        (LogicalKeyboardKey.keyJ, 'j'),
-        (LogicalKeyboardKey.keyX, 'x'),
-        (LogicalKeyboardKey.keyJ, 'j'),
-      ]) {
-        await tester.sendKeyEvent(key.$1, character: key.$2);
-        await tester.pump();
-      }
-      await tester.pumpAndSettle();
+    for (final key in <(LogicalKeyboardKey, String)>[
+      (LogicalKeyboardKey.keyJ, 'j'),
+      (LogicalKeyboardKey.keyX, 'x'),
+      (LogicalKeyboardKey.keyJ, 'j'),
+    ]) {
+      await tester.sendKeyEvent(key.$1, character: key.$2);
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
 
-      expect(find.text('Lição concluída!'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel('Você ganhou 0 de 3 estrelas.'),
-        findsOneWidget,
-      );
-      expect(find.byIcon(Icons.star_outline_rounded), findsNWidgets(3));
-      expect(find.text('Precisão mediana: 66%'), findsOneWidget);
-      expect(find.text('1 tentativa na lição'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(find.text('Lição ainda não concluída'), findsOneWidget);
+    expect(find.text('Lição concluída!'), findsNothing);
+    expect(find.text('Tentar lição novamente'), findsOneWidget);
+    expect(find.byIcon(Icons.star_rounded), findsNothing);
+    await tester.tap(find.text('Tentar lição novamente'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exercício 1 de 2'), findsOneWidget);
+    expect(find.text('Exercício concluído!'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('sequence activities are driven by the catalog', (tester) async {
     final repository = _createRepository();

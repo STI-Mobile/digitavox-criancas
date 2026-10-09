@@ -10,6 +10,8 @@ O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, 
 
 Uma lição contém `id`, `title` e exercícios. No schema 3, `accuracy` é o percentual mínimo de referência da lição (inteiro de 0 a 100); o default para catálogos schema 2 é 90. `secChar` é um limite opcional de caracteres por segundo. A conclusão calcula a mediana das precisões registradas para os exercícios: 0 estrelas quando a mediana não supera `accuracy`, 1 estrela quando supera `accuracy`, 2 quando também supera 95%, e 3 quando é 100%. A exceção de 100% concede sempre três estrelas.
 
+Uma lição que termina com 0 estrelas não é concluída: os exercícios e resultados daquela tentativa são limpos, e a criança pode reiniciar pelo primeiro exercício. O contador de tentativas permanece associado à lição.
+
 Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; nesse tipo ele deve representar exatamente um caractere imprimível. Outros tipos podem carregar entradas textuais maiores. Os identificadores reconhecidos são `key`, `keySequence`, `word`, `phrase`, `timed`, `repetition` e `challenge`. `key`, `keySequence`, `word` e `phrase` possuem fluxo funcional quando `expectedInput` não está vazio; os demais permanecem desabilitados. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds`, `audioGuidance` e `scene`.
 
 O contrato legível por ferramentas está em [course.schema.json](course.schema.json). O parser Dart continua sendo a validação em execução e verifica também unicidade de IDs e referências de personagens, restrições que o JSON Schema não expressa sozinho. Propriedades adicionais desconhecidas não viram comandos executáveis.
