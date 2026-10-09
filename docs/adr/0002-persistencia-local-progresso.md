@@ -18,18 +18,22 @@ O progresso atual contém poucos dados estruturados: cursos, lições, identific
 
 Usar `shared_preferences` 2.5.5 por meio da API assíncrona `SharedPreferencesAsync`. Salvar um único texto na chave `digitavox.student_progress`, usando no Android o backend padrão DataStore Preferences e no iOS `NSUserDefaults`.
 
-O texto contém JSON no schema 2:
+O texto contém JSON no schema 3:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "progress": {
     "courses": {
       "course-1": {
         "lessons": {
           "lesson-1": {
             "completedExerciseIds": ["exercise-1"],
-            "stars": 1
+            "stars": 1,
+            "tries": 1,
+            "exerciseAccuracies": {
+              "exercise-1": 100
+            }
           }
         }
       }
@@ -42,7 +46,7 @@ O texto contém JSON no schema 2:
 }
 ```
 
-`StudentProgressCodec` é responsável por serialização, validação e pela migração de schema 1 para schema 2. Na migração, `highContrastEnabled: true` vira `themePreference: "highContrast"`; `false` vira `"standard"`. `LocalProgressRepository` converte documento ausente, JSON inválido, conteúdo inválido ou versão desconhecida em `StudentProgress` vazio. A captura é restrita a erros conhecidos do formato; falhas do armazenamento continuam sendo propagadas. Uma conclusão já registrada não gera nova gravação.
+`StudentProgressCodec` é responsável por serialização, validação e pela migração de schema 1 e 2 para schema 3. Na migração, `highContrastEnabled: true` vira `themePreference: "highContrast"`; `false` vira `"standard"`. Os schemas 1 e 2 não continham tentativas por lição nem precisão por exercício; esses campos iniciam em zero e vazios, preservando conclusões e estrelas existentes. `LocalProgressRepository` converte documento ausente, JSON inválido, conteúdo inválido ou versão desconhecida em `StudentProgress` vazio. A captura é restrita a erros conhecidos do formato; falhas do armazenamento continuam sendo propagadas. Uma pontuação repetida sem mudança não gera nova gravação.
 
 `ProgressDocumentStore` isola o mecanismo chave-valor para testes determinísticos. `SharedPreferencesProgressStore` é o adaptador de produção e `InMemoryProgressRepository` permanece como implementação simples do contrato para testes não relacionados à durabilidade.
 

@@ -20,7 +20,7 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 `ColorScheme` representa conceitos Material. `DvxThemeTokens`, uma `ThemeExtension`, contém accent, success, focus, texto secundário, surface variant e espessuras semânticas. `DvxSpacing` e `DvxRadius` evitam medidas repetidas. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
 
-A preferência `AppThemePreference` integra `AppSettings`. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento persistido está no schema 2; documentos schema 1 são migrados ao carregar (`highContrastEnabled` vira a preferência correspondente).
+A preferência `AppThemePreference` integra `AppSettings`. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento persistido está no schema 3; documentos schema 1 e 2 são migrados ao carregar (`highContrastEnabled` do schema 1 vira a preferência correspondente).
 
 ## Tema do curso
 

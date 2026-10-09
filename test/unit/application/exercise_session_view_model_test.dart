@@ -156,11 +156,10 @@ ExerciseSessionViewModel _session({
   Future<void> Function(int accuracyPercent)? onCompleted,
   Future<void> Function(bool correct)? onInputEvaluated,
   DateTime Function()? now,
-}) =>
-    ExerciseSessionViewModel(
-      exercise: exercise,
-      onCompleted: onCompleted ?? (_) async {},
-      onInputEvaluated: onInputEvaluated ?? (_) async {},
-      now: now,
-      failedAttempts: {},
-    );
+}) => ExerciseSessionViewModel(
+  exercise: exercise,
+  onCompleted: onCompleted ?? (_) async {},
+  onInputEvaluated: onInputEvaluated ?? (_) async {},
+  now: now,
+  onAttemptStarted: () async => 1,
+);

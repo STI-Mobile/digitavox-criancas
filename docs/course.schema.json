@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Catálogo Digitavox Crianças — schema 2",
+  "title": "Catálogo Digitavox Crianças — schema 3",
   "type": "object",
   "required": ["schemaVersion", "courses"],
   "properties": {
-    "schemaVersion": { "const": 2 },
+    "schemaVersion": { "enum": [2, 3] },
     "courses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/course" } }
   },
   "$defs": {
@@ -95,6 +95,8 @@
         "title": { "$ref": "#/$defs/text" },
         "audioGuidance": { "$ref": "#/$defs/audioGuidance" },
         "scene": { "$ref": "#/$defs/scene" },
+        "accuracy": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "secChar": { "type": "integer", "minimum": 1 },
         "exercises": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/exercise" } }
       }
     },

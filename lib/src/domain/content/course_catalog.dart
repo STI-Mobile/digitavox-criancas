@@ -263,6 +263,8 @@ final class Lesson {
     required this.id,
     required this.title,
     required this.exercises,
+    this.accuracy = 90,
+    this.secChar = 0,
     this.audioGuidance,
     this.scene,
   });
@@ -274,6 +276,8 @@ final class Lesson {
     ).map(Exercise.fromJson).toList(growable: false);
     _requireNonEmpty(exercises, 'Uma lição precisa ter exercícios.');
     _requireUniqueIds(exercises.map((exercise) => exercise.id), 'exercício');
+    final accuracy = _optionalPercentage(json, 'accuracy', defaultValue: 90);
+    final secChar = _optionalPositiveInteger(json, 'secChar', defaultValue: 0);
 
     return Lesson(
       id: _requiredString(json, 'id'),
@@ -281,6 +285,8 @@ final class Lesson {
       exercises: exercises,
       audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
+      accuracy: accuracy,
+      secChar: secChar,
     );
   }
 
@@ -289,6 +295,8 @@ final class Lesson {
   final List<Exercise> exercises;
   final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
+  final int accuracy;
+  final int secChar;
 }
 
 final class CourseModule {
@@ -415,7 +423,7 @@ final class CourseCatalogDocument {
 
   factory CourseCatalogDocument.fromJson(Map<String, Object?> json) {
     final schemaVersion = json['schemaVersion'];
-    if (schemaVersion != 2) {
+    if (schemaVersion != 2 && schemaVersion != 3) {
       throw CourseContentFormatException(
         'Versão de schema não suportada: $schemaVersion.',
       );
@@ -459,6 +467,46 @@ String _requiredString(Map<String, Object?> json, String key) {
     );
   }
   return value;
+}
+
+int _optionalPercentage(
+  Map<String, Object?> json,
+  String key, {
+  required int defaultValue,
+}) {
+  final value = json[key];
+  if (value == null) return defaultValue;
+  final percentage = value is int
+      ? value
+      : value is String
+      ? int.tryParse(value)
+      : null;
+  if (percentage == null || percentage < 0 || percentage > 100) {
+    throw CourseContentFormatException(
+      'O campo "$key" deve ser um percentual inteiro entre 0 e 100.',
+    );
+  }
+  return percentage;
+}
+
+int _optionalPositiveInteger(
+  Map<String, Object?> json,
+  String key, {
+  required int defaultValue,
+}) {
+  final value = json[key];
+  if (value == null) return defaultValue;
+  final integer = value is int
+      ? value
+      : value is String
+      ? int.tryParse(value)
+      : null;
+  if (integer == null || integer < 1) {
+    throw CourseContentFormatException(
+      'O campo "$key" deve ser um inteiro positivo.',
+    );
+  }
+  return integer;
 }
 
 String? _optionalString(Map<String, Object?> json, String key) {

@@ -7,11 +7,27 @@ import '../../support/recording_audio_guidance.dart';
 
 void main() {
   late CourseAudioOrchestrator orchestrator;
+  late RecordingAudioGuidance audioGuidance;
 
   setUp(() {
-    orchestrator = CourseAudioOrchestrator(
-      audioGuidance: RecordingAudioGuidance(),
-    );
+    audioGuidance = RecordingAudioGuidance();
+    orchestrator = CourseAudioOrchestrator(audioGuidance: audioGuidance);
+  });
+
+  test('speakText reproduz texto dinâmico como SpeechCue', () async {
+    await orchestrator.speakText('  Narração dinâmica.  ');
+
+    expect(audioGuidance.sequences, hasLength(1));
+    final cue = audioGuidance.sequences.single.single as SpeechCue;
+    expect(cue.id, 'dynamic-narration');
+    expect(cue.text, 'Narração dinâmica.');
+  });
+
+  test('speakText ignora texto vazio', () async {
+    await orchestrator.speakText('   ');
+
+    expect(audioGuidance.sequences, isEmpty);
+    expect(audioGuidance.events, isEmpty);
   });
 
   test('resolve configuração de fala para SpeechCue', () {

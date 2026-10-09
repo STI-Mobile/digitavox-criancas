@@ -8,6 +8,7 @@ import '../application/exercise_session_view_model.dart';
 import '../infrastructure/input/physical_keyboard_input_interpreter.dart';
 import 'design_system/components/dvx_game_components.dart';
 import 'design_system/tokens/dvx_tokens.dart';
+import 'lesson_completion_screen.dart';
 
 final class ExerciseScreen extends StatefulWidget {
   const ExerciseScreen({required this.engine, super.key});
@@ -106,6 +107,39 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
     child: AnimatedBuilder(
       animation: _viewModel,
       builder: (context, _) {
+        if (_viewModel.status == ExerciseSessionStatus.completed) {
+          if (widget.engine.currentLessonCompleted) {
+            final hasNextLesson = widget.engine.nextTarget != null;
+            return LessonCompletionScreen(
+              earnedStars: widget.engine.currentLessonStars,
+              averageAccuracy: widget.engine.currentLessonAverageAccuracy,
+              tries: widget.engine.currentLessonTries,
+              exerciseStatistics: widget.engine.currentLessonExerciseStatistics,
+              actionLabel: hasNextLesson ? 'Próxima lição' : 'Voltar à lição',
+              message:
+                  'Muito bem! Você concluiu a lição '
+                  '${widget.engine.lesson!.title}.',
+              onContinue: () async {
+                widget.engine.continueAfterExercise();
+              },
+              character: widget.engine.character,
+              onNarrate: widget.engine.courseAudio.speakText,
+            );
+          }
+
+          final message =
+              'Precisão desta atividade: ${_viewModel.accuracyPercent}%. '
+              'Continue para a próxima atividade.';
+          return _ExerciseOutcome(
+            message: message,
+            actionLabel: 'Próximo exercício',
+            onContinue: () async {
+              widget.engine.continueAfterExercise();
+            },
+            onNarrate: widget.engine.courseAudio.speakText,
+          );
+        }
+
         final expected = _viewModel.exercise.expectedInput!;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -189,6 +223,105 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       },
     ),
   );
+}
+
+final class _ExerciseOutcome extends StatefulWidget {
+  const _ExerciseOutcome({
+    required this.message,
+    required this.actionLabel,
+    required this.onContinue,
+    required this.onNarrate,
+  });
+
+  final String message;
+  final String actionLabel;
+  final Future<void> Function() onContinue;
+  final Future<void> Function(String text) onNarrate;
+
+  @override
+  State<_ExerciseOutcome> createState() => _ExerciseOutcomeState();
+}
+
+final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
+  bool _isContinuing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _narrateMessage();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExerciseOutcome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message != widget.message) _narrateMessage();
+  }
+
+  void _narrateMessage() {
+    unawaited(widget.onNarrate(widget.message));
+  }
+
+  Future<void> _continue() async {
+    if (_isContinuing) return;
+    setState(() => _isContinuing = true);
+    try {
+      await widget.onContinue();
+    } finally {
+      if (mounted) setState(() => _isContinuing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(DvxSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(
+                  'Exercício concluído!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium,
+                ),
+              ),
+              const SizedBox(height: DvxSpacing.md),
+              Semantics(
+                liveRegion: true,
+                label: widget.message,
+                child: ExcludeSemantics(
+                  child: Text(
+                    widget.message,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ),
+              const SizedBox(height: DvxSpacing.lg),
+              FilledButton.icon(
+                onPressed: _isContinuing ? null : _continue,
+                icon: _isContinuing
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.arrow_forward),
+                label: Text(
+                  _isContinuing ? 'Carregando...' : widget.actionLabel,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 final class _ExerciseShortcutHelp extends StatelessWidget {

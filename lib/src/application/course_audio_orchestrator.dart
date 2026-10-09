@@ -69,4 +69,17 @@ final class CourseAudioOrchestrator {
     _logger.log('course_audio_cancelled');
     await _audioGuidance.cancelSequence();
   }
+
+  Future<void> speakText(String text) async {
+    final message = text.trim();
+    if (message.isEmpty) return;
+
+    try {
+      await _audioGuidance.playSequence(<AudioCue>[
+        SpeechCue(id: 'dynamic-narration', text: message),
+      ]);
+    } on AudioGuidanceException {
+      _logger.log('audio_service_unavailable');
+    }
+  }
 }

@@ -15,16 +15,23 @@ void main() {
     );
 
     await viewModel.initialize();
-    await viewModel.completeExercise(
+    await viewModel.startLessonAttempt(
+      courseId: 'course-1',
+      lessonId: 'lesson-1',
+    );
+    await viewModel.recordExerciseResult(
       courseId: 'course-1',
       lessonId: 'lesson-1',
       exerciseId: 'exercise-1',
+      accuracyPercent: 100,
+      lessonAccuracyPercent: 90,
+      lessonExerciseIds: const ['exercise-1'],
     );
 
     expect(viewModel.status, CourseCatalogStatus.ready);
     expect(viewModel.courses.single.title, 'Curso demo');
-    expect(viewModel.progress.totalStars, 1);
-    expect((await repository.load()).totalStars, 1);
+    expect(viewModel.progress.totalStars, 3);
+    expect((await repository.load()).totalStars, 3);
   });
 
   test('loads persisted progress before loading the catalog', () async {
@@ -63,19 +70,29 @@ void main() {
     );
     await viewModel.initialize();
 
-    await viewModel.completeExercise(
+    await viewModel.startLessonAttempt(
       courseId: 'course-1',
       lessonId: 'lesson-1',
-      exerciseId: 'exercise-1',
     );
-    await viewModel.completeExercise(
+    await viewModel.recordExerciseResult(
       courseId: 'course-1',
       lessonId: 'lesson-1',
       exerciseId: 'exercise-1',
+      accuracyPercent: 91,
+      lessonAccuracyPercent: 90,
+      lessonExerciseIds: const ['exercise-1'],
+    );
+    await viewModel.recordExerciseResult(
+      courseId: 'course-1',
+      lessonId: 'lesson-1',
+      exerciseId: 'exercise-1',
+      accuracyPercent: 91,
+      lessonAccuracyPercent: 90,
+      lessonExerciseIds: const ['exercise-1'],
     );
 
     expect(viewModel.progress.totalStars, 1);
-    expect(repository.saveCount, 1);
+    expect(repository.saveCount, 2);
   });
 
   test('persists the selected application theme', () async {
@@ -105,10 +122,17 @@ void main() {
       progressRepository: LocalProgressRepository(store: store),
     );
     await firstSession.initialize();
-    await firstSession.completeExercise(
+    await firstSession.startLessonAttempt(
+      courseId: 'course-1',
+      lessonId: 'lesson-1',
+    );
+    await firstSession.recordExerciseResult(
       courseId: 'course-1',
       lessonId: 'lesson-1',
       exerciseId: 'exercise-1',
+      accuracyPercent: 91,
+      lessonAccuracyPercent: 90,
+      lessonExerciseIds: const ['exercise-1'],
     );
 
     final restartedSession = CourseCatalogViewModel(
@@ -209,6 +233,8 @@ final class _FakeCourseCatalog implements CourseCatalog {
                   expectedInput: 'f',
                 ),
               ],
+              accuracy: 90,
+              secChar: 15,
             ),
           ],
         ),

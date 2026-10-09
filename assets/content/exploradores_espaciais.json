@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "courses": [
     {
       "id": "exploradores-espaciais",
@@ -135,6 +135,8 @@
             {
               "id": "m1-0-despertar",
               "title": "Missão 1.0 · O despertar da Aurora",
+              "accuracy": 70,
+              "secChar": 15,
               "scene": {
                 "text": "Cadete, que bom ter você a bordo. Eu sou a Comandante Stella, e esta é a Aurora, a nave-escola da Academia Galáctica. A tempestade solar desligou quase tudo aqui dentro. Antes de reativar a nave, você precisa conhecer o console de navegação. Deslize os dedos pela linha do meio do teclado até sentir duas marcas em relevo. Encontrou? São as teclas F e J, os pontos de partida de toda viagem.",
                 "characterId": "scene-c1",
@@ -175,6 +177,8 @@
             {
               "id": "m1-1-asa-esquerda",
               "title": "Missão 1.1 · Códigos da asa esquerda",
+              "accuracy": 85,
+              "secChar": 12,
               "scene": {
                 "text": "A asa esquerda da Aurora continua apagada. O código de energia dela usa as cinco teclas da sua mão esquerda. Cada vez que você digita o código completo, um propulsor acende. Estou vendo daqui da ponte: capriche, cadete.",
                 "characterId": "scene-c2",
@@ -215,6 +219,8 @@
             {
               "id": "m1-2-asa-direita",
               "title": "Missão 1.2 · Códigos da asa direita",
+              "accuracy": 85,
+              "secChar": 12,
               "scene": {
                 "text": "Asa esquerda brilhando! Agora a direita. O código dela usa as cinco teclas da sua mão direita, incluindo uma tecla que quase ninguém conhece pelo tato: o cê-cedilha, no cantinho, com o dedo mínimo. Poucos cadetes dominam essa tecla logo no primeiro dia.",
                 "characterId": "scene-c3",
@@ -255,6 +261,8 @@
             {
               "id": "m1-3-sincronizacao",
               "title": "Missão 1.3 · Sincronização das asas",
+              "accuracy": 85,
+              "secChar": 12,
               "scene": {
                 "text": "As duas asas têm energia, mas estão fora de ritmo. Se uma empurra mais que a outra, a Aurora voa em círculos. Digite os dois códigos em sequência, sem pressa: sincronia vale mais que velocidade.",
                 "characterId": "scene-c4",
@@ -303,6 +311,8 @@
             {
               "id": "m1-4-palavras-i",
               "title": "Missão 1.4 · Palavras de energia I",
+              "accuracy": 90,
+              "secChar": 10,
               "scene": {
                 "text": "Cadete, os códigos acordaram um sistema antigo da Aurora: o banco de palavras de energia. São palavras pequenas, mas estão em quase toda frase da língua portuguesa. Com elas, a nave começa a formar pensamentos.",
                 "characterId": "scene-c5",
@@ -343,6 +353,8 @@
             {
               "id": "m1-5-palavras-ii",
               "title": "Missão 1.5 · Palavras de energia II",
+              "accuracy": 90,
+              "secChar": 10,
               "scene": {
                 "text": "O banco de energia quer palavras maiores. Repare: asas é a palavra favorita da Aurora, por motivos óbvios.",
                 "characterId": "scene-c6",
@@ -399,6 +411,8 @@
             {
               "id": "m1-6-mensagem",
               "title": "Missão 1.6 · Mensagem para a base",
+              "accuracy": 90,
+              "secChar": 10,
               "scene": {
                 "text": "A Academia quer notícias nossas. Vamos transmitir as primeiras mensagens da Aurora reativada. São curtas, mas são as primeiras palavras que a base vai ouvir de você, cadete.",
                 "characterId": "scene-c7",
@@ -463,6 +477,8 @@
             {
               "id": "m1-7a-prova-codigo",
               "title": "Missão 1.7A · Prova do Cadete — código",
+              "accuracy": 90,
+              "secChar": 8,
               "scene": {
                 "text": "Chegou a hora, cadete. A Prova do Cadete mistura tudo o que você aprendeu: códigos das asas e mensagens de energia. Se o console responder bem, a Aurora decola hoje. Estou orgulhosa de você. Vamos.",
                 "characterId": "scene-c8",
@@ -495,6 +511,9 @@
             {
               "id": "m1-7b-prova-mensagens",
               "title": "Missão 1.7B · Prova do Cadete — mensagens",
+              "accuracy": 90,
+              "secChar": 8,
+
               "scene": {
                 "text": "Complete as mensagens finais do protocolo de decolagem.",
                 "characterId": "scene-c8"
@@ -521,6 +540,8 @@
             {
               "id": "m1-8-cerimonia",
               "title": "Cerimônia da decolagem",
+              "accuracy": 90,
+              "secChar": 30,
               "scene": {
                 "text": "Cadete, protocolo aprovado! Motores... acionar. Sinta o chão vibrar: a Aurora está decolando pela primeira vez desde a tempestade. E tem mais uma surpresa. Quando os sistemas voltaram, os sensores encontraram três passageiros escondidos no hangar: três aliens que se abrigaram aqui durante a tempestade. Eles ainda não falam a nossa língua, o Tradutor Galáctico segue desligado, mas cada um tem uma voz própria. Ouça.",
                 "characterId": "scene-c9-launch",
@@ -553,6 +574,8 @@
             {
               "id": "m1-9-corrida",
               "title": "Minijogo · Corrida de Energia",
+              "accuracy": 85,
+              "secChar": 5,
               "scene": {
                 "text": "Última chamada antes da viagem: a Corrida de Energia! Todas as palavras do banco, uma atrás da outra, no ritmo dos propulsores. Mostre para a galáxia a velocidade de um Cadete de Bronze.",
                 "characterId": "scene-c10",

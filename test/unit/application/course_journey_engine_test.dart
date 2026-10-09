@@ -50,14 +50,17 @@ void main() {
     engine.resume();
     expect(engine.exercise!.id, 'key-f');
     await engine.session!.handleInput('f');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.exercise!.id, 'sequence-fj');
     await engine.session!.handleInput('f');
     await engine.session!.handleInput('j');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.exercise!.id, 'key-j');
     expect(engine.session!.status, ExerciseSessionStatus.waitingForInput);
     await engine.session!.handleInput('j');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.stage, JourneyStage.lesson);
     expect(engine.lesson!.id, 'left-hand');
@@ -67,11 +70,13 @@ void main() {
       engine.pendingIn(engine.lesson!)!,
     );
     await engine.session!.handleInput('a');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.module!.id, 'exploration');
     expect(engine.lesson!.id, 'new-key');
     engine.resume();
     await engine.session!.handleInput('b');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.stage, JourneyStage.lesson);
     expect(engine.resumeTarget, isNull);
@@ -115,7 +120,7 @@ void main() {
       engine.openExercise(module, lesson, first);
       await engine.session!.handleInput('f');
       await pumpEventQueue();
-      expect((await repository.load()).totalStars, 1);
+      expect((await repository.load()).totalStars, 0);
       engine.dispose();
       catalog.dispose();
       catalog = CourseCatalogViewModel(
@@ -168,10 +173,12 @@ void main() {
         'assets/audio/demo/key_f.wav',
       );
       await engine.session!.handleInput('f');
+      engine.continueAfterExercise();
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
       await engine.session!.handleInput('f');
       await engine.session!.handleInput('j');
+      engine.continueAfterExercise();
       await pumpEventQueue();
       expect(engine.character!.id, 'explorer');
       expect(engine.character!.imageAsset, 'assets/images/demo/explorer.png');
@@ -220,9 +227,10 @@ void main() {
       engine.resume();
       await pumpEventQueue();
       await engine.session!.handleInput('f');
+      engine.continueAfterExercise();
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
-      expect((await repository.load()).totalStars, 1);
+      expect((await repository.load()).totalStars, 0);
     },
   );
 

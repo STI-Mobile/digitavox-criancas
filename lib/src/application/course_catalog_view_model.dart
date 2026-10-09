@@ -25,9 +25,6 @@ final class CourseCatalogViewModel extends ChangeNotifier {
   StudentProgress get progress => _progress;
   String? get errorMessage => _errorMessage;
 
-  Map<String,int> get failedAttempts => _progress.failedAttempts;
-
-
   Future<void> initialize() async {
     _status = CourseCatalogStatus.loading;
     _errorMessage = null;
@@ -54,28 +51,52 @@ final class CourseCatalogViewModel extends ChangeNotifier {
         false;
   }
 
-  Future<void> completeExercise({
+  int lessonTries({required String courseId, required String lessonId}) =>
+      _progress.courses[courseId]?.lessons[lessonId]?.tries ?? 0;
+
+  Future<int> startLessonAttempt({
     required String courseId,
     required String lessonId,
-    required String exerciseId,
-    int accuracyPercent = 100,
   }) async {
     if (_status != CourseCatalogStatus.ready) {
       throw StateError('O catálogo ainda não está pronto.');
     }
-    if (isExerciseCompleted(
+
+    _progress = _progress.startLessonAttempt(
       courseId: courseId,
       lessonId: lessonId,
-      exerciseId: exerciseId,
-    )) {
+    );
+    await progressRepository.save(_progress);
+    notifyListeners();
+    return lessonTries(courseId: courseId, lessonId: lessonId);
+  }
+
+  Future<void> recordExerciseResult({
+    required String courseId,
+    required String lessonId,
+    required String exerciseId,
+    required int accuracyPercent,
+    required int lessonAccuracyPercent,
+    required Iterable<String> lessonExerciseIds,
+    required int secChar,
+  }) async {
+    if (_status != CourseCatalogStatus.ready) {
+      throw StateError('O catálogo ainda não está pronto.');
+    }
+    final existing = _progress.courses[courseId]?.lessons[lessonId];
+    if (existing?.completedExerciseIds.contains(exerciseId) == true &&
+        existing?.exerciseAccuracies[exerciseId] == accuracyPercent) {
       return;
     }
 
-    _progress = _progress.completeExercise(
+    _progress = _progress.recordExerciseResult(
       courseId: courseId,
       lessonId: lessonId,
       exerciseId: exerciseId,
       accuracyPercent: accuracyPercent,
+      lessonAccuracyPercent: lessonAccuracyPercent,
+      lessonExerciseIds: lessonExerciseIds,
+      secChar: secChar
     );
     await progressRepository.save(_progress);
     notifyListeners();
@@ -93,5 +114,4 @@ final class CourseCatalogViewModel extends ChangeNotifier {
     await progressRepository.save(_progress);
     notifyListeners();
   }
-
 }

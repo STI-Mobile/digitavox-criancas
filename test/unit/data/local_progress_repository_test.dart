@@ -42,17 +42,22 @@ void main() {
   test('restores a valid existing document', () async {
     final store = _FakeDocumentStore();
     final writer = LocalProgressRepository(store: store);
-    final progress = const StudentProgress().completeExercise(
-      courseId: 'course-1',
-      lessonId: 'lesson-1',
-      exerciseId: 'exercise-1',
-    );
+    final progress = const StudentProgress()
+        .startLessonAttempt(courseId: 'course-1', lessonId: 'lesson-1')
+        .recordExerciseResult(
+          courseId: 'course-1',
+          lessonId: 'lesson-1',
+          exerciseId: 'exercise-1',
+          accuracyPercent: 100,
+          lessonAccuracyPercent: 90,
+          lessonExerciseIds: const ['exercise-1'],
+        );
     await writer.save(progress);
 
     final reader = LocalProgressRepository(store: store);
     final restored = await reader.load();
 
-    expect(restored.totalStars, 1);
+    expect(restored.totalStars, 3);
     expect(
       restored.courses['course-1']!.lessons['lesson-1']!.completedExerciseIds,
       contains('exercise-1'),

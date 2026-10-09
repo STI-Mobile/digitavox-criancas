@@ -30,7 +30,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     required this.exercise,
     required this.onCompleted,
     required this.onInputEvaluated,
-    required this.failedAttempts,
+    required this.onAttemptStarted,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        _expectedCharacters =
@@ -42,7 +42,6 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
         'deve possuir uma entrada esperada',
       );
     }
-    _stopwatch.start();
   }
 
   static const int excessiveErrorsThreshold = 4;
@@ -50,6 +49,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   final Exercise exercise;
   final Future<void> Function(int accuracyPercent) onCompleted;
   final Future<void> Function(bool correct) onInputEvaluated;
+  final Future<int> Function() onAttemptStarted;
   final DateTime Function() _now;
   final List<int> _expectedCharacters;
   final Stopwatch _stopwatch = Stopwatch();
@@ -67,8 +67,9 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   var _helpVisible = false;
   var _isCompleting = false;
   var _isDisposed = false;
-  Map<String,int> errorDistribution = {};
-  final Map<String,int> failedAttempts;
+  Map<String, int> errorDistribution = {};
+  Future<int>? _attemptStart;
+  var _lessonTries = 0;
 
   ExerciseSessionStatus get status => _status;
   String? get lastInput => _lastInput;
@@ -81,6 +82,7 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
   int get correctInputs => _correctInputs;
   int get incorrectInputs => _incorrectInputs;
   int get totalInputs => _correctInputs + _incorrectInputs;
+  int get lessonTries => _lessonTries;
   int get consecutiveErrors => _consecutiveErrors;
   bool get helpVisible => _helpVisible;
   bool get hasPendingInput => _inputIndex < _expectedCharacters.length;
@@ -96,7 +98,9 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
       String.fromCharCodes(_expectedCharacters.skip(_inputIndex));
 
   int get accuracyPercent {
-    return (totalInputs == 0) ? 20 : ((_correctInputs * 100) / totalInputs).toInt();
+    return (totalInputs == 0)
+        ? 20
+        : ((_correctInputs * 100) / totalInputs).toInt();
   }
 
   Future<void> handleInput(String? input) async {
@@ -107,11 +111,16 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     }
     if (input == null || !_isSinglePrintableCharacter(input)) return;
 
+    await _ensureAttemptStarted();
+    if (_isDisposed) return;
+
     final expected = expectedCharacter;
     final correct = input.toLowerCase() == expected.toLowerCase();
     _lastInput = input;
     _lastExpectedInput = expected;
     _typedInput += input;
+
+    if (!_stopwatch.isRunning) _stopwatch.start();
     _inputIndex++;
 
     if (correct) {
@@ -124,7 +133,9 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
     } else {
       _incorrectInputs++;
       _consecutiveErrors++;
-      errorDistribution[input] = (errorDistribution[input] == null) ? 1 : errorDistribution[input]! + 1 ; 
+      errorDistribution[input] = (errorDistribution[input] == null)
+          ? 1
+          : errorDistribution[input]! + 1;
       _status = ExerciseSessionStatus.incorrectAnswer;
       _announcement = _inputIndex < _expectedCharacters.length
           ? 'Tecla ${_spoken(input)} incorreta. Era ${_spoken(expected)}. '
@@ -214,12 +225,21 @@ final class ExerciseSessionViewModel extends ChangeNotifier {
             'Tempo decorrido: ${_formatDuration(elapsed)}. \n '
             'Acertos: $accuracyPercent por cento. \n'
             '$_correctInputs teclas corretas e $_incorrectInputs incorretas. \n'
-            'Letras por minuto: ${(totalInputs/elapsed.inSeconds)*60}\n'
+            'Letras por minuto: ${(totalInputs / elapsed.inSeconds) * 60}\n'
             'Distribuição de erros: ${errorDistributionString(errorDistribution)}\n'
-            'Tentativas: ${(failedAttempts[exercise.id] == null) ? "0" : failedAttempts[exercise.id]}';
-          
+            'Tentativas nesta lição: $_lessonTries';
     }
     notifyListeners();
+  }
+
+  Future<void> _ensureAttemptStarted() async {
+    final attemptStart = _attemptStart ??= onAttemptStarted();
+    try {
+      _lessonTries = await attemptStart;
+    } on Object {
+      if (identical(_attemptStart, attemptStart)) _attemptStart = null;
+      rethrow;
+    }
   }
 
   @override
@@ -246,13 +266,13 @@ String _formatDuration(Duration duration) {
   return '$minutes minutos e $seconds segundos';
 }
 
-String errorDistributionString(Map<String,int> errorDistribution){
-    String errorDist = '';
-    if(errorDistribution.isNotEmpty) {
-      errorDistribution.forEach((input,errors){
-        errorDist += '$input: $errors';
-      });
-      return errorDist;
-    }
-    return 'Sem erros';
+String errorDistributionString(Map<String, int> errorDistribution) {
+  String errorDist = '';
+  if (errorDistribution.isNotEmpty) {
+    errorDistribution.forEach((input, errors) {
+      errorDist += '$input: $errors';
+    });
+    return errorDist;
+  }
+  return 'Sem erros';
 }

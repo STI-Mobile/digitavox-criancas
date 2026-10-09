@@ -15,6 +15,8 @@ typedef JourneyExercise = ({
   Exercise exercise,
 });
 
+typedef LessonExerciseStatistic = ({String title, int accuracyPercent});
+
 /// Interprets the validated catalog. Widgets render the current state and send
 /// commands; order, resumption, availability and narrative belong here.
 final class CourseJourneyEngine extends ChangeNotifier {
@@ -35,9 +37,10 @@ final class CourseJourneyEngine extends ChangeNotifier {
   Lesson? _lesson;
   Exercise? _exercise;
   ExerciseSessionViewModel? _session;
-  ExerciseSessionViewModel? _scheduledAdvance;
   var _audioRequestGeneration = 0;
   bool _disposed = false;
+  bool _hasStartedLessonAttempt = false;
+  Set<String> _attemptExerciseIds = <String>{};
 
   JourneyStage get stage => _stage;
   CourseModule? get module => _module;
@@ -110,6 +113,55 @@ final class CourseJourneyEngine extends ChangeNotifier {
       .where((exercise) => isCompleted(lesson, exercise))
       .length;
 
+  bool get currentLessonCompleted {
+    final currentLesson = _lesson;
+    final currentSession = _session;
+    return currentSession?.status == ExerciseSessionStatus.completed &&
+        currentLesson != null &&
+        currentLesson.exercises.every(
+          (exercise) => _attemptExerciseIds.contains(exercise.id),
+        );
+  }
+
+  double get currentLessonAverageAccuracy {
+    final currentLesson = _lesson;
+    if (currentLesson == null) return 0;
+    return catalog
+            .progress
+            .courses[course.id]
+            ?.lessons[currentLesson.id]
+            ?.averageAccuracyPercent ??
+        0;
+  }
+
+  int get currentLessonStars {
+    final currentLesson = _lesson;
+    if (currentLesson == null) return 0;
+    final lessonProgress =
+        catalog.progress.courses[course.id]?.lessons[currentLesson.id];
+    return lessonProgress?.starsForAccuracy(currentLesson.accuracy,currentLesson.secChar) ?? 0;
+  }
+
+  int get currentLessonTries =>
+      catalog.progress.courses[course.id]?.lessons[_lesson?.id]?.tries ?? 0;
+
+  List<LessonExerciseStatistic> get currentLessonExerciseStatistics {
+    final currentLesson = _lesson;
+    if (currentLesson == null) return const [];
+    final accuracies =
+        catalog
+            .progress
+            .courses[course.id]
+            ?.lessons[currentLesson.id]
+            ?.exerciseAccuracies ??
+        const <String, int>{};
+    return List.unmodifiable([
+      for (final exercise in currentLesson.exercises)
+        if (accuracies[exercise.id] case final accuracyPercent?)
+          (title: exercise.title, accuracyPercent: accuracyPercent),
+    ]);
+  }
+
   int get completedCount => exercises
       .where((target) => isCompleted(target.lesson, target.exercise))
       .length;
@@ -179,6 +231,19 @@ final class CourseJourneyEngine extends ChangeNotifier {
     if (!lesson.exercises.contains(exercise) || !isAvailable(exercise)) {
       throw ArgumentError('Exercício indisponível nesta lição.');
     }
+    if (_stage != JourneyStage.exercise || !identical(_lesson, lesson)) {
+      _hasStartedLessonAttempt = false;
+      final completedIds =
+          catalog
+              .progress
+              .courses[course.id]
+              ?.lessons[lesson.id]
+              ?.completedExerciseIds ??
+          const <String>{};
+      _attemptExerciseIds = completedIds.length < lesson.exercises.length
+          ? Set<String>.from(completedIds)
+          : <String>{};
+    }
     _enter(
       JourneyStage.exercise,
       module: module,
@@ -195,16 +260,39 @@ final class CourseJourneyEngine extends ChangeNotifier {
   }
 
   void continueAfterExercise() {
-    if (_session?.status != ExerciseSessionStatus.completed) return;
+    final lesson = _lesson;
+    final exercise = _exercise;
+
+    if (_session?.status != ExerciseSessionStatus.completed ||
+        lesson == null ||
+        exercise == null ||
+        !isCompleted(lesson, exercise)) {
+      return;
+    }
+
     final target = nextTarget;
     if (target == null) {
-      openLesson(_module!, _lesson!);
-    } else if (!identical(target.lesson, _lesson)) {
-      // The next lesson is an explicit narrative stop, never an automatic jump.
+      openLesson(_module!, lesson);
+    } else if (!identical(target.lesson, lesson)) {
       openLesson(target.module, target.lesson);
     } else {
       openExercise(target.module, target.lesson, target.exercise);
     }
+  }
+
+  void retryCurrentExercise() {
+    final module = _module;
+    final lesson = _lesson;
+    final exercise = _exercise;
+
+    if (_session?.status != ExerciseSessionStatus.completed ||
+        module == null ||
+        lesson == null ||
+        exercise == null) {
+      return;
+    }
+
+    openExercise(module, lesson, exercise);
   }
 
   void back() {
@@ -244,6 +332,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
     Exercise? exercise,
   }) {
     if (_disposed) return;
+
     // Dispose the previous session before starting the next narrative. A delayed
     // widget disposal must never stop audio belonging to a newer location.
     _session?.removeListener(_changed);
@@ -256,12 +345,27 @@ final class CourseJourneyEngine extends ChangeNotifier {
     if (exercise != null && lesson != null) {
       _session = ExerciseSessionViewModel(
         exercise: exercise,
+        onAttemptStarted: () async {
+          if (!_hasStartedLessonAttempt) {
+            final tries = await catalog.startLessonAttempt(
+              courseId: course.id,
+              lessonId: lesson.id,
+            );
+            _hasStartedLessonAttempt = true;
+            return tries;
+          }
+          return catalog.lessonTries(courseId: course.id, lessonId: lesson.id);
+        },
         onCompleted: (accuracyPercent) async {
-          await catalog.completeExercise(
+          _attemptExerciseIds.add(exercise.id);
+          await catalog.recordExerciseResult(
             courseId: course.id,
             lessonId: lesson.id,
             exerciseId: exercise.id,
             accuracyPercent: accuracyPercent,
+            lessonAccuracyPercent: lesson.accuracy,
+            lessonExerciseIds: lesson.exercises.map((item) => item.id),
+            secChar: lesson.secChar
           );
           await courseAudio.play(
             currentAudioConfiguration,
@@ -274,7 +378,6 @@ final class CourseJourneyEngine extends ChangeNotifier {
               ? CourseAudioEvent.correctInput
               : CourseAudioEvent.incorrectInput,
         ),
-        failedAttempts: catalog.failedAttempts,
       )..addListener(_changed);
     }
     final audioGeneration = ++_audioRequestGeneration;
@@ -295,16 +398,6 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   void _changed() {
     if (_disposed) return;
-    final session = _session;
-    if (session?.status == ExerciseSessionStatus.completed &&
-        !identical(_scheduledAdvance, session)) {
-      _scheduledAdvance = session;
-      scheduleMicrotask(() {
-        if (!_disposed && identical(_session, session)) {
-          continueAfterExercise();
-        }
-      });
-    }
     notifyListeners();
   }
 

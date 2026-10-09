@@ -15,6 +15,11 @@ void main() {
             'lesson-1': LessonProgress(
               completedExerciseIds: <String>{'exercise-2', 'exercise-1'},
               stars: 2,
+              tries: 3,
+              exerciseAccuracies: const <String, int>{
+                'exercise-1': 97,
+                'exercise-2': 100,
+              },
             ),
           },
         ),
@@ -29,12 +34,16 @@ void main() {
     final serializedProgress = document['progress']! as Map<String, Object?>;
     final settings = serializedProgress['settings']! as Map<String, Object?>;
 
-    expect(document['schemaVersion'], 2);
+    expect(document['schemaVersion'], 3);
     expect(settings['spokenFeedbackEnabled'], isFalse);
     expect(settings['themePreference'], 'highContrast');
     expect(
       codec.encode(progress),
       contains('"completedExerciseIds":["exercise-1","exercise-2"]'),
+    );
+    expect(
+      codec.encode(progress),
+      contains('"exerciseAccuracies":{"exercise-1":97,"exercise-2":100}'),
     );
   });
 
@@ -46,10 +55,17 @@ void main() {
             'lesson-1': LessonProgress(
               completedExerciseIds: <String>{'exercise-1', 'exercise-2'},
               stars: 2,
+              tries: 2,
+              exerciseAccuracies: const <String, int>{
+                'exercise-1': 96,
+                'exercise-2': 99,
+              },
             ),
             'lesson-2': LessonProgress(
               completedExerciseIds: <String>{'exercise-3'},
               stars: 1,
+              tries: 1,
+              exerciseAccuracies: const <String, int>{'exercise-3': 100},
             ),
           },
         ),
@@ -63,6 +79,11 @@ void main() {
     final restored = codec.decode(codec.encode(original));
 
     expect(restored.totalStars, 3);
+    expect(restored.courses['course-1']!.lessons['lesson-1']!.tries, 2);
+    expect(
+      restored.courses['course-1']!.lessons['lesson-1']!.exerciseAccuracies,
+      {'exercise-1': 96, 'exercise-2': 99},
+    );
     expect(
       restored.courses['course-1']!.lessons['lesson-1']!.completedExerciseIds,
       <String>{'exercise-1', 'exercise-2'},
@@ -82,7 +103,7 @@ void main() {
     expect(
       () => codec.decode('''
         {
-          "schemaVersion": 3,
+          "schemaVersion": 4,
           "progress": {"courses": {}, "settings": {}}
         }
       '''),
@@ -132,6 +153,36 @@ void main() {
     ''');
 
     expect(restored.settings.themePreference, AppThemePreference.highContrast);
+  });
+
+  test('migrates version 2 lessons with empty attempt statistics', () {
+    final restored = codec.decode('''
+      {
+        "schemaVersion": 2,
+        "progress": {
+          "courses": {
+            "course-1": {
+              "lessons": {
+                "lesson-1": {
+                  "completedExerciseIds": ["exercise-1"],
+                  "stars": 1
+                }
+              }
+            }
+          },
+          "settings": {
+            "spokenFeedbackEnabled": true,
+            "themePreference": "standard"
+          }
+        }
+      }
+    ''');
+
+    final lesson = restored.courses['course-1']!.lessons['lesson-1']!;
+    expect(lesson.tries, 0);
+    expect(lesson.exerciseAccuracies, isEmpty);
+    expect(lesson.completedExerciseIds, {'exercise-1'});
+    expect(lesson.stars, 1);
   });
 
   test('rejects an unknown theme preference', () {

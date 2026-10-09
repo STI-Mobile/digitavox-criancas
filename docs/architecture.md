@@ -23,7 +23,7 @@ presentation → application → domain
 - `ChangeNotifier` do SDK sustenta o primeiro ViewModel; não há necessidade concreta de gerenciador de estado externo.
 - O catálogo implementa `CourseCatalog`, pois carregamento por asset e um futuro pacote externo são uma fronteira real.
 - A persistência implementa `ProgressRepository`. A composição principal usa `LocalProgressRepository`, com um documento JSON versionado salvo por `SharedPreferencesAsync`; a implementação em memória permanece disponível para testes.
-- `StudentProgressCodec` valida explicitamente cursos, lições, exercícios concluídos, estrelas e configurações. Documento ausente, corrompido ou com schema desconhecido resulta em progresso vazio; falhas do armazenamento não são silenciadas.
+- `StudentProgressCodec` valida explicitamente cursos, lições, exercícios concluídos, estrelas, tentativas, estatísticas de precisão e configurações. Documento ausente, corrompido ou com schema desconhecido resulta em progresso vazio; falhas do armazenamento não são silenciadas.
 - Modelos de progresso são imutáveis para tornar transições previsíveis e testáveis.
 - O catálogo possui `schemaVersion`, versão do curso e validação na entrada.
 - O Design System reside na apresentação e combina tokens institucionais, um dos três temas acessíveis do aplicativo e uma identidade de curso resolvida por identificador semântico. O domínio conhece somente `themeId` e a preferência persistida, nunca cores ou tipos Flutter. Consulte `docs/design-system.md`.
@@ -33,11 +33,11 @@ presentation → application → domain
 - Áudio declarado pelo curso segue `CourseAudioConfiguration` → `CourseAudioOrchestrator` → `AudioCue` → `AudioGuidance`. O engine emite contexto e eventos, mas não conhece assets físicos, TTS ou players. Consulte `docs/architecture/course-audio-integration.md`.
 - Áudio gravado do curso, futura fala dinâmica e acessibilidade do sistema são responsabilidades distintas. `Semantics`, VoiceOver e TalkBack não são mecanismos narrativos do curso.
 - `AudioGuidanceCoordinator` oferece cues genéricos tipados, sequenciamento, cancelamento e fallback de fala gravada para TTS nativo. O contrato `AudioGuidance` permite integrar e testar consumidores sem plugin. Consulte `docs/architecture/audio-guidance.md`.
-- Cada primeira conclusão ainda concede uma estrela pela regra mínima do harness. Essa regra é provisória e não representa pontuação baseada em desempenho.
+- As estrelas são calculadas ao concluir a lição a partir da mediana das precisões dos exercícios e do critério `accuracy` definido no conteúdo.
 
 ## Pontos de extensão
 
-- Evolução do progresso: incrementar o schema, definir migração ou fallback e cobrir compatibilidade antes de alterar o formato persistido.
+- Evolução do progresso: incrementar o schema, definir migração ou fallback e cobrir compatibilidade antes de alterar o formato persistido. O schema 3 registra tentativas e precisão por exercício no escopo da lição.
 - Pacotes de escola: implementar outro `CourseCatalog`, incluindo segurança, migração e origem do pacote quando os requisitos existirem.
 - Exercícios: estender o schema e o domínio, depois criar apresentação especializada por tipo.
 - Fala dinâmica: validar conteúdo de cursos reais sobre o contrato declarativo já integrado; o serviço de TTS permanece uma infraestrutura genérica.

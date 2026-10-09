@@ -144,7 +144,7 @@ final class CourseJourneyScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: DvxSpacing.md),
                           ExerciseScreen(
-                            key: ValueKey(engine.exercise),
+                            key: ValueKey(engine.session),
                             engine: engine,
                           ),
                         ],

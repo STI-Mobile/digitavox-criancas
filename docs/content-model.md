@@ -8,6 +8,8 @@ Course → Module → Lesson → Exercise
 
 O catálogo JSON possui `schemaVersion`; cada curso tem identificador estável, versão, indicação explícita de demo e módulos. IDs devem ser únicos entre irmãos. Listas estruturais não podem ser vazias. O campo opcional `theme` seleciona uma identidade visual conhecida pelo aplicativo, como `space`; o catálogo não contém cores nem detalhes de Flutter. Sem tema conhecido, a apresentação usa uma identidade neutra.
 
+Uma lição contém `id`, `title` e exercícios. No schema 3, `accuracy` é o percentual mínimo de referência da lição (inteiro de 0 a 100); o default para catálogos schema 2 é 90. `secChar` é um limite opcional de caracteres por segundo. A conclusão calcula a mediana das precisões registradas para os exercícios: 0 estrelas quando a mediana não supera `accuracy`, 1 estrela quando supera `accuracy`, 2 quando também supera 95%, e 3 quando é 100%. A exceção de 100% concede sempre três estrelas.
+
 Um exercício contém `id`, `title`, `type` e `prompt`. O schema 2 exige também `expectedInput` para exercícios do tipo `key`; nesse tipo ele deve representar exatamente um caractere imprimível. Outros tipos podem carregar entradas textuais maiores. Os identificadores reconhecidos são `key`, `keySequence`, `word`, `phrase`, `timed`, `repetition` e `challenge`. `key`, `keySequence`, `word` e `phrase` possuem fluxo funcional quando `expectedInput` não está vazio; os demais permanecem desabilitados. Campos opcionais atuais são `minimumRepetitions`, `timeLimitSeconds`, `audioGuidance` e `scene`.
 
 O contrato legível por ferramentas está em [course.schema.json](course.schema.json). O parser Dart continua sendo a validação em execução e verifica também unicidade de IDs e referências de personagens, restrições que o JSON Schema não expressa sozinho. Propriedades adicionais desconhecidas não viram comandos executáveis.
@@ -33,7 +35,7 @@ Exemplo reduzido:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "courses": [
     {
       "id": "demo-course",
@@ -136,7 +138,7 @@ Os personagens são definidos por curso:
 
 Declare os arquivos físicos no `pubspec.yaml` para incluí-los no bundle. O [exemplo completo](examples/journey_course.json) é uma fixture técnica usada pelos testes, não um curso aprovado: seus novos áudios e imagens são caminhos ilustrativos e **não estão incluídos**. O catálogo demo de produção e seus prompts não foram alterados para adicionar personagens fictícios.
 
-Esses campos formam o contrato atual do schema 2, ainda não publicado externamente. `audioGuidance` é a única representação de áudio de curso; não há parser alternativo nem migração de conteúdo. A persistência de progresso mantém seu formato e sua versão; a retomada é derivada das conclusões salvas, não de um novo cursor persistido. `minimumRepetitions` controla a execução de tipos textuais suportados; `timed`, `repetition` e `challenge` ainda não possuem executor.
+Esses campos formam o contrato atual dos schemas 2 e 3, ainda não publicado externamente. O schema 3 acrescenta os critérios de lição `accuracy` e `secChar`; o parser mantém compatibilidade com catálogos schema 2. `audioGuidance` é a única representação de áudio de curso; não há parser alternativo nem migração de conteúdo. A retomada é derivada das conclusões salvas, não de um novo cursor persistido. `minimumRepetitions` controla a execução de tipos textuais suportados; `timed`, `repetition` e `challenge` ainda não possuem executor.
 
 Mudanças incompatíveis exigem nova `schemaVersion`, estratégia de migração e testes. Pacotes externos futuros deverão definir manifesto, integridade/autenticidade, compatibilidade, isolamento de assets e política de atualização antes da implementação. Não presuma que JSON externo é confiável.
 
