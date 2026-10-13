@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -9,6 +11,7 @@ import 'design_system/components/dvx_game_components.dart';
 import 'design_system/course_theme/course_theme.dart';
 import 'design_system/tokens/dvx_tokens.dart';
 import 'exercise_screen.dart';
+import 'keyboard_navigation.dart';
 
 final class CourseJourneyScreen extends StatelessWidget {
   const CourseJourneyScreen({
@@ -38,123 +41,144 @@ final class CourseJourneyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: engine,
-    builder: (context, _) => Focus(
+    builder: (context, _) => KeyboardNavigation(
       key: ValueKey('keyboard-${engine.locationKey}'),
-      autofocus: engine.stage != JourneyStage.exercise,
-      onKeyEvent: _handleKeyEvent,
-      child: PopScope(
-        canPop: !engine.canGoBack,
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop) engine.back();
-        },
-        child: Builder(
-          builder: (context) {
-            final preference = engine.catalog.progress.settings.themePreference;
-            final courseTheme = DvxCourseThemes.resolve(engine.course.themeId)
-                .resolve(preference);
-            return DvxGameScaffold(
-              courseTheme: courseTheme,
-              leading: engine.canGoBack
-                  ? IconButton(
-                      onPressed: engine.back,
-                      tooltip: switch (engine.stage) {
-                        JourneyStage.exercise => 'Voltar à lição',
-                        JourneyStage.lesson => 'Voltar ao módulo',
-                        _ => 'Voltar ao curso',
-                      },
-                      icon: const Icon(Icons.arrow_back),
-                    )
-                  : null,
-              title: switch (engine.stage) {
-                JourneyStage.course => 'Digitavox',
-                JourneyStage.module => 'Módulo',
-                JourneyStage.lesson => 'Lição',
-                JourneyStage.exercise => 'Exercício',
-              },
-              actions: [
-                if (engine.canReplayNarration)
-                  IconButton(
-                    onPressed: engine.replayNarration,
-                    tooltip: 'Ouvir novamente',
-                    icon: const Icon(Icons.volume_up_outlined),
+      onNavigate: () => unawaited(engine.stopNarration()),
+      onAnnounce: engine.courseAudio.speakText,
+      child: Focus(
+        canRequestFocus: false,
+        onKeyEvent: _handleKeyEvent,
+        child: PopScope(
+          canPop: !engine.canGoBack,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) engine.back();
+          },
+          child: Builder(
+            builder: (context) {
+              final preference =
+                  engine.catalog.progress.settings.themePreference;
+              final courseTheme = DvxCourseThemes.resolve(engine.course.themeId)
+                  .resolve(preference);
+              return DvxGameScaffold(
+                courseTheme: courseTheme,
+                leading: engine.canGoBack
+                    ? KeyboardNavigationLabel(
+                        label: switch (engine.stage) {
+                          JourneyStage.exercise => 'Voltar à lição',
+                          JourneyStage.lesson => 'Voltar ao módulo',
+                          _ => 'Voltar ao curso',
+                        },
+                        child: IconButton(
+                          onPressed: engine.back,
+                          tooltip: switch (engine.stage) {
+                            JourneyStage.exercise => 'Voltar à lição',
+                            JourneyStage.lesson => 'Voltar ao módulo',
+                            _ => 'Voltar ao curso',
+                          },
+                          icon: const Icon(Icons.arrow_back),
+                        ),
+                      )
+                    : null,
+                title: switch (engine.stage) {
+                  JourneyStage.course => 'Digitavox',
+                  JourneyStage.module => 'Módulo',
+                  JourneyStage.lesson => 'Lição',
+                  JourneyStage.exercise => 'Exercício',
+                },
+                actions: [
+                  if (engine.canReplayNarration)
+                    KeyboardNavigationLabel(
+                      label: 'Ouvir novamente',
+                      child: IconButton(
+                        onPressed: engine.replayNarration,
+                        tooltip: 'Ouvir novamente',
+                        icon: const Icon(Icons.volume_up_outlined),
+                      ),
+                    ),
+                  DvxThemeSelector(
+                    preference: preference,
+                    onSelected: _selectTheme,
                   ),
-                DvxThemeSelector(
-                  preference: preference,
-                  onSelected: _selectTheme,
-                ),
-              ],
-              body: Semantics(
-                key: ValueKey(engine.locationKey),
-                scopesRoute: true,
-                namesRoute: true,
-                label: engine.title,
-                explicitChildNodes: true,
-                child: FocusTraversalGroup(
-                  policy: ReadingOrderTraversalPolicy(),
-                  child: ListView(
+                ],
+                body: Semantics(
+                  key: ValueKey(engine.locationKey),
+                  scopesRoute: true,
+                  namesRoute: true,
+                  label: engine.title,
+                  explicitChildNodes: true,
+                  child: SingleChildScrollView(
                     key: PageStorageKey(engine.locationKey),
                     padding: const EdgeInsets.all(DvxSpacing.lg),
-                    children: [
-                      if (engine.canGoBack) ...[
-                        Text(
-                          [
-                            engine.course.title,
-                            if (engine.lesson != null) engine.module!.title,
-                            if (engine.exercise != null) engine.lesson!.title,
-                          ].join(' · '),
-                        ),
-                        const SizedBox(height: DvxSpacing.sm),
-                      ],
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          engine.title,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-                      const SizedBox(height: DvxSpacing.md),
-                      CourseScene(
-                        scene: engine.scene,
-                        character: engine.character,
-                      ),
-                      if (engine.canReplayNarration) ...[
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: engine.replayNarration,
-                              icon: const Icon(Icons.volume_up_outlined),
-                              label: const Text('Ouvir novamente'),
-                            ),
-                            TextButton(
-                              onPressed: engine.stopNarration,
-                              child: const Text('Parar áudio'),
-                            ),
-                          ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (engine.canGoBack) ...[
+                          Text(
+                            [
+                              engine.course.title,
+                              if (engine.lesson != null) engine.module!.title,
+                              if (engine.exercise != null) engine.lesson!.title,
+                            ].join(' · '),
+                          ),
+                          const SizedBox(height: DvxSpacing.sm),
+                        ],
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            engine.title,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                         ),
                         const SizedBox(height: DvxSpacing.md),
-                      ],
-                      ...switch (engine.stage) {
-                        JourneyStage.course => _course(),
-                        JourneyStage.module => _module(),
-                        JourneyStage.lesson => _lesson(),
-                        JourneyStage.exercise => [
-                          Text(
-                            'Exercício ${engine.lesson!.exercises.indexOf(engine.exercise!) + 1} de ${engine.lesson!.exercises.length}',
+                        CourseScene(
+                          scene: engine.scene,
+                          character: engine.character,
+                        ),
+                        if (engine.canReplayNarration) ...[
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              KeyboardNavigationLabel(
+                                label: 'Ouvir novamente',
+                                child: OutlinedButton.icon(
+                                  onPressed: engine.replayNarration,
+                                  icon: const Icon(Icons.volume_up_outlined),
+                                  label: const Text('Ouvir novamente'),
+                                ),
+                              ),
+                              KeyboardNavigationLabel(
+                                label: 'Parar áudio',
+                                child: TextButton(
+                                  onPressed: engine.stopNarration,
+                                  child: const Text('Parar áudio'),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: DvxSpacing.md),
-                          ExerciseScreen(
-                            key: ValueKey(engine.session),
-                            engine: engine,
-                          ),
                         ],
-                      },
-                    ],
+                        ...switch (engine.stage) {
+                          JourneyStage.course => _course(),
+                          JourneyStage.module => _module(),
+                          JourneyStage.lesson => _lesson(),
+                          JourneyStage.exercise => [
+                            Text(
+                              'Exercício ${engine.lesson!.exercises.indexOf(engine.exercise!) + 1} de ${engine.lesson!.exercises.length}',
+                            ),
+                            const SizedBox(height: DvxSpacing.md),
+                            ExerciseScreen(
+                              key: ValueKey(engine.session),
+                              engine: engine,
+                            ),
+                          ],
+                        },
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     ),
@@ -182,11 +206,17 @@ final class CourseJourneyScreen extends StatelessWidget {
       ),
       const SizedBox(height: DvxSpacing.lg),
       if (target != null) ...[
-        ElevatedButton.icon(
-          onPressed: engine.resume,
-          icon: const Icon(Icons.play_arrow),
-          label: Text(
-            engine.completedCount == 0 ? 'Começar curso' : 'Continuar curso',
+        KeyboardNavigationLabel(
+          label: engine.completedCount == 0
+              ? 'Começar curso'
+              : 'Continuar curso',
+          child: ElevatedButton.icon(
+            autofocus: true,
+            onPressed: engine.resume,
+            icon: const Icon(Icons.play_arrow),
+            label: Text(
+              engine.completedCount == 0 ? 'Começar curso' : 'Continuar curso',
+            ),
           ),
         ),
         const SizedBox(height: DvxSpacing.sm),
@@ -202,6 +232,7 @@ final class CourseJourneyScreen extends StatelessWidget {
       const SizedBox(height: DvxSpacing.lg),
       for (final (index, module) in engine.course.modules.indexed)
         CourseNavigationTile(
+          autofocus: target == null && index == 0,
           title: 'Módulo ${index + 1} · ${module.title}',
           description: '${module.lessons.length} lições · Abrir módulo',
           onPressed: () => engine.openModule(module),
@@ -212,6 +243,7 @@ final class CourseJourneyScreen extends StatelessWidget {
   List<Widget> _module() => [
     for (final (index, lesson) in engine.module!.lessons.indexed)
       CourseNavigationTile(
+        autofocus: index == 0,
         title: 'Lição ${index + 1} · ${lesson.title}',
         description:
             '${engine.completedIn(lesson)} de ${lesson.exercises.length} exercícios concluídos. '
@@ -226,6 +258,7 @@ final class CourseJourneyScreen extends StatelessWidget {
     final completed = engine.completedIn(lesson);
     final pending = engine.pendingIn(lesson);
     final following = engine.followingLesson;
+    final firstAvailableIndex = lesson.exercises.indexWhere(engine.isAvailable);
     return [
       Text('$completed de ${lesson.exercises.length} exercícios concluídos'),
       const SizedBox(height: DvxSpacing.sm),
@@ -235,10 +268,15 @@ final class CourseJourneyScreen extends StatelessWidget {
       ),
       const SizedBox(height: DvxSpacing.lg),
       if (pending != null) ...[
-        ElevatedButton.icon(
-          onPressed: () => engine.openExercise(engine.module!, lesson, pending),
-          icon: const Icon(Icons.play_arrow),
-          label: Text(completed == 0 ? 'Começar lição' : 'Continuar lição'),
+        KeyboardNavigationLabel(
+          label: completed == 0 ? 'Começar lição' : 'Continuar lição',
+          child: ElevatedButton.icon(
+            autofocus: true,
+            onPressed: () =>
+                engine.openExercise(engine.module!, lesson, pending),
+            icon: const Icon(Icons.play_arrow),
+            label: Text(completed == 0 ? 'Começar lição' : 'Continuar lição'),
+          ),
         ),
         const SizedBox(height: DvxSpacing.lg),
       ] else ...[
@@ -251,6 +289,7 @@ final class CourseJourneyScreen extends StatelessWidget {
       ],
       for (final (index, exercise) in lesson.exercises.indexed)
         CourseNavigationTile(
+          autofocus: pending == null && index == firstAvailableIndex,
           title: '${index + 1}. ${exercise.title}',
           description:
               '${exercise.prompt}\n'
@@ -265,14 +304,23 @@ final class CourseJourneyScreen extends StatelessWidget {
               : null,
         ),
       if (following != null)
-        OutlinedButton(
-          onPressed: () =>
-              engine.openLesson(following.module, following.lesson),
-          child: Text('Próxima lição: ${following.lesson.title}'),
+        KeyboardNavigationLabel(
+          label: 'Próxima lição: ${following.lesson.title}',
+          child: OutlinedButton(
+            autofocus: pending == null && firstAvailableIndex < 0,
+            onPressed: () =>
+                engine.openLesson(following.module, following.lesson),
+            child: Text('Próxima lição: ${following.lesson.title}'),
+          ),
         ),
-      TextButton(
-        onPressed: engine.openCourse,
-        child: const Text('Voltar ao curso'),
+      KeyboardNavigationLabel(
+        label: 'Voltar ao curso',
+        child: TextButton(
+          autofocus:
+              pending == null && firstAvailableIndex < 0 && following == null,
+          onPressed: engine.openCourse,
+          child: const Text('Voltar ao curso'),
+        ),
       ),
     ];
   }

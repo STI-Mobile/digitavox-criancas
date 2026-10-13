@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:flutter/material.dart';
 
+import 'keyboard_navigation.dart';
+
 final class LessonCompletionScreen extends StatefulWidget {
   const LessonCompletionScreen({
     required this.earnedStars,
@@ -33,6 +35,7 @@ final class LessonCompletionScreen extends StatefulWidget {
 
 final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
   bool _isContinuing = false;
+  final _continueFocusNode = FocusNode(debugLabel: 'continuar lição');
 
   Future<void> _continue() async {
     if (_isContinuing) return;
@@ -49,12 +52,23 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
   void initState() {
     super.initState();
     _narrateMessage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _continueFocusNode.requestFocus();
+      Scrollable.ensureVisible(_continueFocusNode.context!);
+    });
   }
 
   @override
   void didUpdateWidget(covariant LessonCompletionScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.message != widget.message) _narrateMessage();
+  }
+
+  @override
+  void dispose() {
+    _continueFocusNode.dispose();
+    super.dispose();
   }
 
   void _narrateMessage() {
@@ -76,10 +90,13 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Lição concluída!',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineMedium,
+              Semantics(
+                header: true,
+                child: Text(
+                  'Lição concluída!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium,
+                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -192,20 +209,24 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                 '${widget.tries} '
                 '${widget.tries == 1 ? 'tentativa' : 'tentativas'} na lição',
               ),
-              
+
               for (final exercise in widget.exerciseStatistics)
                 Text('${exercise.title}: ${exercise.accuracyPercent}%'),
               const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _isContinuing ? null : _continue,
-                icon: _isContinuing
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.arrow_forward),
-                label: Text(
-                  _isContinuing ? 'Carregando...' : widget.actionLabel,
+              KeyboardNavigationLabel(
+                label: widget.actionLabel,
+                child: FilledButton.icon(
+                  focusNode: _continueFocusNode,
+                  onPressed: _isContinuing ? null : _continue,
+                  icon: _isContinuing
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.arrow_forward),
+                  label: Text(
+                    _isContinuing ? 'Carregando...' : widget.actionLabel,
+                  ),
                 ),
               ),
             ],

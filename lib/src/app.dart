@@ -61,6 +61,7 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
           ? ProfileSelectionScreen(
               profileRepository: widget.profileRepository,
               onProfileSelected: _selectProfile,
+              onAnnounce: _courseAudio.speakText,
             )
           : CourseHomeScreen(
               courseCatalog: widget.courseCatalog,

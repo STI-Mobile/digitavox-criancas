@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
+import '../../keyboard_navigation.dart';
 import '../course_theme/course_theme.dart';
 import '../tokens/dvx_tokens.dart';
 
@@ -251,27 +252,30 @@ final class DvxThemeSelector extends StatelessWidget {
   final ValueChanged<AppThemePreference> onSelected;
 
   @override
-  Widget build(BuildContext context) => PopupMenuButton<AppThemePreference>(
-    tooltip: 'Alterar tema visual',
-    initialValue: preference,
-    onSelected: onSelected,
-    icon: const Icon(Icons.contrast),
-    itemBuilder: (context) => [
-      for (final value in AppThemePreference.values)
-        PopupMenuItem(
-          value: value,
-          child: Row(
-            children: [
-              Icon(
-                value == preference
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
-              ),
-              const SizedBox(width: DvxSpacing.sm),
-              Expanded(child: Text(value.label)),
-            ],
+  Widget build(BuildContext context) => KeyboardNavigationLabel(
+    label: 'Alterar tema visual. ${preference.label}',
+    child: PopupMenuButton<AppThemePreference>(
+      tooltip: 'Alterar tema visual',
+      initialValue: preference,
+      onSelected: onSelected,
+      icon: const Icon(Icons.contrast),
+      itemBuilder: (context) => [
+        for (final value in AppThemePreference.values)
+          PopupMenuItem(
+            value: value,
+            child: Row(
+              children: [
+                Icon(
+                  value == preference
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                ),
+                const SizedBox(width: DvxSpacing.sm),
+                Expanded(child: Text(value.label)),
+              ],
+            ),
           ),
-        ),
-    ],
+      ],
+    ),
   );
 }
