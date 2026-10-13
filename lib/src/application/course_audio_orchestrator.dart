@@ -22,7 +22,14 @@ final class CourseAudioOrchestrator {
   ) {
     final declaredCues = configuration?.cuesFor(event);
     if (declaredCues == null || declaredCues.isEmpty) {
-      return const <AudioCue>[];
+      return switch (event) {
+        CourseAudioEvent.correctInput => const [ClickCue(id: 'input-correct')],
+        CourseAudioEvent.incorrectInput => const [
+          ClickCue(id: 'input-incorrect', doubleClick: true),
+        ],
+        CourseAudioEvent.start ||
+        CourseAudioEvent.completed => const <AudioCue>[],
+      };
     }
 
     return List<AudioCue>.unmodifiable(
@@ -44,7 +51,7 @@ final class CourseAudioOrchestrator {
   bool hasCues(
     CourseAudioConfiguration? configuration,
     CourseAudioEvent event,
-  ) => configuration?.cuesFor(event).isNotEmpty == true;
+  ) => resolve(configuration, event).isNotEmpty;
 
   Future<void> play(
     CourseAudioConfiguration? configuration,

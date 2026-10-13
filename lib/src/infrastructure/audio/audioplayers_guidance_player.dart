@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/audio/audio_guidance_services.dart';
+import 'system_click_player.dart';
 
 /// A completion-aware asset player. Separate instances are injected for
 /// speech assets, SFX and music even though they share this implementation.
@@ -29,6 +30,7 @@ final class AudioplayersGuidancePlayer
   );
 
   final AudioPlayer _player;
+  final _clickPlayer = SystemClickPlayer();
   late final StreamSubscription<void> _completionSubscription;
   Completer<void>? _activeCompletion;
   var _generation = 0;
@@ -44,6 +46,7 @@ final class AudioplayersGuidancePlayer
     }
 
     final generation = ++_generation;
+    _clickPlayer.stop();
     await _guard('stop', _stopPlayer);
     final completion = Completer<void>();
     _activeCompletion = completion;
@@ -78,6 +81,21 @@ final class AudioplayersGuidancePlayer
   }
 
   @override
+  Future<void> playClick({bool doubleClick = false}) async {
+    if (_disposed) {
+      throw const AudioServiceException(
+        operation: 'playClick',
+        cause: 'player descartado',
+      );
+    }
+    final generation = ++_generation;
+    _clickPlayer.stop();
+    await _guard('stop', _stopPlayer);
+    if (_disposed || generation != _generation) return;
+    await _clickPlayer.play(doubleClick: doubleClick);
+  }
+
+  @override
   Future<void> pause() => _guard('pause', _player.pause);
 
   @override
@@ -88,6 +106,7 @@ final class AudioplayersGuidancePlayer
   Future<void> stop() async {
     if (_disposed) return;
     ++_generation;
+    _clickPlayer.stop();
     await _guard('stop', _stopPlayer);
   }
 
@@ -95,6 +114,7 @@ final class AudioplayersGuidancePlayer
   Future<void> dispose() async {
     if (_disposed) return;
     ++_generation;
+    _clickPlayer.stop();
     await _guard('stop', _stopPlayer);
     _disposed = true;
     await _completionSubscription.cancel();
