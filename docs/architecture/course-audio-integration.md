@@ -71,7 +71,7 @@ Eventos suportados nesta etapa:
 
 ## Course Audio Orchestration
 
-`CourseAudioOrchestrator.resolve` transforma `ContentAudioCue` em `SpeechCue`, `SfxCue` ou `MusicCue`. `play` envia a lista completa a `AudioGuidance.playSequence`; um evento sem configuração interrompe áudio anterior e não inventa feedback. Falhas controladas de Audio Guidance são contidas para não impedir input, conclusão ou persistência.
+`CourseAudioOrchestrator.resolve` transforma `ContentAudioCue` em `SpeechCue`, `SfxCue` ou `MusicCue`. `play` envia a lista completa a `AudioGuidance.playSequence`. Quando `correctInput` ou `incorrectInput` não possui cues declarados, o orquestrador restaura o feedback técnico original por `ClickCue`: um clique no acerto, dois no erro, com intervalo de 120 ms. Cues declarados substituem esse padrão, evitando duplicação de efeitos. `start` e `completed` sem configuração continuam apenas interrompendo o áudio anterior. Falhas controladas de Audio Guidance são contidas para não impedir input, conclusão ou persistência.
 
 `ExerciseSessionViewModel` apenas informa `onInputEvaluated(bool)` e `onCompleted()`. Ele não armazena fala, não constrói cues e não importa Audio Guidance. O engine escolhe o evento e entrega a configuração corrente ao orquestrador.
 

@@ -2,7 +2,7 @@
 
 - Status: aceita
 - Data: 2026-09-22
-- Atualizada: 2026-09-24
+- Atualizada: 2026-10-13
 
 ## Contexto
 
@@ -42,6 +42,8 @@ Course decides WHAT and WHEN. CourseAudioOrchestrator translates course events i
 O conteúdo usa exclusivamente `audioGuidance`, organizado pelos eventos `start`, `correctInput`, `incorrectInput` e `completed`. Cada evento contém uma sequência ordenada de `speech`, `sfx` e `music`. Speech aceita texto, asset opcional e speaker opcional; SFX e Music exigem asset. O conteúdo não declara engine TTS, voz nativa, player ou política de plataforma.
 
 `CourseJourneyEngine` seleciona o evento e a configuração da etapa. `CourseAudioOrchestrator` resolve `ContentAudioCue` em `AudioCue` e chama apenas o contrato `AudioGuidance`. `AudioGuidanceCoordinator` coordena sequência, cancelamento e fallback asset → TTS. O composition root injeta as implementações concretas.
+
+A restauração do feedback técnico original mantém essa fronteira: na ausência de cues de input declarados pelo curso, o orquestrador produz `ClickCue` simples para acerto e duplo para erro. `AudioGuidanceCoordinator` encaminha ambos ao `SfxPlayer`; `SystemClickPlayer`, na infraestrutura, usa `SystemSoundType.click` com 120 ms entre os pulsos. Cancelamento invalida o segundo pulso pendente. Efeitos declarados pelo curso têm precedência, e textos, regras pedagógicas e schema de conteúdo permanecem iguais. Essa decisão recupera o comportamento introduzido em `4233b86` e removido em `59b026a`, sem reintroduzir a antiga fronteira paralela de feedback.
 
 ## Infraestrutura e sessão de áudio
 

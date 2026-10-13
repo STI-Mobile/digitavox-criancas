@@ -16,11 +16,22 @@ Acessibilidade é uma restrição de arquitetura e critério de aceite. A interf
 - Sinais sonoros de acerto e erro devem ser distintos e sempre acompanhados por estado textual e semântico equivalente.
 - Evite mudanças automáticas de foco. Quando necessárias, documente e teste o destino.
 
+## Navegação com teclado físico
+
+- Nos menus de perfis, curso, módulo e lição, seta para baixo/Tab avança e seta para cima/Shift + Tab retorna, em ordem de controles. A navegação é circular, ignora ações desabilitadas e traz a seleção para a área visível, inclusive com texto ampliado. Enter e espaço acionam os controles nativos.
+- Cada etapa começa com foco na ação principal disponível. Ao abrir um exercício, o foco é solicitado explicitamente na entrada de digitação após o layout; não é necessário acionar “Ativar teclado”.
+- As setas e F1–F9 consultam o exercício somente enquanto a entrada possui foco primário. Tab permite sair da entrada para os controles; nesses controles, as setas voltam a navegar e espaço/Enter não são contabilizados como digitação. “Ativar teclado” devolve o foco à execução.
+- Ao concluir, o foco sai da entrada e vai para “Próximo exercício”, “Próxima lição”, “Voltar à lição” ou “Tentar lição novamente”, conforme o resultado. Esses destinos são explícitos para permitir continuar sem procurar o botão. Escape preserva o retorno pela hierarquia.
+- A seleção por teclado anuncia o nome/estado do controle pelo `CourseAudioOrchestrator`, substituindo a fala anterior. Consultas do exercício também substituem a fala; a primeira entrada de digitação interrompe a narrativa. A semântica nativa dos controles e o feedback textual permanecem disponíveis.
+- Combinações com Alt/Meta não são capturadas; as consultas com Control + seta permanecem disponíveis na entrada do exercício. Diálogos e o menu de temas mantêm o comportamento de teclado nativo do Flutter.
+
+O foco de teclado não equivale ao cursor de leitura de VoiceOver/TalkBack. A coexistência da fala do app com o leitor de tela ainda requer validação manual nos dois sistemas, incluindo entrada, conclusão, navegação rápida, diálogos e retorno por Escape.
+
 ## Áudio e leitores de tela
 
 Áudio gravado do curso não substitui acessibilidade. Uma instrução pode e deve existir simultaneamente como texto, `Semantics` e asset narrativo porque esses canais têm finalidades diferentes. VoiceOver e TalkBack tornam a interface operável; não são motores de personagem ou narrativa.
 
-Flutter expõe `accessibleNavigation` quando um serviço como VoiceOver ou TalkBack altera o modelo de interação. O app encapsula esse sinal em `SystemAccessibilityStatus`, mas ainda não o usa para desligar ou alterar áudio. Sobreposição, interrupção, volume e foco serão decididos somente após testes em dispositivos reais.
+Flutter expõe `accessibleNavigation` quando um serviço como VoiceOver ou TalkBack altera o modelo de interação. O app encapsula esse sinal em `SystemAccessibilityStatus`, mas ainda não o usa para desligar ou alterar áudio. A interrupção entre falas controladas pelo app segue a política de navegação acima. Sobreposição com o leitor de tela, volume e foco de acessibilidade dependem de testes em dispositivos reais.
 
 ## Checklist de mudança de UI
 
