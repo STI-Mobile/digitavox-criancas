@@ -30,6 +30,40 @@ void main() {
     expect(audioGuidance.events, isEmpty);
   });
 
+  test(
+    'restaura um clique no acerto e dois no erro sem cues declarados',
+    () async {
+      await orchestrator.play(null, CourseAudioEvent.correctInput);
+      await orchestrator.play(
+        const CourseAudioConfiguration(),
+        CourseAudioEvent.incorrectInput,
+      );
+      final cues = audioGuidance.playedCues.whereType<ClickCue>().toList();
+      expect(cues, hasLength(2));
+      expect(cues.first.doubleClick, isFalse);
+      expect(cues.last.doubleClick, isTrue);
+      expect(orchestrator.hasCues(null, CourseAudioEvent.correctInput), isTrue);
+      expect(orchestrator.hasCues(null, CourseAudioEvent.start), isFalse);
+    },
+  );
+
+  test('feedback declarado substitui o clique padrão', () async {
+    await orchestrator.play(
+      const CourseAudioConfiguration(
+        correctInput: [
+          ContentAudioCue(
+            id: 'custom-correct',
+            type: ContentAudioCueType.sfx,
+            asset: 'assets/audio/demo/test.wav',
+          ),
+        ],
+      ),
+      CourseAudioEvent.correctInput,
+    );
+    expect(audioGuidance.playedCues.whereType<ClickCue>(), isEmpty);
+    expect(audioGuidance.playedCues.single, isA<SfxCue>());
+  });
+
   test('resolve configuração de fala para SpeechCue', () {
     final cues = orchestrator.resolve(
       const CourseAudioConfiguration(

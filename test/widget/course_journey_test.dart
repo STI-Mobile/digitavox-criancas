@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:digitavox_criancas/src/app.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
 import 'package:digitavox_criancas/src/data/persistence/local_profile_repository.dart';
@@ -6,6 +8,7 @@ import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/tokens/dvx_tokens.dart';
+import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +18,233 @@ import '../support/journey_fixture.dart';
 import '../support/recording_audio_guidance.dart';
 
 void main() {
+  testWidgets(
+    'keyboard menus cycle, announce selection and activate with Enter',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      await _pumpDemo(tester, repository: _createRepository(), audio: audio);
+      expect(_focusedLabel(), 'Começar curso');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), startsWith('Módulo 1'));
+      expect((audio.playedCues.last as SpeechCue).text, _focusedLabel());
+      expect(audio.events, contains('cancel'));
+
+      // Reverse traversal agrees with Shift+Tab.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Começar curso');
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Alterar tema visual. Padrão');
+
+      // Wrap from the first toolbar control to the last module and back.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), startsWith('Módulo 2'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Alterar tema visual. Padrão');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), startsWith('Lição 1'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Começar lição');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'exercise focus moves to continuation and no longer captures buttons',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      await _pumpDemo(tester, repository: _createRepository(), audio: audio);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Próxima tecla: f.');
+
+      // Tab leaves typing; arrows and Space operate native controls there.
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Ativar teclado');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Atalhos F1');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
+      await tester.pumpAndSettle();
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      expect(find.text('Repetição 1 de 3'), findsOneWidget);
+
+      for (var i = 0; i < 3; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Próximo exercício');
+      final semantics = tester.getSemantics(
+        find.widgetWithText(FilledButton, 'Próximo exercício'),
+      );
+      expect(semantics.flagsCollection.isButton, isTrue);
+      expect(semantics.flagsCollection.isFocused, Tristate.isTrue);
+      final sequenceCount = audio.sequences.length;
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Voltar à lição');
+      expect(audio.sequences.length, sequenceCount + 1);
+      expect((audio.playedCues.last as SpeechCue).text, 'Voltar à lição');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Próximo exercício');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('Exercício 2 de 2'), findsOneWidget);
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Próxima lição');
+      await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
+      await tester.pumpAndSettle();
+      expect(find.text('Asa Esquerda'), findsWidgets);
+      expect(_focusedLabel(), 'Começar lição');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'keyboard navigation scrolls to offscreen actions with large text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await _pumpDemo(tester, repository: _createRepository());
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), startsWith('Módulo 1'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), startsWith('Lição 2'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('Asa Esquerda'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'profile actions are named and selectable with arrows and Enter',
+    (tester) async {
+      final repository = _createRepository();
+      await repository.createProfile('Ana');
+      await repository.createProfile('Bia');
+      final audio = RecordingAudioGuidance();
+      await tester.pumpWidget(
+        DigitavoxApp(
+          courseCatalog: JourneyFixtureCatalog(),
+          profileRepository: repository,
+          audioGuidance: audio,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Aprender com Ana');
+      final select = tester.getSemantics(find.text('Ana'));
+      expect(select.flagsCollection.isButton, isTrue);
+      expect(select.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Excluir perfil de Ana');
+      final delete = tester.getSemantics(
+        find.bySemanticsLabel('Excluir perfil de Ana'),
+      );
+      expect(delete.flagsCollection.isButton, isTrue);
+      expect(delete.label, 'Excluir perfil de Ana');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Aprender com Bia');
+      expect((audio.playedCues.last as SpeechCue).text, 'Aprender com Bia');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('Começar curso'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'restores click feedback during typing and keeps it off menu actions',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      await _pumpDemo(
+        tester,
+        repository: _createRepository(),
+        audio: audio,
+        catalog: const AssetCourseCatalog(
+          assetPath: 'assets/content/exploradores_espaciais.json',
+        ),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as ClickCue).doubleClick, isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as ClickCue).doubleClick, isTrue);
+      final clicksBefore = audio.playedCues.whereType<ClickCue>().length;
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
+      await tester.pumpAndSettle();
+      expect(audio.playedCues.whereType<ClickCue>().length, clicksBefore);
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        'entrada do exercício',
+      );
+      expect(
+        find.bySemanticsLabel(RegExp('Tecla x incorreta')),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets(
     'browses the hierarchy and exposes named, operable semantic buttons',
     (tester) async {
@@ -95,7 +325,7 @@ void main() {
         find.bySemanticsLabel('Você ganhou 3 de 3 estrelas.'),
         findsOneWidget,
       );
-      expect(find.text('Precisão mediana: 100%'), findsOneWidget);
+      expect(find.text('Precisão média: 100%'), findsOneWidget);
       expect(find.text('1 tentativa na lição'), findsOneWidget);
       expect(find.text('Próxima lição'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -134,8 +364,9 @@ void main() {
     expect(find.text('Lição ainda não concluída'), findsOneWidget);
     expect(find.text('Lição concluída!'), findsNothing);
     expect(find.text('Tentar lição novamente'), findsOneWidget);
+    expect(_focusedLabel(), 'Tentar lição novamente');
     expect(find.byIcon(Icons.star_rounded), findsNothing);
-    await tester.tap(find.text('Tentar lição novamente'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
     expect(find.text('Exercício 1 de 2'), findsOneWidget);
@@ -247,12 +478,16 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-      await tester.pump();
-
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
       await tester.pump();
-
       await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+      await tester.pumpAndSettle();
+
+      expect(_focusedLabel(), 'Próximo exercício');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
 
       expect(
@@ -444,9 +679,10 @@ Future<void> _pumpDemo(
 }
 
 LocalProfileRepository _createRepository() {
+  final stores = <String, _MemoryDocumentStore>{};
   return LocalProfileRepository(
     profilesStore: _MemoryDocumentStore(),
-    progressStoreFor: (_) => _MemoryDocumentStore(),
+    progressStoreFor: (id) => stores.putIfAbsent(id, _MemoryDocumentStore.new),
   );
 }
 
@@ -461,3 +697,7 @@ final class _MemoryDocumentStore implements ProgressDocumentStore {
     _document = document;
   }
 }
+
+String? _focusedLabel() => FocusManager.instance.primaryFocus?.context
+    ?.findAncestorWidgetOfExactType<KeyboardNavigationLabel>()
+    ?.label;
