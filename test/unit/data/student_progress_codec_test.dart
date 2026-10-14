@@ -16,7 +16,7 @@ void main() {
               completedExerciseIds: <String>{'exercise-2', 'exercise-1'},
               stars: 2,
               tries: 3,
-              exerciseAccuracies: const <String, int>{
+              exerciseAccuracies: <String, int>{
                 'exercise-1': 97,
                 'exercise-2': 100,
               },
@@ -34,7 +34,7 @@ void main() {
     final serializedProgress = document['progress']! as Map<String, Object?>;
     final settings = serializedProgress['settings']! as Map<String, Object?>;
 
-    expect(document['schemaVersion'], 3);
+    expect(document['schemaVersion'], 4);
     expect(settings['spokenFeedbackEnabled'], isFalse);
     expect(settings['themePreference'], 'highContrast');
     expect(
@@ -56,7 +56,7 @@ void main() {
               completedExerciseIds: <String>{'exercise-1', 'exercise-2'},
               stars: 2,
               tries: 2,
-              exerciseAccuracies: const <String, int>{
+              exerciseAccuracies: <String, int>{
                 'exercise-1': 96,
                 'exercise-2': 99,
               },
@@ -65,7 +65,7 @@ void main() {
               completedExerciseIds: <String>{'exercise-3'},
               stars: 1,
               tries: 1,
-              exerciseAccuracies: const <String, int>{'exercise-3': 100},
+              exerciseAccuracies: <String, int>{'exercise-3': 100},
             ),
           },
         ),
@@ -92,6 +92,98 @@ void main() {
     expect(restored.settings.themePreference, AppThemePreference.dark);
   });
 
+  test('round trips measurements, ceremony events and rewards', () {
+    final original = const StudentProgress()
+        .recordExerciseResult(
+          courseId: 'course',
+          lessonId: 'mission',
+          exerciseId: 'practice',
+          accuracyPercent: 95,
+          lessonAccuracyPercent: 90,
+          lessonExerciseIds: const ['practice'],
+          elapsedMilliseconds: 5000,
+          totalInputs: 20,
+          correctInputs: 19,
+          errorPairs: const {'ç→l': 1},
+        )
+        .recordCourseEvent(
+          courseId: 'course',
+          eventId: 'launch',
+          rewardIds: const ['bronze', 'blib-blub'],
+        );
+    final restored = codec.decode(codec.encode(original));
+    final course = restored.courses['course']!;
+    final stats = course.lessons['mission']!.exerciseStatistics['practice']!;
+    expect(stats.elapsedMilliseconds, 5000);
+    expect(stats.totalInputs, 20);
+    expect(stats.correctInputs, 19);
+    expect(stats.errorPairs, {'ç→l': 1});
+    expect(course.completedEventIds, {'launch'});
+    expect(course.unlockedRewardIds, {'bronze', 'blib-blub'});
+    expect(codec.encode(restored), codec.encode(original));
+  });
+
+  test('migrates version 3 without claiming new rewards or measurements', () {
+    final oldDocument = jsonDecode(
+      codec.encode(
+        const StudentProgress(
+          courses: {
+            'c': CourseProgress(
+              lessons: {
+                'l': LessonProgress(
+                  completedExerciseIds: {'e'},
+                  stars: 2,
+                  tries: 3,
+                  exerciseAccuracies: {'e': 95},
+                ),
+              },
+            ),
+          },
+        ),
+      ),
+    ) as Map<String, dynamic>;
+    oldDocument['schemaVersion'] = 3;
+    final courses = oldDocument['progress']['courses'] as Map<String, dynamic>;
+    final course = courses['c'] as Map<String, dynamic>;
+    course.remove('completedEventIds');
+    course.remove('unlockedRewardIds');
+    (course['lessons']['l'] as Map<String, dynamic>).remove(
+      'exerciseStatistics',
+    );
+    final restored = codec.decode(jsonEncode(oldDocument));
+    expect(restored.courses['c']!.lessons['l']!.tries, 3);
+    expect(restored.courses['c']!.lessons['l']!.exerciseAccuracies, {'e': 95});
+    expect(restored.courses['c']!.lessons['l']!.exerciseStatistics, isEmpty);
+    expect(restored.courses['c']!.completedEventIds, isEmpty);
+    expect(restored.courses['c']!.unlockedRewardIds, isEmpty);
+  });
+
+  test('rejects inconsistent persisted statistics', () {
+    final document = jsonDecode(
+      codec.encode(
+        const StudentProgress(
+          courses: {
+            'c': CourseProgress(
+              lessons: {
+                'l': LessonProgress(
+                  exerciseStatistics: {
+                    'e': ExerciseStatistics(totalInputs: 2, correctInputs: 2),
+                  },
+                ),
+              },
+            ),
+          },
+        ),
+      ),
+    ) as Map<String, dynamic>;
+    document['progress']['courses']['c']['lessons']['l']['exerciseStatistics']['e']['correctInputs'] =
+        3;
+    expect(
+      () => codec.decode(jsonEncode(document)),
+      throwsA(isA<ProgressDataFormatException>()),
+    );
+  });
+
   test('rejects malformed JSON with a known format error', () {
     expect(
       () => codec.decode('{'),
@@ -103,7 +195,7 @@ void main() {
     expect(
       () => codec.decode('''
         {
-          "schemaVersion": 4,
+          "schemaVersion": 99,
           "progress": {"courses": {}, "settings": {}}
         }
       '''),

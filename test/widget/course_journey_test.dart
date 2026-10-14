@@ -27,7 +27,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Módulo 1'));
+      expect(_focusedLabel(), startsWith('O Despertar da Aurora'));
       expect((audio.playedCues.last as SpeechCue).text, _focusedLabel());
       expect(audio.events, contains('cancel'));
 
@@ -44,7 +44,7 @@ void main() {
       // Wrap from the first toolbar control to the last module and back.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Módulo 2'));
+      expect(_focusedLabel(), startsWith('Navegação'));
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Alterar tema visual. Padrão');
@@ -54,10 +54,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Lição 1'));
+      expect(_focusedLabel(), startsWith('Sensores da Aurora'));
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Começar lição');
+      expect(_focusedLabel(), 'Começar missão');
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(
@@ -75,6 +75,8 @@ void main() {
       await _pumpDemo(tester, repository: _createRepository(), audio: audio);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
         'entrada do exercício',
@@ -86,12 +88,15 @@ void main() {
       // Tab leaves typing; arrows and Space operate native controls there.
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Ativar teclado');
+      expect(_focusedLabel(), 'Pausar prática');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Atalhos F1');
+      expect(_focusedLabel(), 'Ajuda F1');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'Retomar prática');
       await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
       await tester.pumpAndSettle();
       expect(
@@ -114,9 +119,9 @@ void main() {
       final sequenceCount = audio.sequences.length;
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Voltar à lição');
+      expect(_focusedLabel(), 'Voltar à missão');
       expect(audio.sequences.length, sequenceCount + 1);
-      expect((audio.playedCues.last as SpeechCue).text, 'Voltar à lição');
+      expect((audio.playedCues.last as SpeechCue).text, 'Voltar à missão');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Próximo exercício');
@@ -132,11 +137,11 @@ void main() {
         await tester.pump();
       }
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Próxima lição');
+      expect(_focusedLabel(), 'Próxima missão');
       await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
       await tester.pumpAndSettle();
       expect(find.text('Asa Esquerda'), findsWidgets);
-      expect(_focusedLabel(), 'Começar lição');
+      expect(_focusedLabel(), 'Começar missão');
       expect(tester.takeException(), isNull);
     },
   );
@@ -153,12 +158,12 @@ void main() {
       await _pumpDemo(tester, repository: _createRepository());
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Módulo 1'));
+      expect(_focusedLabel(), startsWith('O Despertar da Aurora'));
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Lição 2'));
+      expect(_focusedLabel(), startsWith('Asa Esquerda'));
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(find.text('Asa Esquerda'), findsWidgets);
@@ -216,31 +221,33 @@ void main() {
           assetPath: 'assets/content/exploradores_espaciais.json',
         ),
       );
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
+      await _startCourse(tester);
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
         'entrada do exercício',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
       await tester.pumpAndSettle();
-      expect((audio.playedCues.last as ClickCue).doubleClick, isFalse);
+      expect((audio.playedCues.last as SpeechCue).text, 'f');
       await tester.sendKeyEvent(LogicalKeyboardKey.keyX, character: 'x');
       await tester.pumpAndSettle();
-      expect((audio.playedCues.last as ClickCue).doubleClick, isTrue);
+      expect(audio.playedCues.whereType<ClickCue>().last.doubleClick, isTrue);
+      expect(
+        find.bySemanticsLabel(RegExp('Tecla x incorreta')),
+        findsOneWidget,
+      );
       final clicksBefore = audio.playedCues.whereType<ClickCue>().length;
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
       await tester.pumpAndSettle();
       expect(audio.playedCues.whereType<ClickCue>().length, clicksBefore);
+      expect(_focusedLabel(), 'Retomar prática');
+      await tester.sendKeyEvent(LogicalKeyboardKey.space, character: ' ');
+      await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
         'entrada do exercício',
-      );
-      expect(
-        find.bySemanticsLabel(RegExp('Tecla x incorreta')),
-        findsOneWidget,
       );
     },
   );
@@ -254,7 +261,7 @@ void main() {
 
       final module = find.widgetWithText(
         OutlinedButton,
-        'Módulo 1 · O Despertar da Aurora',
+        'O Despertar da Aurora',
       );
 
       final node = tester.getSemantics(module);
@@ -265,32 +272,38 @@ void main() {
       await tester.tap(module);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Lição 1 · Sensores da Aurora'));
+      await tester.tap(find.text('Sensores da Aurora'));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Exercícios da missão'));
+      await tester.pumpAndSettle();
       expect(find.text('1. Tecla F'), findsOneWidget);
-      expect(find.text('2. Tecla J'), findsOneWidget);
+      final locked = find.widgetWithText(OutlinedButton, '2. Tecla J');
+      expect(tester.widget<OutlinedButton>(locked).onPressed, isNull);
 
-      await tester.tap(find.text('2. Tecla J'));
+      await tester.tap(find.text('1. Tecla F'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Exercício 2 de 2'), findsOneWidget);
+      expect(find.text('Exercício 1 de 2'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text('0 de 2 exercícios concluídos'), findsOneWidget);
+      expect(find.text('Começar missão'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text('Lição 1 · Sensores da Aurora'), findsOneWidget);
+      expect(
+        find.widgetWithText(OutlinedButton, 'Sensores da Aurora'),
+        findsOneWidget,
+      );
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
       expect(find.text('Digitavox'), findsOneWidget);
-      expect(find.bySemanticsLabel('0 estrelas conquistadas'), findsOneWidget);
+      expect(find.text('0 de 4 missões concluídas'), findsOneWidget);
     },
   );
 
@@ -299,8 +312,7 @@ void main() {
     (tester) async {
       await _pumpDemo(tester, repository: _createRepository());
 
-      await tester.tap(find.text('Começar curso'));
-      await tester.pumpAndSettle();
+      await _startCourse(tester);
 
       for (var index = 0; index < 3; index++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
@@ -309,7 +321,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Exercício concluído!'), findsOneWidget);
-      expect(find.text('Lição concluída!'), findsNothing);
+      expect(find.text('Missão concluída!'), findsNothing);
 
       await tester.tap(find.text('Próximo exercício'));
       await tester.pumpAndSettle();
@@ -320,14 +332,20 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(find.text('Lição concluída!'), findsOneWidget);
+      expect(find.text('Missão concluída!'), findsOneWidget);
       expect(
         find.bySemanticsLabel('Você ganhou 3 de 3 estrelas.'),
         findsOneWidget,
       );
-      expect(find.text('Precisão média: 100%'), findsOneWidget);
-      expect(find.text('1 tentativa na lição'), findsOneWidget);
-      expect(find.text('Próxima lição'), findsOneWidget);
+      expect(find.textContaining('Precisão 100'), findsNothing);
+      await tester.ensureVisible(find.text('Ouvir diário de bordo'));
+      await tester.tap(find.text('Ouvir diário de bordo'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Precisão 100'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.text('Fechar diário'));
+      await tester.pumpAndSettle();
+      expect(find.text('Próxima missão'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -336,8 +354,7 @@ void main() {
     tester,
   ) async {
     await _pumpDemo(tester, repository: _createRepository());
-    await tester.tap(find.text('Começar curso'));
-    await tester.pumpAndSettle();
+    await _startCourse(tester);
 
     for (final key in <(LogicalKeyboardKey, String)>[
       (LogicalKeyboardKey.keyF, 'f'),
@@ -361,10 +378,10 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    expect(find.text('Lição ainda não concluída'), findsOneWidget);
-    expect(find.text('Lição concluída!'), findsNothing);
-    expect(find.text('Tentar lição novamente'), findsOneWidget);
-    expect(_focusedLabel(), 'Tentar lição novamente');
+    expect(find.text('Vamos praticar mais'), findsOneWidget);
+    expect(find.text('Missão concluída!'), findsNothing);
+    expect(find.text('Praticar novamente'), findsOneWidget);
+    expect(_focusedLabel(), 'Praticar novamente');
     expect(find.byIcon(Icons.star_rounded), findsNothing);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
@@ -379,12 +396,14 @@ void main() {
 
     await _pumpDemo(tester, repository: repository);
 
-    await tester.tap(find.text('Módulo 1 · O Despertar da Aurora'));
+    await tester.tap(find.text('O Despertar da Aurora'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Lição 2 · Asa Esquerda'));
+    await tester.tap(find.text('Asa Esquerda'));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Exercícios da missão'));
+    await tester.pumpAndSettle();
     final activity = find.widgetWithText(
       OutlinedButton,
       '1. Código da Asa Esquerda',
@@ -406,8 +425,7 @@ void main() {
 
       await _pumpDemo(tester, repository: repository);
 
-      await tester.tap(find.text('Começar curso'));
-      await tester.pumpAndSettle();
+      await _startCourse(tester);
 
       for (var index = 0; index < 3; index++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
@@ -425,85 +443,64 @@ void main() {
       await tester.tap(find.text('Continuar curso'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tecla J'), findsOneWidget);
+      expect(find.text('Continuar missão'), findsOneWidget);
+      await tester.tap(find.text('Continuar missão'));
+      await tester.pumpAndSettle();
+      expect(find.text('Exercício 2 de 2'), findsOneWidget);
     },
   );
 
   testWidgets(
-    'JSON drives character assets, narration and missing-image fallback',
+    'JSON controls briefing narration and missing artwork never blocks practice',
     (tester) async {
       final audio = RecordingAudioGuidance();
-      final repository = _createRepository();
-
+      final json = journeyJson();
+      final course = (json['courses'] as List).single as Map<String, Object?>;
+      final module = (course['modules'] as List).first as Map<String, Object?>;
+      final lesson = (module['lessons'] as List).first as Map<String, Object?>;
+      (lesson['scene'] as Map<String, Object?>)['characterId'] = 'explorer';
       await _pumpDemo(
         tester,
-        repository: repository,
+        repository: _createRepository(),
         audio: audio,
-        catalog: JourneyFixtureCatalog(),
+        catalog: JourneyFixtureCatalog(json),
       );
-
-      expect(find.text('Bem-vindo à jornada de demonstração.'), findsOneWidget);
-
-      expect(
-        find.bySemanticsLabel(
-          'Aurora. Personagem guia da jornada de demonstração.',
-        ),
-        findsOneWidget,
-      );
-
-      expect(find.byType(Image), findsOneWidget);
-
       expect(
         (audio.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/welcome.wav',
       );
-
+      await tester.tap(find.text('Apresentação do curso'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bem-vindo à jornada de demonstração.'), findsOneWidget);
+      await tester.ensureVisible(find.text('Parar áudio'));
       await tester.tap(find.text('Parar áudio'));
       await tester.pumpAndSettle();
-
       expect(audio.events.last, 'cancel');
-
-      await tester.tap(find.text('Ouvir novamente'));
+      await tester.ensureVisible(find.text('Ouvir apresentação'));
+      await tester.tap(find.text('Ouvir apresentação'));
       await tester.pumpAndSettle();
-
       expect(
         (audio.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/welcome.wav',
       );
-
       await tester.ensureVisible(find.text('Começar curso'));
-      await tester.pumpAndSettle();
-
       await tester.tap(find.text('Começar curso'));
       await tester.pumpAndSettle();
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-      await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
-      await tester.pump();
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
-      await tester.pumpAndSettle();
-
-      expect(_focusedLabel(), 'Próximo exercício');
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pumpAndSettle();
-
       expect(
         find.bySemanticsLabel(
           'Explorador. Personagem explorador da jornada de demonstração.',
         ),
         findsOneWidget,
       );
-
-      expect(find.byIcon(Icons.person_outline), findsOneWidget);
-
+      expect(find.byType(Image), findsOneWidget);
+      await tester.ensureVisible(find.text('Começar missão'));
+      await tester.tap(find.text('Começar missão'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Image), findsNothing);
       expect(
         (audio.playedCues.last as SpeechCue).audioAsset,
-        'assets/audio/demo/key_j.wav',
+        'assets/audio/demo/key_f.wav',
       );
-
       expect(tester.takeException(), isNull);
     },
   );
@@ -523,7 +520,7 @@ void main() {
 
     await _pumpDemo(tester, repository: repository);
 
-    final module = find.text('Módulo 1 · O Despertar da Aurora');
+    final module = find.text('O Despertar da Aurora');
 
     await tester.scrollUntilVisible(module, 250);
     await tester.pumpAndSettle();
@@ -531,10 +528,10 @@ void main() {
     await tester.tap(module);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Lição 1 · Sensores da Aurora'));
+    await tester.tap(find.text('Sensores da Aurora'));
     await tester.pumpAndSettle();
 
-    final start = find.text('Começar lição');
+    final start = find.text('Começar missão');
 
     await tester.scrollUntilVisible(start, 250);
     await tester.pumpAndSettle();
@@ -542,12 +539,10 @@ void main() {
     await tester.tap(start);
     await tester.pumpAndSettle();
 
-    final keyboard = find.text('Ativar teclado');
-
-    await tester.scrollUntilVisible(keyboard, 250);
-    await tester.pumpAndSettle();
-
-    await tester.tap(keyboard);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'entrada do exercício',
+    );
 
     for (var index = 0; index < 3; index++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
@@ -567,8 +562,7 @@ void main() {
 
     await _pumpDemo(tester, repository: repository);
 
-    await tester.tap(find.text('Começar curso'));
-    await tester.pumpAndSettle();
+    await _startCourse(tester);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.f2);
     await tester.pump();
@@ -578,19 +572,22 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.f1);
     await tester.pumpAndSettle();
 
-    expect(find.text('Atalhos do exercício'), findsOneWidget);
+    expect(find.text('Ajuda · tempo pausado'), findsOneWidget);
     expect(find.textContaining('F9 — tempo'), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
 
     expect(find.text('Sensores da Aurora'), findsWidgets);
-    expect(find.text('0 de 2 exercícios concluídos'), findsOneWidget);
+    expect(find.text('Começar missão'), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
 
-    expect(find.text('Lição 1 · Sensores da Aurora'), findsOneWidget);
+    expect(
+      find.widgetWithText(OutlinedButton, 'Sensores da Aurora'),
+      findsOneWidget,
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
@@ -644,6 +641,15 @@ void main() {
 
     expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
   });
+}
+
+Future<void> _startCourse(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Começar curso'));
+  await tester.tap(find.text('Começar curso'));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.text('Começar missão'));
+  await tester.tap(find.text('Começar missão'));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _pumpDemo(
