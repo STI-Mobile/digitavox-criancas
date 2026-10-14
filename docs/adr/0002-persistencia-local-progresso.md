@@ -77,3 +77,5 @@ Migrações de identidade do conteúdo são declaradas pelo curso com `legacyLes
 - Todo o agregado é lido e gravado de uma vez; isso é adequado ao volume atual, mas deve ser revisto se o progresso crescer muito ou exigir consultas/transações parciais.
 - Preferências não são armazenamento para dados críticos: a própria dependência informa que uma gravação pode ser persistida em disco de forma assíncrona sem garantia após o retorno. Perda excepcional de progresso ainda é possível, e não há sincronização, backup controlado pelo app ou recuperação em nuvem.
 - Documento inválido não impede a inicialização, mas o app começa vazio e preserva o valor inválido até a próxima alteração válida sobrescrevê-lo.
+
+Novos perfis usam `themePreference: "dark"` por padrão. O tema apresentado como Claro conserva o valor `"standard"`; preferências existentes e a migração do schema 1 continuam iguais. A mudança do padrão e do nome visível não altera o contrato persistido nem exige nova versão do schema.
