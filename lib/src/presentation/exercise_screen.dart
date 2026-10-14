@@ -25,6 +25,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
 
   late final ExerciseSessionViewModel _viewModel;
   late final FocusNode _keyboardFocusNode;
+  final _resumeFocusNode = FocusNode(debugLabel: 'retomar prática');
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
   @override
   void dispose() {
     _keyboardFocusNode.dispose();
+    _resumeFocusNode.dispose();
     super.dispose();
   }
 
@@ -66,27 +68,62 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
     }
     final input = _inputInterpreter.interpret(event);
     if (input == null) return KeyEventResult.ignored;
+    if (_viewModel.isPaused) return KeyEventResult.handled;
     unawaited(widget.engine.stopNarration());
     unawaited(_viewModel.handleInput(input));
     return KeyEventResult.handled;
   }
 
-  Future<void> _handleShortcut(ExerciseShortcut shortcut) {
-    unawaited(widget.engine.stopNarration());
-    unawaited(
-      _viewModel.handleShortcut(
-        shortcut,
-        lessonPresentation: widget.engine.lesson?.scene?.text,
-        lessonInstruction: _viewModel.exercise.prompt,
-      ),
+  Future<void> _handleShortcut(ExerciseShortcut shortcut) async {
+    await widget.engine.stopNarration();
+    await _viewModel.handleShortcut(
+      shortcut,
+      lessonPresentation: widget.engine.lesson?.scene?.text,
+      lessonInstruction:
+          widget.engine.lesson?.scene?.instruction ??
+          _viewModel.exercise.prompt,
     );
-    if (shortcut == ExerciseShortcut.repeatExercise &&
-        widget.engine.canReplayNarration) {
-      return widget.engine.replayNarration();
-    } else {
-      return widget.engine.courseAudio.speakText(_viewModel.announcement!);
+    if (shortcut == ExerciseShortcut.help && !_viewModel.helpVisible) {
+      if (_viewModel.isPaused) {
+        _resumeFocusNode.requestFocus();
+      } else {
+        _keyboardFocusNode.requestFocus();
+      }
+    }
+    if (shortcut == ExerciseShortcut.help && _viewModel.helpVisible) {
+      await widget.engine.narrateHelp();
+      return;
+    }
+    final announcement = _viewModel.announcement;
+    if (announcement != null) {
+      await widget.engine.courseAudio.speakText(announcement);
     }
   }
+
+  void _pausePractice() {
+    widget.engine.pausePractice();
+    _resumeFocusNode.requestFocus();
+  }
+
+  void _resumePractice() {
+    widget.engine.resumePractice();
+    _keyboardFocusNode.requestFocus();
+  }
+
+  Map<String, String> get _shortcutActions =>
+      widget.engine.course.practice.shortcuts.isEmpty
+      ? const {
+          'F1': 'help',
+          'F2': 'nextKey',
+          'F3': 'spellRemaining',
+          'F4': 'remaining',
+          'F5': 'lessonInstruction',
+          'F6': 'lessonPresentation',
+          'F7': 'repeatExercise',
+          'F8': 'currentTime',
+          'F9': 'statistics',
+        }
+      : widget.engine.course.practice.shortcuts;
 
   ExerciseShortcut? _shortcutFor(KeyEvent event) {
     final key = event.logicalKey;
@@ -97,33 +134,41 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       return null;
     }
     final control = keyboard.isControlPressed;
-    if (key == LogicalKeyboardKey.f1) return ExerciseShortcut.help;
-    if (key == LogicalKeyboardKey.f2 ||
-        (key == LogicalKeyboardKey.arrowDown && !control)) {
+    final functionKeys = <LogicalKeyboardKey, String>{
+      LogicalKeyboardKey.f1: 'F1',
+      LogicalKeyboardKey.f2: 'F2',
+      LogicalKeyboardKey.f3: 'F3',
+      LogicalKeyboardKey.f4: 'F4',
+      LogicalKeyboardKey.f5: 'F5',
+      LogicalKeyboardKey.f6: 'F6',
+      LogicalKeyboardKey.f7: 'F7',
+      LogicalKeyboardKey.f8: 'F8',
+      LogicalKeyboardKey.f9: 'F9',
+    };
+    final functionKey = functionKeys[key];
+    if (functionKey != null) {
+      final action = _shortcutActions[functionKey];
+      for (final shortcut in ExerciseShortcut.values) {
+        if (shortcut.name == action) return shortcut;
+      }
+      return null;
+    }
+    if (key == LogicalKeyboardKey.arrowDown && !control) {
       return ExerciseShortcut.nextKey;
     }
-    if (key == LogicalKeyboardKey.f3 ||
-        (key == LogicalKeyboardKey.arrowRight && control)) {
-      return ExerciseShortcut.spellRemaining;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      return control
+          ? ExerciseShortcut.spellRemaining
+          : ExerciseShortcut.remaining;
     }
-    if (key == LogicalKeyboardKey.f4 ||
-        (key == LogicalKeyboardKey.arrowRight && !control)) {
-      return ExerciseShortcut.remaining;
+    if (key == LogicalKeyboardKey.arrowUp) {
+      return control
+          ? ExerciseShortcut.lessonPresentation
+          : ExerciseShortcut.repeatExercise;
     }
-    if (key == LogicalKeyboardKey.f5 ||
-        (key == LogicalKeyboardKey.arrowUp && !control)) {
-      return ExerciseShortcut.repeatExercise;
-    }
-    if (key == LogicalKeyboardKey.f6 ||
-        (key == LogicalKeyboardKey.arrowUp && control)) {
-      return ExerciseShortcut.lessonPresentation;
-    }
-    if (key == LogicalKeyboardKey.f7 ||
-        (key == LogicalKeyboardKey.arrowDown && control)) {
+    if (key == LogicalKeyboardKey.arrowDown && control) {
       return ExerciseShortcut.lessonInstruction;
     }
-    if (key == LogicalKeyboardKey.f8) return ExerciseShortcut.currentTime;
-    if (key == LogicalKeyboardKey.f9) return ExerciseShortcut.statistics;
     if (key == LogicalKeyboardKey.arrowLeft) {
       return control ? ExerciseShortcut.accuracy : ExerciseShortcut.repetition;
     }
@@ -143,24 +188,35 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
       child: Focus(
         focusNode: _keyboardFocusNode,
         onKeyEvent: _handleKeyEvent,
-        skipTraversal: _viewModel.status == ExerciseSessionStatus.completed,
-        canRequestFocus: _viewModel.status != ExerciseSessionStatus.completed,
+        skipTraversal:
+            _viewModel.status == ExerciseSessionStatus.completed ||
+            _viewModel.completionError != null,
+        canRequestFocus:
+            _viewModel.status != ExerciseSessionStatus.completed &&
+            _viewModel.completionError == null,
         child: AnimatedBuilder(
           animation: _viewModel,
           builder: (context, _) {
+            if (_viewModel.completionError != null) {
+              return _ExerciseOutcome(
+                title: 'Resultado aguardando salvamento',
+                message: _viewModel.completionError!,
+                actionLabel: 'Tentar salvar novamente',
+                onContinue: _viewModel.retryCompletion,
+              );
+            }
             if (_viewModel.status == ExerciseSessionStatus.completed) {
               if (widget.engine.currentLessonAttemptFinished &&
                   !widget.engine.currentLessonCompleted) {
                 return _ExerciseOutcome(
-                  title: 'Lição ainda não concluída',
-                  message:
-                      'Você ainda não conquistou estrelas nesta lição. '
-                      'Tente novamente para concluí-la.',
-                  actionLabel: 'Tentar lição novamente',
+                  title: 'Vamos praticar mais',
+                  message: _viewModel.timeExpired
+                      ? 'O tempo desta prática terminou. Vamos praticar novamente.'
+                      : 'Vamos praticar novamente para concluir esta missão. Você pode usar a ajuda.',
+                  actionLabel: 'Praticar novamente',
                   onContinue: () async {
                     widget.engine.retryCurrentLesson();
                   },
-                  onNarrate: widget.engine.courseAudio.speakText,
                 );
               }
               if (widget.engine.currentLessonCompleted) {
@@ -171,17 +227,21 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                   tries: widget.engine.currentLessonTries,
                   exerciseStatistics:
                       widget.engine.currentLessonExerciseStatistics,
-                  actionLabel: hasNextLesson
-                      ? 'Próxima lição'
-                      : 'Voltar à lição',
+                  actionLabel: widget.engine.isModuleReadyForCompletion
+                      ? 'Concluir módulo'
+                      : hasNextLesson
+                      ? 'Próxima missão'
+                      : 'Voltar à missão',
                   message:
-                      'Muito bem! Você concluiu a lição '
+                      'Muito bem! Você concluiu '
                       '${widget.engine.lesson!.title}.',
                   onContinue: () async {
                     widget.engine.continueAfterExercise();
                   },
-                  character: widget.engine.character,
+                  diary: widget.engine.currentLessonDiary,
+                  onDiaryNarration: widget.engine.narrateDiary,
                   onNarrate: widget.engine.courseAudio.speakText,
+                  onBack: () => widget.engine.openModule(widget.engine.module!),
                 );
               }
 
@@ -194,7 +254,6 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                 onContinue: () async {
                   widget.engine.continueAfterExercise();
                 },
-                onNarrate: widget.engine.courseAudio.speakText,
               );
             }
 
@@ -202,14 +261,13 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    _viewModel.exercise.prompt,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                Text(
+                  'Exercício ${widget.engine.lesson!.exercises.indexOf(widget.engine.exercise!) + 1} de ${widget.engine.lesson!.exercises.length}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
+                const SizedBox(height: DvxSpacing.sm),
+                Text(_viewModel.exercise.prompt, textAlign: TextAlign.center),
                 const SizedBox(height: DvxSpacing.md),
                 DvxKeyPrompt(
                   value: expected,
@@ -217,31 +275,11 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                 ),
                 const SizedBox(height: DvxSpacing.md),
                 if (_viewModel.totalRepetitions > 1)
-                  DvxGameCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DvxSpacing.md,
-                      vertical: DvxSpacing.sm,
-                    ),
-                    child: Text(
-                      'Repetição ${_viewModel.currentRepetition} de ${_viewModel.totalRepetitions}',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                  Text(
+                    'Repetição ${_viewModel.currentRepetition} de ${_viewModel.totalRepetitions}',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                const SizedBox(height: DvxSpacing.sm),
-                Text(
-                  _viewModel.typedInput.isEmpty
-                      ? 'Aguardando entrada'
-                      : 'Digitado: ${_viewModel.typedInput}',
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  _viewModel.hasPendingInput
-                      ? 'Próxima tecla: ${_viewModel.expectedCharacter.toUpperCase()}'
-                      : 'Finalizando exercício',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
                 const SizedBox(height: DvxSpacing.md),
                 DvxFeedback(
                   kind: switch (_viewModel.status) {
@@ -254,9 +292,10 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                     ExerciseSessionStatus.completed =>
                       DvxFeedbackKind.completed,
                   },
-                  message:
-                      _viewModel.announcement ??
-                      'Digite a próxima tecla do exercício.',
+                  message: _viewModel.isPaused
+                      ? 'Prática pausada. O tempo está parado.'
+                      : _viewModel.announcement ??
+                            'Digite a próxima tecla do exercício.',
                 ),
                 const SizedBox(height: DvxSpacing.md),
                 Wrap(
@@ -264,34 +303,50 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                   spacing: DvxSpacing.sm,
                   runSpacing: DvxSpacing.sm,
                   children: [
-                    KeyboardNavigationLabel(
-                      label: 'Ativar teclado',
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          unawaited(widget.engine.stopNarration());
-                          _keyboardFocusNode.requestFocus();
-                        },
-                        icon: const Icon(Icons.keyboard),
-                        label: const Text('Ativar teclado'),
+                    if (_viewModel.isPaused && !_viewModel.helpVisible)
+                      KeyboardNavigationLabel(
+                        label: 'Retomar prática',
+                        child: FilledButton.icon(
+                          focusNode: _resumeFocusNode,
+                          onPressed: _resumePractice,
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Retomar prática'),
+                        ),
+                      )
+                    else if (!_viewModel.helpVisible)
+                      KeyboardNavigationLabel(
+                        label: 'Pausar prática',
+                        child: OutlinedButton.icon(
+                          onPressed: _pausePractice,
+                          icon: const Icon(Icons.pause),
+                          label: const Text('Pausar prática'),
+                        ),
                       ),
-                    ),
                     KeyboardNavigationLabel(
                       label: _viewModel.helpVisible
                           ? 'Fechar atalhos'
-                          : 'Atalhos F1',
+                          : 'Ajuda F1',
                       child: OutlinedButton.icon(
                         onPressed: () => _handleShortcut(ExerciseShortcut.help),
                         icon: const Icon(Icons.help_outline),
                         label: Text(
                           _viewModel.helpVisible
                               ? 'Fechar atalhos'
-                              : 'Atalhos F1',
+                              : 'Ajuda F1',
                         ),
                       ),
                     ),
                   ],
                 ),
-                if (_viewModel.helpVisible) const _ExerciseShortcutHelp(),
+                if (_viewModel.helpVisible)
+                  _ExerciseShortcutHelp(shortcuts: _shortcutActions),
+                const SizedBox(height: DvxSpacing.md),
+                Text(
+                  'Ao sair, os exercícios concluídos ficam salvos. '
+                  'Este exercício recomeça quando você voltar.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
               ],
             );
           },
@@ -307,14 +362,12 @@ final class _ExerciseOutcome extends StatefulWidget {
     required this.message,
     required this.actionLabel,
     required this.onContinue,
-    required this.onNarrate,
   });
 
   final String title;
   final String message;
   final String actionLabel;
   final Future<void> Function() onContinue;
-  final Future<void> Function(String text) onNarrate;
 
   @override
   State<_ExerciseOutcome> createState() => _ExerciseOutcomeState();
@@ -327,7 +380,6 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
   @override
   void initState() {
     super.initState();
-    _narrateMessage();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _continueFocusNode.requestFocus();
@@ -336,19 +388,9 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
   }
 
   @override
-  void didUpdateWidget(covariant _ExerciseOutcome oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.message != widget.message) _narrateMessage();
-  }
-
-  @override
   void dispose() {
     _continueFocusNode.dispose();
     super.dispose();
-  }
-
-  void _narrateMessage() {
-    unawaited(widget.onNarrate(widget.message));
   }
 
   Future<void> _continue() async {
@@ -419,40 +461,44 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
 }
 
 final class _ExerciseShortcutHelp extends StatelessWidget {
-  const _ExerciseShortcutHelp();
+  const _ExerciseShortcutHelp({required this.shortcuts});
 
-  static const items = [
-    'F1 — abrir ou fechar esta ajuda',
-    'F2 ou seta para baixo — próxima tecla',
-    'F3 ou Control + seta para direita — soletrar o restante',
-    'F4 ou seta para direita — informar o restante',
-    'F5 ou seta para cima — repetir o exercício',
-    'F6 ou Control + seta para cima — apresentação da lição',
-    'F7 ou Control + seta para baixo — instrução da lição',
-    'F8 — hora atual',
-    'F9 — tempo e percentual de acertos',
-    'Seta para esquerda — repetição atual',
-    'Control + seta para esquerda — percentual de acertos',
-    'Tab — acessar os controles; Shift + Tab — controle anterior',
-    'Nos controles, setas para cima e baixo — navegar',
-    'Enter ou espaço — acionar o controle selecionado',
-    'Escape — voltar',
-  ];
+  final Map<String, String> shortcuts;
+
+  static const _descriptions = <String, String>{
+    'help': 'abrir ou fechar esta ajuda',
+    'nextKey': 'próxima letra e dedo',
+    'spellRemaining': 'soletrar o restante',
+    'remaining': 'informar o restante',
+    'repeatExercise': 'repetir o exercício',
+    'lessonPresentation': 'apresentação da missão',
+    'lessonInstruction': 'instrução da missão',
+    'currentTime': 'hora atual',
+    'statistics': 'tempo e percentual de acertos',
+    'accuracy': 'percentual de acertos',
+    'repetition': 'repetição atual',
+  };
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    container: true,
-    label: items.join('. '),
-    child: ExcludeSemantics(
-      child: Card(
-        margin: const EdgeInsets.only(top: DvxSpacing.md),
-        child: Padding(
-          padding: const EdgeInsets.all(DvxSpacing.md),
+  Widget build(BuildContext context) {
+    final items = [
+      for (final shortcut in shortcuts.entries)
+        '${shortcut.key} — ${_descriptions[shortcut.value] ?? shortcut.value}',
+      'Tab — acessar os controles; Shift + Tab — controle anterior',
+      'Nos controles, setas para cima e baixo — navegar',
+      'Enter ou espaço — acionar o controle selecionado',
+      'Escape — sair da prática e voltar à missão',
+    ];
+    return Semantics(
+      container: true,
+      label: 'Ajuda. O tempo está pausado. ${items.join('. ')}',
+      child: ExcludeSemantics(
+        child: DvxGameCard(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Atalhos do exercício',
+                'Ajuda · tempo pausado',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: DvxSpacing.sm),
@@ -465,6 +511,6 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

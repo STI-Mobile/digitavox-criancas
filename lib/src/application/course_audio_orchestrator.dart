@@ -32,20 +32,35 @@ final class CourseAudioOrchestrator {
       };
     }
 
-    return List<AudioCue>.unmodifiable(
-      declaredCues.map(
-        (cue) => switch (cue.type) {
-          ContentAudioCueType.speech => SpeechCue(
+    return List<AudioCue>.unmodifiable([
+      for (final cue in declaredCues)
+        if (cue.type == ContentAudioCueType.speech)
+          SpeechCue(
             id: cue.id,
             text: cue.text ?? '',
             audioAsset: cue.asset,
             speaker: cue.speaker,
-          ),
-          ContentAudioCueType.sfx => SfxCue(id: cue.id, asset: cue.asset!),
-          ContentAudioCueType.music => MusicCue(id: cue.id, asset: cue.asset!),
-        },
-      ),
-    );
+          )
+        else if (cue.fallback == ContentAudioFallback.systemClick &&
+            cue.asset == null)
+          ClickCue(
+            id: cue.id,
+            doubleClick: event == CourseAudioEvent.incorrectInput,
+          )
+        else if (cue.asset != null)
+          switch (cue.type) {
+            ContentAudioCueType.sfx => SfxCue(id: cue.id, asset: cue.asset!),
+            ContentAudioCueType.music => MusicCue(
+              id: cue.id,
+              asset: cue.asset!,
+            ),
+            ContentAudioCueType.speech => SpeechCue(
+              id: cue.id,
+              text: cue.text ?? '',
+              audioAsset: cue.asset,
+            ),
+          },
+    ]);
   }
 
   bool hasCues(

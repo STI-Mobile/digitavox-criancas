@@ -12,6 +12,7 @@ final class DvxGameScaffold extends StatelessWidget {
     required this.body,
     this.leading,
     this.actions,
+    this.bottomNavigationBar,
     super.key,
   });
 
@@ -20,10 +21,12 @@ final class DvxGameScaffold extends StatelessWidget {
   final Widget body;
   final Widget? leading;
   final List<Widget>? actions;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: courseTheme.background,
+    bottomNavigationBar: bottomNavigationBar,
     appBar: AppBar(
       backgroundColor: courseTheme.background,
       leading: leading,
@@ -31,6 +34,7 @@ final class DvxGameScaffold extends StatelessWidget {
       actions: actions,
     ),
     body: Stack(
+      fit: StackFit.expand,
       children: [
         Positioned.fill(child: _CourseBackdrop(theme: courseTheme)),
         SafeArea(child: body),
@@ -152,7 +156,7 @@ final class DvxKeyPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final singleKey = value.runes.length == 1;
+    final shortTarget = value.runes.length <= 5;
     return Semantics(
       label: 'Exercício: $value. Próxima tecla: $nextCharacter.',
       child: ExcludeSemantics(
@@ -180,17 +184,14 @@ final class DvxKeyPrompt extends StatelessWidget {
                   ],
           ),
           alignment: Alignment.center,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value.toUpperCase(),
-              style:
-                  (singleKey
-                          ? Theme.of(context).textTheme.displayLarge
-                          : Theme.of(context).textTheme.headlineMedium)
-                      ?.copyWith(color: scheme.primary),
-              textAlign: TextAlign.center,
-            ),
+          child: Text(
+            value.toUpperCase(),
+            style:
+                (shortTarget
+                        ? Theme.of(context).textTheme.displayLarge
+                        : Theme.of(context).textTheme.headlineMedium)
+                    ?.copyWith(color: scheme.primary),
+            textAlign: TextAlign.center,
           ),
         ),
       ),

@@ -40,142 +40,244 @@ final class AppSettings {
   );
 }
 
+/// Measurements for one completed exercise of the current/last attempt.
+final class ExerciseStatistics {
+  const ExerciseStatistics({
+    this.elapsedMilliseconds = 0,
+    this.totalInputs = 0,
+    this.correctInputs = 0,
+    this.errorPairs = const <String, int>{},
+  });
+
+  final int elapsedMilliseconds;
+  final int totalInputs;
+  final int correctInputs;
+
+  /// Keys identify expected → received characters, e.g. "f→j".
+  final Map<String, int> errorPairs;
+
+  void validate() {
+    if (elapsedMilliseconds < 0 ||
+        totalInputs < 0 ||
+        correctInputs < 0 ||
+        correctInputs > totalInputs ||
+        errorPairs.entries.any(
+          (entry) => entry.key.isEmpty || entry.value < 1,
+        ) ||
+        errorPairs.values.fold(0, (sum, count) => sum + count) >
+            totalInputs - correctInputs) {
+      throw ArgumentError('Estatísticas de exercício inconsistentes.');
+    }
+  }
+}
+
 final class LessonProgress {
   const LessonProgress({
     this.completedExerciseIds = const <String>{},
     this.stars = 0,
     this.tries = 0,
     this.exerciseAccuracies = const <String, int>{},
+    this.exerciseStatistics = const <String, ExerciseStatistics>{},
     this.timeElapsed = 0,
     this.totalInputs = 0,
   });
 
   final Set<String> completedExerciseIds;
+
+  /// Best historical reward; does not approve a subsequent attempt.
   final int stars;
   final int tries;
   final Map<String, int> exerciseAccuracies;
+  final Map<String, ExerciseStatistics> exerciseStatistics;
+  // Retained for callers of the earlier in-memory contract.
   final int timeElapsed;
   final int totalInputs;
 
   double? get averageAccuracyPercent {
     if (exerciseAccuracies.isEmpty) return null;
-    int totalAcc = 0;
-    exerciseAccuracies.forEach((key, value) {
-      totalAcc += value;
-    });
-    return totalAcc / exerciseAccuracies.length;
+    final measured = exerciseAccuracies.keys.map(
+      (id) => exerciseStatistics[id],
+    );
+    if (measured.every((stats) => stats != null && stats.totalInputs > 0)) {
+      var inputs = 0;
+      var correct = 0;
+      for (final stats in measured) {
+        inputs += stats!.totalInputs;
+        correct += stats.correctInputs;
+      }
+      return 100 * correct / inputs;
+    }
+    // Legacy results do not contain counts; do not invent measurements.
+    return exerciseAccuracies.values.fold(0, (sum, value) => sum + value) /
+        exerciseAccuracies.length;
   }
 
-  int starsForAccuracy(int lessonAccuracyPercent, int lessonSecChar) {
+  int starsForAccuracy(
+    int lessonAccuracyPercent,
+    int lessonSecChar, {
+    int twoStarsMinimum = 95,
+    int threeStarsMinimum = 100,
+  }) {
+    _validateThresholds(
+      lessonAccuracyPercent,
+      twoStarsMinimum,
+      threeStarsMinimum,
+    );
     final average = averageAccuracyPercent;
-    if (average == null) return 0;
-    if (average <= lessonAccuracyPercent ||
-        totalInputs / timeElapsed > lessonSecChar) {
-      return 0;
-    }
-    if (average == 100) return 3;
-    if (average > 95) return 2;
+    if (average == null || average < lessonAccuracyPercent) return 0;
+    if (average >= threeStarsMinimum) return 3;
+    if (average >= twoStarsMinimum) return 2;
     return 1;
   }
 
+  /// Preserve the unsuccessful diary until the next attempt starts.
   LessonProgress clearAttemptResults() => LessonProgress(
     stars: stars,
     tries: tries,
-    timeElapsed: timeElapsed,
-    totalInputs: totalInputs,
+    exerciseAccuracies: exerciseAccuracies,
+    exerciseStatistics: exerciseStatistics,
   );
 
   LessonProgress startAttempt() => LessonProgress(
     completedExerciseIds: completedExerciseIds,
     stars: stars,
     tries: tries + 1,
-    exerciseAccuracies: exerciseAccuracies,
+    exerciseAccuracies: completedExerciseIds.isEmpty
+        ? const {}
+        : exerciseAccuracies,
+    exerciseStatistics: completedExerciseIds.isEmpty
+        ? const {}
+        : exerciseStatistics,
   );
 
   LessonProgress recordExerciseResult(
     String exerciseId, {
     int accuracyPercent = 100,
     required int lessonAccuracyPercent,
-    required int secChar,
+    int secChar = 0,
     required Iterable<String> lessonExerciseIds,
+    int? elapsedMilliseconds,
+    int? totalInputs,
+    int? correctInputs,
+    Map<String, int>? errorPairs,
+    int twoStarsMinimum = 95,
+    int threeStarsMinimum = 100,
+    bool countsTowardCompletion = true,
   }) {
-    if (exerciseId.trim().isEmpty) {
-      throw ArgumentError.value(exerciseId, 'exerciseId', 'não pode ser vazio');
+    if (exerciseId.trim().isEmpty ||
+        accuracyPercent < 0 ||
+        accuracyPercent > 100) {
+      throw ArgumentError('Identificador ou precisão inválidos.');
     }
-    if (accuracyPercent < 0 || accuracyPercent > 100) {
-      throw ArgumentError.value(
-        accuracyPercent,
-        'accuracyPercent',
-        'deve estar entre 0 e 100',
+    _validateThresholds(
+      lessonAccuracyPercent,
+      twoStarsMinimum,
+      threeStarsMinimum,
+    );
+    final nextCompleted = {...completedExerciseIds};
+    if (countsTowardCompletion) {
+      nextCompleted.add(exerciseId);
+    } else {
+      nextCompleted.remove(exerciseId);
+    }
+    final nextAccuracies = {...exerciseAccuracies, exerciseId: accuracyPercent};
+    final nextStatistics = {...exerciseStatistics};
+    if (totalInputs != null ||
+        correctInputs != null ||
+        elapsedMilliseconds != null ||
+        errorPairs != null) {
+      if (totalInputs == null || correctInputs == null) {
+        throw ArgumentError(
+          'Contagens total e correta devem ser fornecidas juntas.',
+        );
+      }
+      final stats = ExerciseStatistics(
+        elapsedMilliseconds: elapsedMilliseconds ?? 0,
+        totalInputs: totalInputs,
+        correctInputs: correctInputs,
+        errorPairs: Map.unmodifiable(errorPairs ?? const <String, int>{}),
       );
+      stats.validate();
+      nextStatistics[exerciseId] = stats;
+    } else {
+      nextStatistics.remove(exerciseId);
     }
-    if (lessonAccuracyPercent < 0 || lessonAccuracyPercent > 100) {
-      throw ArgumentError.value(
-        lessonAccuracyPercent,
-        'lessonAccuracyPercent',
-        'deve estar entre 0 e 100',
-      );
-    }
-    final nextCompleted = Set<String>.from(completedExerciseIds);
-    nextCompleted.add(exerciseId);
-    final nextAccuracies = Map<String, int>.from(exerciseAccuracies)
-      ..[exerciseId] = accuracyPercent;
-
-    final allExerciseIds = lessonExerciseIds.toSet();
-    final hasCompletedLesson =
-        allExerciseIds.isNotEmpty &&
-        allExerciseIds.every(nextCompleted.contains);
-    final updatedProgress = LessonProgress(
+    final updated = LessonProgress(
       completedExerciseIds: Set.unmodifiable(nextCompleted),
       stars: stars,
       tries: tries,
       exerciseAccuracies: Map.unmodifiable(nextAccuracies),
+      exerciseStatistics: Map.unmodifiable(nextStatistics),
     );
-    final hasAllAccuracies =
-        allExerciseIds.isNotEmpty &&
-        allExerciseIds.every(nextAccuracies.containsKey);
-    if (!hasCompletedLesson || !hasAllAccuracies) return updatedProgress;
-
-    final lessonStars = updatedProgress.starsForAccuracy(
+    final allIds = lessonExerciseIds.toSet();
+    if (!countsTowardCompletion ||
+        allIds.isEmpty ||
+        !allIds.every(nextCompleted.contains)) {
+      return updated;
+    }
+    final earned = updated.starsForAccuracy(
       lessonAccuracyPercent,
       secChar,
+      twoStarsMinimum: twoStarsMinimum,
+      threeStarsMinimum: threeStarsMinimum,
     );
     return LessonProgress(
-      completedExerciseIds: updatedProgress.completedExerciseIds,
-      stars: lessonStars > stars ? lessonStars : stars,
+      completedExerciseIds: updated.completedExerciseIds,
+      stars: earned > stars ? earned : stars,
       tries: tries,
-      exerciseAccuracies: updatedProgress.exerciseAccuracies,
+      exerciseAccuracies: updated.exerciseAccuracies,
+      exerciseStatistics: updated.exerciseStatistics,
     );
   }
 }
 
+void _validateThresholds(int minimum, int two, int three) {
+  if (minimum < 0 || minimum > two || two > three || three > 100) {
+    throw ArgumentError('Faixas de estrelas inconsistentes.');
+  }
+}
+
 final class CourseProgress {
-  const CourseProgress({this.lessons = const <String, LessonProgress>{}});
-
+  const CourseProgress({
+    this.lessons = const <String, LessonProgress>{},
+    this.completedEventIds = const <String>{},
+    this.unlockedRewardIds = const <String>{},
+  });
   final Map<String, LessonProgress> lessons;
-
+  final Set<String> completedEventIds;
+  final Set<String> unlockedRewardIds;
   int get stars =>
       lessons.values.fold(0, (total, lesson) => total + lesson.stars);
 
-  CourseProgress startLessonAttempt({required String lessonId}) {
-    final currentLesson = lessons[lessonId] ?? const LessonProgress();
+  CourseProgress _withLessons(Map<String, LessonProgress> next) =>
+      CourseProgress(
+        lessons: Map.unmodifiable(next),
+        completedEventIds: completedEventIds,
+        unlockedRewardIds: unlockedRewardIds,
+      );
+
+  CourseProgress recordEvent(String eventId, Iterable<String> rewardIds) {
+    if (eventId.trim().isEmpty || rewardIds.any((id) => id.trim().isEmpty)) {
+      throw ArgumentError('Eventos e recompensas precisam de identificadores.');
+    }
+    if (completedEventIds.contains(eventId)) return this;
     return CourseProgress(
-      lessons: Map.unmodifiable({
-        ...lessons,
-        lessonId: currentLesson.startAttempt(),
-      }),
+      lessons: lessons,
+      completedEventIds: Set.unmodifiable({...completedEventIds, eventId}),
+      unlockedRewardIds: Set.unmodifiable({...unlockedRewardIds, ...rewardIds}),
     );
   }
 
+  CourseProgress startLessonAttempt({required String lessonId}) =>
+      _withLessons({
+        ...lessons,
+        lessonId: (lessons[lessonId] ?? const LessonProgress()).startAttempt(),
+      });
+
   CourseProgress clearLessonAttemptResults({required String lessonId}) {
     final lesson = lessons[lessonId];
-    if (lesson == null) return this;
-    return CourseProgress(
-      lessons: Map.unmodifiable({
-        ...lessons,
-        lessonId: lesson.clearAttemptResults(),
-      }),
-    );
+    if (lesson == null || lesson.completedExerciseIds.isEmpty) return this;
+    return _withLessons({...lessons, lessonId: lesson.clearAttemptResults()});
   }
 
   CourseProgress recordExerciseResult({
@@ -184,22 +286,32 @@ final class CourseProgress {
     required int accuracyPercent,
     required int lessonAccuracyPercent,
     required Iterable<String> lessonExerciseIds,
-    required int secChar,
-  }) {
-    final currentLesson = lessons[lessonId] ?? const LessonProgress();
-    return CourseProgress(
-      lessons: Map.unmodifiable({
-        ...lessons,
-        lessonId: currentLesson.recordExerciseResult(
+    int secChar = 0,
+    int? elapsedMilliseconds,
+    int? totalInputs,
+    int? correctInputs,
+    Map<String, int>? errorPairs,
+    int twoStarsMinimum = 95,
+    int threeStarsMinimum = 100,
+    bool countsTowardCompletion = true,
+  }) => _withLessons({
+    ...lessons,
+    lessonId: (lessons[lessonId] ?? const LessonProgress())
+        .recordExerciseResult(
           exerciseId,
           accuracyPercent: accuracyPercent,
           lessonAccuracyPercent: lessonAccuracyPercent,
           lessonExerciseIds: lessonExerciseIds,
           secChar: secChar,
+          elapsedMilliseconds: elapsedMilliseconds,
+          totalInputs: totalInputs,
+          correctInputs: correctInputs,
+          errorPairs: errorPairs,
+          twoStarsMinimum: twoStarsMinimum,
+          threeStarsMinimum: threeStarsMinimum,
+          countsTowardCompletion: countsTowardCompletion,
         ),
-      }),
-    );
-  }
+  });
 }
 
 final class StudentProgress {
@@ -207,13 +319,10 @@ final class StudentProgress {
     this.courses = const <String, CourseProgress>{},
     this.settings = const AppSettings(),
   });
-
   final Map<String, CourseProgress> courses;
   final AppSettings settings;
-
   int get totalStars =>
       courses.values.fold(0, (total, course) => total + course.stars);
-
   StudentProgress copyWith({
     Map<String, CourseProgress>? courses,
     AppSettings? settings,
@@ -222,33 +331,37 @@ final class StudentProgress {
     settings: settings ?? this.settings,
   );
 
+  StudentProgress recordCourseEvent({
+    required String courseId,
+    required String eventId,
+    Iterable<String> rewardIds = const [],
+  }) {
+    final course = courses[courseId] ?? const CourseProgress();
+    final next = course.recordEvent(eventId, rewardIds);
+    if (identical(course, next)) return this;
+    return copyWith(courses: Map.unmodifiable({...courses, courseId: next}));
+  }
+
   StudentProgress startLessonAttempt({
     required String courseId,
     required String lessonId,
-  }) {
-    final currentCourse = courses[courseId] ?? const CourseProgress();
-    return StudentProgress(
-      courses: Map.unmodifiable({
-        ...courses,
-        courseId: currentCourse.startLessonAttempt(lessonId: lessonId),
-      }),
-      settings: settings,
-    );
-  }
+  }) => copyWith(
+    courses: Map.unmodifiable({
+      ...courses,
+      courseId: (courses[courseId] ?? const CourseProgress())
+          .startLessonAttempt(lessonId: lessonId),
+    }),
+  );
 
   StudentProgress clearLessonAttemptResults({
     required String courseId,
     required String lessonId,
   }) {
-    final currentCourse = courses[courseId];
-    if (currentCourse == null) return this;
-    return StudentProgress(
-      courses: Map.unmodifiable({
-        ...courses,
-        courseId: currentCourse.clearLessonAttemptResults(lessonId: lessonId),
-      }),
-      settings: settings,
-    );
+    final course = courses[courseId];
+    if (course == null) return this;
+    final next = course.clearLessonAttemptResults(lessonId: lessonId);
+    if (identical(next, course)) return this;
+    return copyWith(courses: Map.unmodifiable({...courses, courseId: next}));
   }
 
   StudentProgress recordExerciseResult({
@@ -258,22 +371,33 @@ final class StudentProgress {
     required int accuracyPercent,
     required int lessonAccuracyPercent,
     required Iterable<String> lessonExerciseIds,
-    required int secChar,
-  }) {
-    final currentCourse = courses[courseId] ?? const CourseProgress();
-    return StudentProgress(
-      courses: Map.unmodifiable({
-        ...courses,
-        courseId: currentCourse.recordExerciseResult(
-          lessonId: lessonId,
-          exerciseId: exerciseId,
-          accuracyPercent: accuracyPercent,
-          lessonAccuracyPercent: lessonAccuracyPercent,
-          lessonExerciseIds: lessonExerciseIds,
-          secChar: secChar,
-        ),
-      }),
-      settings: settings,
-    );
-  }
+    int secChar = 0,
+    int? elapsedMilliseconds,
+    int? totalInputs,
+    int? correctInputs,
+    Map<String, int>? errorPairs,
+    int twoStarsMinimum = 95,
+    int threeStarsMinimum = 100,
+    bool countsTowardCompletion = true,
+  }) => copyWith(
+    courses: Map.unmodifiable({
+      ...courses,
+      courseId: (courses[courseId] ?? const CourseProgress())
+          .recordExerciseResult(
+            lessonId: lessonId,
+            exerciseId: exerciseId,
+            accuracyPercent: accuracyPercent,
+            lessonAccuracyPercent: lessonAccuracyPercent,
+            lessonExerciseIds: lessonExerciseIds,
+            secChar: secChar,
+            elapsedMilliseconds: elapsedMilliseconds,
+            totalInputs: totalInputs,
+            correctInputs: correctInputs,
+            errorPairs: errorPairs,
+            twoStarsMinimum: twoStarsMinimum,
+            threeStarsMinimum: threeStarsMinimum,
+            countsTowardCompletion: countsTowardCompletion,
+          ),
+    }),
+  );
 }

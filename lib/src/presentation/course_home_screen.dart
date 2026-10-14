@@ -63,6 +63,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
+      _engine?.pausePractice();
       unawaited(_engine?.stopNarration());
     }
   }
