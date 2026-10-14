@@ -23,7 +23,7 @@ final class LocalProfileRepository implements ProfileRepository {
       if (decoded is! List) return const [];
 
       return decoded
-          .whereType<Map>()
+          .whereType<Map<String, dynamic>>()
           .map(
             (item) => StudentProfile(
               id: item['id'] as String,
