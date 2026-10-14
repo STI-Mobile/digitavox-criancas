@@ -13,7 +13,7 @@ enum AppThemePreference {
   );
 
   String get label => switch (this) {
-    standard => 'Padrão',
+    standard => 'Claro',
     dark => 'Escuro',
     highContrast => 'Alto contraste',
   };
@@ -22,7 +22,7 @@ enum AppThemePreference {
 final class AppSettings {
   const AppSettings({
     this.spokenFeedbackEnabled = true,
-    this.themePreference = AppThemePreference.standard,
+    this.themePreference = AppThemePreference.dark,
   });
 
   final bool spokenFeedbackEnabled;

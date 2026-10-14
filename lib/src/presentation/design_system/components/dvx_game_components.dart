@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
@@ -246,11 +248,13 @@ final class DvxThemeSelector extends StatelessWidget {
   const DvxThemeSelector({
     required this.preference,
     required this.onSelected,
+    required this.onAnnounce,
     super.key,
   });
 
   final AppThemePreference preference;
   final ValueChanged<AppThemePreference> onSelected;
+  final Future<void> Function(String) onAnnounce;
 
   @override
   Widget build(BuildContext context) => KeyboardNavigationLabel(
@@ -262,21 +266,53 @@ final class DvxThemeSelector extends StatelessWidget {
       icon: const Icon(Icons.contrast),
       itemBuilder: (context) => [
         for (final value in AppThemePreference.values)
-          PopupMenuItem(
+          _ThemeMenuItem(
             value: value,
-            child: Row(
-              children: [
-                Icon(
-                  value == preference
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                ),
-                const SizedBox(width: DvxSpacing.sm),
-                Expanded(child: Text(value.label)),
-              ],
+            onAnnounce: onAnnounce,
+            child: Semantics(
+              selected: value == preference,
+              child: Row(
+                children: [
+                  Icon(
+                    value == preference
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                  ),
+                  const SizedBox(width: DvxSpacing.sm),
+                  Expanded(child: Text(value.label)),
+                ],
+              ),
             ),
           ),
       ],
     ),
+  );
+}
+
+/// Keeps native popup activation and semantics while observing its item focus.
+final class _ThemeMenuItem extends PopupMenuItem<AppThemePreference> {
+  const _ThemeMenuItem({
+    required super.value,
+    required super.child,
+    required this.onAnnounce,
+  });
+
+  final Future<void> Function(String) onAnnounce;
+
+  @override
+  PopupMenuItemState<AppThemePreference, _ThemeMenuItem> createState() =>
+      _ThemeMenuItemState();
+}
+
+final class _ThemeMenuItemState
+    extends PopupMenuItemState<AppThemePreference, _ThemeMenuItem> {
+  @override
+  Widget build(BuildContext context) => Focus(
+    canRequestFocus: false,
+    includeSemantics: false,
+    onFocusChange: (focused) {
+      if (focused) unawaited(widget.onAnnounce(widget.value!.label));
+    },
+    child: super.build(context),
   );
 }

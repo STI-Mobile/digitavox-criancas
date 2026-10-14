@@ -28,7 +28,7 @@ final class DigitavoxApp extends StatefulWidget {
 }
 
 final class _DigitavoxAppState extends State<DigitavoxApp> {
-  AppThemePreference _themePreference = AppThemePreference.standard;
+  AppThemePreference _themePreference = const AppSettings().themePreference;
   StudentProfile? _selectedProfile;
 
   late final CourseAudioOrchestrator _courseAudio = CourseAudioOrchestrator(
@@ -38,7 +38,7 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
   void _selectProfile(StudentProfile profile) {
     setState(() {
       _selectedProfile = profile;
-      _themePreference = AppThemePreference.standard;
+      _themePreference = const AppSettings().themePreference;
     });
   }
 

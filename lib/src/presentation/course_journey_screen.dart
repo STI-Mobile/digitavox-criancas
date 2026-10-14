@@ -100,6 +100,7 @@ final class CourseJourneyScreen extends StatelessWidget {
                         DvxThemeSelector(
                           preference: preference,
                           onSelected: _selectTheme,
+                          onAnnounce: engine.courseAudio.speakText,
                         ),
                       ],
                 body: Semantics(
