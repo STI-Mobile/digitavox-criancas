@@ -20,7 +20,7 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 `ColorScheme` representa conceitos Material. `DvxThemeTokens`, uma `ThemeExtension`, contém accent, success, focus, texto secundário, surface variant e espessuras semânticas. `DvxSpacing` e `DvxRadius` evitam medidas repetidas. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
 
-A preferência `AppThemePreference` integra `AppSettings`. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento persistido está no schema 3; documentos schema 1 e 2 são migrados ao carregar (`highContrastEnabled` do schema 1 vira a preferência correspondente).
+A preferência `AppThemePreference` integra `AppSettings`. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento de progresso está no schema 4; documentos 1, 2 e 3 são migrados ao carregar (`highContrastEnabled` do schema 1 vira a preferência correspondente). A versão do progresso é independente da versão do catálogo de conteúdo.
 
 ## Tema do curso
 
@@ -44,8 +44,19 @@ O domínio guarda apenas o identificador. `DvxCourseThemes`, na apresentação, 
 
 Botões continuam nativos. Seus temas garantem alvos mínimos e borda de foco, mais forte em alto contraste; wrappers sem semântica adicional não foram criados.
 
-## Migração atual
+## Padrões de tela
 
-O fluxo de curso, módulo, lição e exercício usa `DvxGameScaffold`, tokens, tema do curso e componentes compartilhados. Cores literais e `TextStyle` com tamanhos próprios permanecem somente dentro da implementação do Design System. Áudio narrativo, teclado físico, engine, persistência de progresso e semântica existente não foram movidos para componentes visuais.
+O fluxo usa `DvxGameScaffold`, tokens, tema do curso e componentes compartilhados. As diferenças entre fases são de informação e composição, sem duplicar regras do curso:
 
-Validação manual com VoiceOver e TalkBack, em dispositivo físico e nos três temas, continua necessária antes de considerar a experiência pedagógica aprovada.
+- Curso: ação principal de começar/continuar, progresso por missões obrigatórias e apresentação expansível.
+- Módulo: mapa/lista de missões com estados textuais de disponível, em andamento, concluída e bloqueada; bônus separado do progresso obrigatório.
+- Apresentação da missão: ilustração local, narrativa de Stella e instrução de ZERO-1; uma ação principal de começar/continuar. A lista de atividades é secundária.
+- Prática: cabeçalho compacto, instrução, alvo, posição/repetição, feedback discreto, ajuda e pausa. Não repetir ilustração da missão, retrato do guia, breadcrumb completo, texto de abertura ou seletor de tema dentro da execução.
+- Resultado: conquista e ação seguinte; a lista completa de estatísticas abre no Diário de bordo. Um erro de tecla não produz uma tela de reprovação.
+- Conclusão do módulo: cena da cerimônia, conquistas e ação de retorno; sem espaço de digitação avaliado.
+
+Personagens e ilustrações são recursos diferentes no catálogo. `CourseScene` resolve a imagem da cena local, e `CourseJourneyEngine.illustration` não herda a imagem de um ancestral para a prática. Texto e narração compartilham referências canônicas. Imagem não transporta uma instrução que esteja ausente dos canais textual e semântico.
+
+Cores literais e medidas específicas ficam nos componentes/tokens. Botões continuam nativos, com destinos e rótulos explícitos. Áudio, teclado, progressão e persistência permanecem fora dos componentes visuais.
+
+Texto ampliado, foco, contraste e ausência de overflow são verificáveis por testes e inspeção das telas. Validação manual com VoiceOver e TalkBack em dispositivo físico e nos três temas continua pendente; screenshots não comprovam operabilidade com leitores de tela.
