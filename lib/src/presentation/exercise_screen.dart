@@ -26,6 +26,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
   late final ExerciseSessionViewModel _viewModel;
   late final FocusNode _keyboardFocusNode;
   final _resumeFocusNode = FocusNode(debugLabel: 'retomar prática');
+  final _guidanceKey = GlobalKey(debugLabel: 'apoio do exercício');
 
   @override
   void initState() {
@@ -76,6 +77,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
 
   Future<void> _handleShortcut(ExerciseShortcut shortcut) async {
     await widget.engine.stopNarration();
+    if (!mounted) return;
     await _viewModel.handleShortcut(
       shortcut,
       lessonPresentation: widget.engine.lesson?.scene?.text,
@@ -83,6 +85,14 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
           widget.engine.lesson?.scene?.instruction ??
           _viewModel.exercise.prompt,
     );
+    if (!mounted) return;
+    if (shortcut != ExerciseShortcut.help) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final context = _guidanceKey.currentContext;
+        if (context != null) Scrollable.ensureVisible(context);
+      });
+    }
     if (shortcut == ExerciseShortcut.help && !_viewModel.helpVisible) {
       if (_viewModel.isPaused) {
         _resumeFocusNode.requestFocus();
@@ -281,23 +291,6 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 const SizedBox(height: DvxSpacing.md),
-                DvxFeedback(
-                  kind: switch (_viewModel.status) {
-                    ExerciseSessionStatus.waitingForInput =>
-                      DvxFeedbackKind.waiting,
-                    ExerciseSessionStatus.correctAnswer =>
-                      DvxFeedbackKind.success,
-                    ExerciseSessionStatus.incorrectAnswer =>
-                      DvxFeedbackKind.error,
-                    ExerciseSessionStatus.completed =>
-                      DvxFeedbackKind.completed,
-                  },
-                  message: _viewModel.isPaused
-                      ? 'Prática pausada. O tempo está parado.'
-                      : _viewModel.announcement ??
-                            'Digite a próxima tecla do exercício.',
-                ),
-                const SizedBox(height: DvxSpacing.md),
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: DvxSpacing.sm,
@@ -346,6 +339,54 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                   'Este exercício recomeça quando você voltar.',
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: DvxSpacing.md),
+                DvxGameCard(
+                  key: _guidanceKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          'Ajuda do exercício',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(height: DvxSpacing.sm),
+                      Semantics(
+                        container: true,
+                        label: 'F1 — ajuda e atalhos. Seta para baixo — próxima letra e dedo. Seta para cima — repetir o exercício.',
+                        child: const ExcludeSemantics(
+                          child: Text(
+                            'F1: ajuda · ↓: próxima tecla · ↑: exercício',
+                          ),
+                        ),
+                      ),
+                      if (_viewModel.isPaused) ...[
+                        const SizedBox(height: DvxSpacing.sm),
+                        const Text('Prática pausada. O tempo está parado.'),
+                      ],
+                      const SizedBox(height: DvxSpacing.md),
+                      DvxFeedback(
+                        kind: switch (_viewModel.status) {
+                          ExerciseSessionStatus.waitingForInput =>
+                            DvxFeedbackKind.waiting,
+                          ExerciseSessionStatus.correctAnswer =>
+                            DvxFeedbackKind.success,
+                          ExerciseSessionStatus.incorrectAnswer =>
+                            DvxFeedbackKind.error,
+                          ExerciseSessionStatus.completed =>
+                            DvxFeedbackKind.completed,
+                        },
+                        message:
+                            _viewModel.announcement ??
+                            (_viewModel.spellOut
+                                ? 'Próxima tecla: ${_viewModel.nextKeyDescription}.'
+                                : 'Exercício: ${_viewModel.exercise.expectedInput}.'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );
@@ -484,6 +525,10 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
     final items = [
       for (final shortcut in shortcuts.entries)
         '${shortcut.key} — ${_descriptions[shortcut.value] ?? shortcut.value}',
+      'Seta para baixo — próxima letra e dedo',
+      'Seta para cima — repetir o exercício',
+      'Seta para direita — informar o restante',
+      'Seta para esquerda — repetição atual',
       'Tab — acessar os controles; Shift + Tab — controle anterior',
       'Nos controles, setas para cima e baixo — navegar',
       'Enter ou espaço — acionar o controle selecionado',
