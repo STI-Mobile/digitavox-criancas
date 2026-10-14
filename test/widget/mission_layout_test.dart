@@ -57,6 +57,8 @@ void main() {
   }
 
   Future<void> startMission(WidgetTester tester) async {
+    await tester.ensureVisible(find.text('Começar curso'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Começar curso'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Começar missão'));
@@ -131,6 +133,114 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.f1);
     await tester.pumpAndSettle();
     expect(engine.session!.isPaused, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('bottom help box shows arrow queries without consuming input', (
+    tester,
+  ) async {
+    await pumpJourney(tester);
+    await startMission(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    final box = find.widgetWithText(DvxGameCard, 'Ajuda do exercício');
+    expect(box, findsOneWidget);
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.text('F1: ajuda · ↓: próxima tecla · ↑: exercício'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.bySemanticsLabel(
+          'F1 — ajuda e atalhos. Seta para baixo — próxima letra e dedo. Seta para cima — repetir o exercício.',
+        ),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.bySemanticsLabel('Próxima tecla: f.'),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.bySemanticsLabel('Exercício: fj.'),
+      ),
+      findsOneWidget,
+    );
+    expect(engine.session!.totalInputs, 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+    expect(engine.session!.isPaused, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.bySemanticsLabel('Próxima tecla: j.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: box,
+        matching: find.text('Prática pausada. O tempo está parado.'),
+      ),
+      findsOneWidget,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+    await tester.pumpAndSettle();
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'entrada do exercício',
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+    await tester.pumpAndSettle();
+    expect(box, findsNothing);
+    expect(_focusedLabel(), 'Próximo exercício');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('arrow query brings the help box into view with enlarged text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpJourney(tester);
+    await startMission(tester);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'entrada do exercício',
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    final box = find.widgetWithText(DvxGameCard, 'Ajuda do exercício');
+    expect(tester.getRect(box).top, greaterThanOrEqualTo(0));
+    expect(tester.getRect(box).bottom, lessThanOrEqualTo(800));
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'entrada do exercício',
+    );
+    expect(engine.session!.totalInputs, 0);
     expect(tester.takeException(), isNull);
   });
 

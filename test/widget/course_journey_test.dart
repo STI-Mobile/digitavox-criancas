@@ -39,7 +39,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Alterar tema visual. Padrão');
+      expect(_focusedLabel(), 'Alterar tema visual. Escuro');
 
       // Wrap from the first toolbar control to the last module and back.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
@@ -47,7 +47,7 @@ void main() {
       expect(_focusedLabel(), startsWith('Navegação'));
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), 'Alterar tema visual. Padrão');
+      expect(_focusedLabel(), 'Alterar tema visual. Escuro');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -186,6 +186,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(
+        Theme.of(tester.element(find.text('Ana'))).brightness,
+        Brightness.dark,
+      );
       expect(_focusedLabel(), 'Aprender com Ana');
       final select = tester.getSemantics(find.text('Ana'));
       expect(select.flagsCollection.isButton, isTrue);
@@ -595,7 +599,63 @@ void main() {
     expect(find.text('Digitavox'), findsOneWidget);
   });
 
-  testWidgets('switches and persists Standard, Dark and High Contrast', (
+  testWidgets(
+    'announces each theme during keyboard navigation before applying it',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      final repository = _createRepository();
+      await _pumpDemo(tester, repository: repository, audio: audio);
+      await tester.tap(find.byTooltip('Alterar tema visual'));
+      await tester.pumpAndSettle();
+      final initialCueCount = audio.sequences.length;
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Claro');
+      expect(
+        tester.getSemantics(find.text('Escuro')).flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+      expect(
+        tester.getSemantics(find.text('Claro')).flagsCollection.isSelected,
+        Tristate.isFalse,
+      );
+      expect(audio.sequences.length, initialCueCount + 1);
+      expect(
+        Theme.of(tester.element(find.text('Digitavox'))).brightness,
+        Brightness.dark,
+      );
+      final profile = (await repository.loadProfiles()).single;
+      expect(
+        (await repository.progressFor(profile).load()).settings.themePreference,
+        AppThemePreference.dark,
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Escuro');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Alto contraste');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Escuro');
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).text, 'Claro');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(
+        (await repository.progressFor(profile).load()).settings.themePreference,
+        AppThemePreference.dark,
+      );
+      expect(find.text('Padrão'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('starts dark and persists Claro, Escuro and Alto contraste', (
     tester,
   ) async {
     final repository = _createRepository();
@@ -604,11 +664,34 @@ void main() {
 
     var context = tester.element(find.text('Digitavox'));
 
-    expect(Theme.of(context).brightness, Brightness.light);
+    expect(Theme.of(context).brightness, Brightness.dark);
 
     await tester.tap(find.byTooltip('Alterar tema visual'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Claro'));
+    await tester.pumpAndSettle();
+    expect(
+      Theme.of(tester.element(find.text('Digitavox'))).brightness,
+      Brightness.light,
+    );
+    final profileWithLightTheme = (await repository.loadProfiles()).single;
+    expect(
+      (await repository.progressFor(profileWithLightTheme).load())
+          .settings
+          .themePreference,
+      AppThemePreference.standard,
+    );
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await _pumpDemo(tester, repository: repository);
+    expect(
+      Theme.of(tester.element(find.text('Digitavox'))).brightness,
+      Brightness.light,
+    );
+
+    await tester.tap(find.byTooltip('Alterar tema visual'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Escuro'));
     await tester.pumpAndSettle();
 

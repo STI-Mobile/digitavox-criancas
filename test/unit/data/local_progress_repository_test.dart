@@ -10,6 +10,7 @@ void main() {
 
     expect(progress.courses, isEmpty);
     expect(progress.totalStars, 0);
+    expect(progress.settings.themePreference, AppThemePreference.dark);
   });
 
   test('falls back safely when the document is corrupted', () async {
