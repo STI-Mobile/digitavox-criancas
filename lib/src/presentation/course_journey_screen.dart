@@ -184,6 +184,7 @@ final class CourseJourneyScreen extends StatelessWidget {
         ExpansionTile(
           key: PageStorageKey('course-story-${engine.course.id}'),
           title: const Text('Apresentação do curso'),
+          initiallyExpanded: true,
           children: [
             Padding(
               padding: const EdgeInsets.all(DvxSpacing.md),
@@ -307,6 +308,7 @@ final class CourseJourneyScreen extends StatelessWidget {
             : engine.completedIn(lesson) > 0
             ? 'Em andamento · Continuar missão'
             : 'Disponível · Começar missão',
+        earnedStars: engine.earnedStarsFor(lesson),
         completed: engine.isLessonCompleted(lesson),
         onPressed: engine.isLessonUnlocked(lesson)
             ? () => engine.openLesson(engine.module!, lesson)

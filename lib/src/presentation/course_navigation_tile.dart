@@ -9,6 +9,7 @@ final class CourseNavigationTile extends StatelessWidget {
     required this.title,
     required this.description,
     required this.onPressed,
+    this.earnedStars,
     this.completed = false,
     this.autofocus = false,
     super.key,
@@ -17,6 +18,7 @@ final class CourseNavigationTile extends StatelessWidget {
   final String title;
   final String description;
   final VoidCallback? onPressed;
+  final int? earnedStars;
   final bool completed;
   final bool autofocus;
 
@@ -24,7 +26,12 @@ final class CourseNavigationTile extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
     child: KeyboardNavigationLabel(
-      label: '$title. $description',
+      label: [
+        title,
+        description,
+        if (earnedStars case final stars?)
+          'Melhor resultado: $stars de 3 estrelas.',
+      ].join('. '),
       child: OutlinedButton(
         autofocus: autofocus,
         style: OutlinedButton.styleFrom(
@@ -59,6 +66,29 @@ final class CourseNavigationTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (earnedStars case final stars?) ...[
+              const SizedBox(width: DvxSpacing.sm),
+              Semantics(
+                label: 'Melhor resultado: $stars de 3 estrelas.',
+                child: ExcludeSemantics(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var star = 1; star <= 3; star++)
+                        Icon(
+                          star <= stars
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: Theme.of(context)
+                              .extension<DvxThemeTokens>()!
+                              .accent,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             if (onPressed != null) ...[
               const SizedBox(width: DvxSpacing.sm),
               const ExcludeSemantics(child: Icon(Icons.chevron_right)),

@@ -164,6 +164,8 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   bool isLessonCompleted(Lesson lesson) =>
       (catalog.progress.courses[course.id]?.lessons[lesson.id]?.stars ?? 0) > 0;
+  int earnedStarsFor(Lesson lesson) =>
+      catalog.progress.courses[course.id]?.lessons[lesson.id]?.stars ?? 0;
   bool isLessonUnlocked(Lesson lesson) {
     final saved = catalog.progress.courses[course.id];
     final eventId = lesson.prerequisiteEventId;
@@ -260,10 +262,10 @@ final class CourseJourneyEngine extends ChangeNotifier {
       }
     }
     final letters = elapsed == 0 ? 0.0 : inputs * 60000 / elapsed;
-    return 'Precisão ${currentLessonAverageAccuracy.toStringAsFixed(1)} por cento. '
-        '$currentLessonTries ${currentLessonTries == 1 ? 'tentativa' : 'tentativas'} na missão. Tempo de prática: ${(elapsed / 1000).round()} segundos. '
-        '$inputs teclas digitadas, $correct corretas. Letras por minuto: ${letters.toStringAsFixed(1)}. '
-        'Palavras por minuto: ${(letters / 5).toStringAsFixed(1)}. Trocas de teclas: ${errorDistributionString(pairs)}.';
+    return 'Precisão ${currentLessonAverageAccuracy.toStringAsFixed(1)} por cento.\n '
+        '$currentLessonTries ${currentLessonTries == 1 ? 'tentativa' : 'tentativas'} na missão.\n Tempo de prática: ${(elapsed / 1000).round()} segundos.\n '
+        '$inputs teclas digitadas, $correct corretas.\n Letras por minuto: ${letters.toStringAsFixed(1)}. \n'
+        'Palavras por minuto: ${(letters / 5).toStringAsFixed(1)}. \n Trocas de teclas: ${errorDistributionString(pairs)}.';
   }
 
   int get completedCount => exercises

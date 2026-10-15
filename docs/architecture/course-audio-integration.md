@@ -44,7 +44,7 @@ Recursos ainda não produzidos declaram `pending: true` e não apontam para um a
 
 O fallback de erro é útil à prática sem visão, mas continua acompanhado por feedback textual e semântico. Volume/silenciamento do sistema e reprodução física exigem verificação no dispositivo. Música/aliens/sensores não recebem esse clique técnico como substituição.
 
-Ao incorporar mídia pronta, remover o estado pendente e incluir um asset real em `assets/audio/`, declarado no bundle. Fala conserva texto acessível mesmo com gravação. Falha de um asset pronto pode usar a política de fallback do coordenador; o catálogo não implementa players. O conteúdo não pode injetar caminhos fora da raiz permitida nem código executável.
+Ao incorporar mídia pronta, remover o estado pendente e incluir um asset real em `assets/audio/`, declarado no bundle. A fala `m1c1-stella` da Missão 1.0 já possui gravação em `assets/audio/demo/stella/m1c1-stella.mp3`; as demais mídias pendentes continuam sem assets prontos. Fala conserva texto acessível mesmo com gravação. Falha de um asset pronto pode usar a política de fallback do coordenador; o catálogo não implementa players. O conteúdo não pode injetar caminhos fora da raiz permitida nem código executável.
 
 `CourseAudioOrchestrator.resolve` converte recursos em `SpeechCue`, `SfxCue`, `MusicCue` ou `ClickCue` técnico autorizado. Se um evento de input não possui configuração alguma, o fallback genérico do orquestrador permanece disponível. Um recurso declarado com `silent` é uma escolha explícita e não deve cair nesse fallback por ter sido filtrado. Lista de reprodução vazia não impede a ação pedagógica.
 
@@ -56,7 +56,7 @@ Ao concluir uma missão aprovada, o engine executa o efeito `lesson.audioGuidanc
 
 `completionEvent` do módulo fornece a cerimônia após aprovação da Prova. Seu evento/recompensas são persistidos de modo idempotente antes da narração inicial. Reabrir uma etapa já concedida não toca novamente por iniciativa do app; **Ouvir cerimônia novamente** é uma reprodução explícita sem novo desbloqueio. Uma interrupção de áudio não cria exercício artificial nem pune a criança.
 
-O catálogo declara as falas e os recursos de decolagem, aliens e fanfarra. Enquanto esses sons estiverem pendentes, somente as falas de fallback são audíveis; não descrever a sequência sonora completa como produzida ou validada.
+O catálogo declara as falas e os recursos de decolagem, aliens e fanfarra. Enquanto esses sons estiverem pendentes, somente a gravação de Stella em M1C1 e as falas de fallback ficam disponíveis; não descrever a sequência sonora completa como produzida ou validada.
 
 ## Cancelamento e lifecycle
 

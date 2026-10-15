@@ -276,6 +276,22 @@ void main() {
       await tester.tap(module);
       await tester.pumpAndSettle();
 
+      final missionTile = find.widgetWithText(
+        OutlinedButton,
+        'Sensores da Aurora',
+      );
+      expect(
+        find.descendant(
+          of: missionTile,
+          matching: find.byIcon(Icons.star_outline_rounded),
+        ),
+        findsNWidgets(3),
+      );
+      expect(
+        tester.getSemantics(missionTile).label,
+        contains('Melhor resultado: 0 de 3 estrelas.'),
+      );
+
       await tester.tap(find.text('Sensores da Aurora'));
       await tester.pumpAndSettle();
 
@@ -350,6 +366,29 @@ void main() {
       await tester.tap(find.text('Fechar diário'));
       await tester.pumpAndSettle();
       expect(find.text('Próxima missão'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Voltar à missão'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Voltar ao módulo'));
+      await tester.pumpAndSettle();
+      final completedMission = find.widgetWithText(
+        OutlinedButton,
+        'Sensores da Aurora',
+      );
+      expect(
+        find.descendant(
+          of: completedMission,
+          matching: find.byIcon(Icons.star_rounded),
+        ),
+        findsNWidgets(3),
+      );
+      expect(
+        find.descendant(
+          of: completedMission,
+          matching: find.byIcon(Icons.star_outline_rounded),
+        ),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     },
   );

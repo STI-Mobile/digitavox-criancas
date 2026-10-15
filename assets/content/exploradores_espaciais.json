@@ -786,16 +786,14 @@
           "type": "speech",
           "text": "Cadete, que bom ter você a bordo. Eu sou a Comandante Stella, e esta é a Aurora, a nave-escola da Academia Galáctica. A tempestade solar desligou quase tudo aqui dentro. Antes de reativar a nave, você precisa conhecer o console de navegação. Deslize os dedos pela linha do meio do teclado até sentir duas marcas em relevo. Encontrou? São as teclas F e J, os pontos de partida de toda viagem.",
           "speaker": "stella",
-          "pending": true,
-          "fallback": "text"
+          "asset": "assets/audio/demo/stella/m1c1-stella.mp3"
         },
         {
           "id": "m1c1-zero1",
           "type": "speech",
           "text": "Bip! ZERO-1 na escuta. Indicador esquerdo no F, indicador direito no J. Os outros dedos descansam nas teclas vizinhas da mesma linha. Para testar os sensores do console, digite F e J quando eu pedir.",
           "speaker": "zero1",
-          "pending": true,
-          "fallback": "text"
+          "asset": "assets/audio/demo/zero1/m1c1-zero1.mp3"        
         },
         {
           "id": "sfx-sensor-on",

@@ -147,11 +147,19 @@ void main() {
     );
 
     test(
-      'mídia ainda não produzida declara fallback e não finge asset pronto',
+      'mídia pronta aponta para asset e as demais mantêm fallback explícito',
       () {
         final resources = _parse().audioResources.values;
         expect(resources, isNotEmpty);
-        for (final cue in resources) {
+        final narration = resources.singleWhere(
+          (cue) => cue.id == 'm1c1-stella',
+        );
+        expect(narration.pending, isFalse);
+        expect(narration.asset, 'assets/audio/demo/stella/m1c1-stella.mp3');
+        expect(narration.fallback, isNull);
+        expect(narration.text, isNotEmpty);
+
+        for (final cue in resources.where((cue) => cue.id != narration.id)) {
           expect(cue.pending, isTrue);
           expect(cue.asset, isNull);
           expect(
