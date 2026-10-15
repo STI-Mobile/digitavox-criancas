@@ -6,4 +6,4 @@ Os arquivos de demonstração técnica desta pasta validam a infraestrutura de �
 
 `technical_signal_demo.wav` é um sinal curto e neutro usado somente para validar o canal de SFX na integração técnica.
 
-`stella/m1c1-stella.mp3` é a gravação associada à fala canônica de Stella na Missão 1.0 do Módulo 1; o texto continua disponível para leitura acessível e fallback.
+`stella/m1c1-stella.mp3` e `zero1/m1c1-zero1.mp3` são as gravações associadas às falas da Missão 1.0 do Módulo 1; os textos continuam disponíveis para leitura acessível e fallback.

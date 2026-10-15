@@ -512,8 +512,6 @@ void main() {
         (audio.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/welcome.wav',
       );
-      await tester.tap(find.text('Apresentação do curso'));
-      await tester.pumpAndSettle();
       expect(find.text('Bem-vindo à jornada de demonstração.'), findsOneWidget);
       await tester.ensureVisible(find.text('Parar áudio'));
       await tester.tap(find.text('Parar áudio'));

@@ -151,15 +151,19 @@ void main() {
       () {
         final resources = _parse().audioResources.values;
         expect(resources, isNotEmpty);
-        final narration = resources.singleWhere(
-          (cue) => cue.id == 'm1c1-stella',
-        );
-        expect(narration.pending, isFalse);
-        expect(narration.asset, 'assets/audio/demo/stella/m1c1-stella.mp3');
-        expect(narration.fallback, isNull);
-        expect(narration.text, isNotEmpty);
+        const readyAssets = {
+          'm1c1-stella': 'assets/audio/demo/stella/m1c1-stella.mp3',
+          'm1c1-zero1': 'assets/audio/demo/zero1/m1c1-zero1.mp3',
+        };
+        final readyCues = resources.where((cue) => !cue.pending);
+        expect({for (final cue in readyCues) cue.id: cue.asset}, readyAssets);
+        for (final cue in readyCues) {
+          expect(cue.fallback, isNull);
+          expect(cue.text, isNotEmpty);
+          expect(File(cue.asset!).existsSync(), isTrue);
+        }
 
-        for (final cue in resources.where((cue) => cue.id != narration.id)) {
+        for (final cue in resources.where((cue) => cue.pending)) {
           expect(cue.pending, isTrue);
           expect(cue.asset, isNull);
           expect(
