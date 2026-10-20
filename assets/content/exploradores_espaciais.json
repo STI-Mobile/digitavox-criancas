@@ -774,17 +774,17 @@
         {
           "id": "m1c0-stella",
           "type": "speech",
-          "text": "Uma tempestade solar varreu a galáxia e espalhou quinze aliens amigáveis para longe de casa. A Academia Galáctica lançou a Operação Grande Resgate, e toda comunicação espacial passa pelo console de navegação: o teclado. Você chegou à Academia no dia em que a tempestade desligou a nossa nave-escola, a Aurora. Eu sou a Comandante Stella, e preciso de um par de mãos novas. Bem-vindo a bordo, cadete.",
+          "text": "Uma tempestade solar varreu a galáxia... e espalhou quinze aliens amigáveis para longe de casa. A Academia Galáctica lançou a Operação Grande Resgate! E toda comunicação espacial passa pelo console de navegação... o teclado! Você chegou à Academia no dia em que a tempestade desligou a nossa nave-escola... a Aurora. Eu sou a Comandante Stella. E preciso de um par de mãos novas. Bem-vindo a bordo, cadete!",
           "speaker": "stella",
-          "pending": true,
+          "asset":"assets/audio/demo/stella/m1c0-stella.wav",
           "fallback": "text"
         },
         {
           "id": "m1c0-zero1",
           "type": "speech",
-          "text": "Bip! ZERO-1 na escuta, computador de bordo da Aurora. Digite as teclas com toques suaves e precisos, sem força e sem deixar a tecla pressionada. Se eu apitar, foi tecla errada: siga em frente, não tente apagar. Precisa de ajuda? Tecle F1. Para eu soletrar o que falta, F3. Para repetir o exercício, F7.",
+          "text": "Bip! Zero Um na escuta, computador de bordo da Aurora! Digite as teclas... com toques suaves e precisos. Sem força... e sem deixar a tecla pressionada. Se eu apitar... foi tecla errada. Siga em frente! Não tente apagar. E, se precisar de ajuda, tecle... F1. Para eu soletrar o que falta, tecle... F3. E para repetir o exercício, tecle... F7.",
           "speaker": "zero1",
-          "pending": true,
+          "asset":"assets/audio/demo/zero1/m1c0-zero1.wav",
           "fallback": "text"
         },
         {
@@ -800,14 +800,15 @@
           "type": "speech",
           "text": "Cadete, que bom ter você a bordo. Eu sou a Comandante Stella, e esta é a Aurora, a nave-escola da Academia Galáctica. A tempestade solar desligou quase tudo aqui dentro. Antes de reativar a nave, você precisa conhecer o console de navegação. Deslize os dedos pela linha do meio do teclado até sentir duas marcas em relevo. Encontrou? São as teclas F e J, os pontos de partida de toda viagem.",
           "speaker": "stella",
-          "asset": "assets/audio/demo/stella/m1c1-stella.mp3"
+          "pending": true,
+          "fallback": "text"
         },
         {
           "id": "m1c1-zero1",
           "type": "speech",
-          "text": "Bip! ZERO-1 na escuta. Indicador esquerdo no F, indicador direito no J. Os outros dedos descansam nas teclas vizinhas da mesma linha. Para testar os sensores do console, digite F e J quando eu pedir.",
+          "text": "Bip-bop! Zero Um na escuta! Meus sensores estão... quase acordados. Indicador esquerdo... no F. Indicador direito... no J. Os outros dedos descansam nas teclas vizinhas, da mesma linha. Ninguém fica de fora! Para testar os sensores do console... digite F e J quando eu pedir. Bip!",
           "speaker": "zero1",
-          "asset": "assets/audio/demo/zero1/m1c1-zero1.mp3"        
+          "asset": "assets/audio/demo/zero1/m1c1-zero1.wav"        
         },
         {
           "id": "sfx-sensor-on",
@@ -1022,7 +1023,7 @@
           "type": "speech",
           "text": "Missão cumprida, cadete. Uma estrela no seu histórico de voo.",
           "speaker": "stella",
-          "pending": true,
+          "asset":"assets/audio/demo/stella/stella-1estrela.wav",
           "fallback": "text"
         },
         {
@@ -1060,9 +1061,9 @@
         {
           "id": "zero1-ajuda-erros",
           "type": "speech",
-          "text": "Vamos com calma. Continue sem apagar. Se precisar de ajuda, tecle F1.",
+          "text": "Bip... bip?! Ops... meus parafusos tremeram! Calma, circuitos... calma. Vamos com calma. Continue sem apagar. Se precisar de ajuda... tecle... F1. Bip-bop!",
           "speaker": "zero1",
-          "pending": true,
+          "asset":"assets/audio/demo/zero1/zero1-ajuda-erros.wav",
           "fallback": "text"
         },
         {
