@@ -23,6 +23,9 @@ void main() {
     expect(tokens.success, const Color(0xFF00707F));
     expect(tokens.highContrast, isFalse);
     expect(theme.textTheme.bodyMedium?.fontFamily, 'Open Sans');
+    expect(theme.textTheme.titleMedium?.fontFamily, 'Fredoka');
+    expect(theme.textTheme.headlineMedium?.fontFamily, 'Fredoka');
+    expect(theme.textTheme.displayLarge?.fontFamily, 'Fredoka');
   });
 
   test('resolves the Escuro identity palette', () {

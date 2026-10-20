@@ -134,13 +134,30 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     for (var star = 1; star <= 3; star++)
-                      Icon(
-                        star <= widget.earnedStars
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: context.dvxTokens.accent,
-                        size: 36,
-                      ),
+                      if (star <= widget.earnedStars)
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: context.dvxTokens.outline,
+                              size: 36,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: context.dvxTokens.accent,
+                              size: (context.dvxTokens.borderWidth > 0)
+                                  ? 36 - context.dvxTokens.borderWidth * 8
+                                  : 36 - 6,
+                            ),
+                          ],
+                        )
+                      else
+                        Icon(
+                          Icons.star_outline,
+                          color: context.dvxTokens.accent,
+                          size: 36,
+                        ),
                   ],
                 ),
               ),

@@ -54,14 +54,9 @@ final class _CourseBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     if (theme.reduceDecoration) return const SizedBox.shrink();
     return ExcludeSemantics(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.background
-        ),
-        ),
-      );
+      child: DecoratedBox(decoration: BoxDecoration(color: theme.background)),
+    );
   }
-
 }
 
 final class DvxGameCard extends StatelessWidget {

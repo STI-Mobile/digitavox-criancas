@@ -145,7 +145,7 @@ void main() {
         expect(scene.narrationCues.single.text, scene.text);
         expect(scene.audioGuidance!.start.first.text, scene.text);
         expect(scene.instructionCues.single.speaker, 'zero1');
-        expect(scene.instruction, contains('Indicador esquerdo no F'));
+        expect(scene.instruction, contains('Indicador esquerdo... no F'));
       },
     );
 
@@ -155,13 +155,22 @@ void main() {
         final resources = _parse().audioResources.values;
         expect(resources, isNotEmpty);
         const readyAssets = {
-          'm1c1-stella': 'assets/audio/demo/stella/m1c1-stella.mp3',
-          'm1c1-zero1': 'assets/audio/demo/zero1/m1c1-zero1.mp3',
+          'm1c0-stella': 'assets/audio/demo/stella/m1c0-stella.wav',
+          'm1c0-zero1': 'assets/audio/demo/zero1/m1c0-zero1.wav',
+          'm1c1-zero1': 'assets/audio/demo/zero1/m1c1-zero1.wav',
+          'stella-1estrela': 'assets/audio/demo/stella/stella-1estrela.wav',
+          'zero1-ajuda-erros': 'assets/audio/demo/zero1/zero1-ajuda-erros.wav',
+        };
+        const readyFallbacks = {
+          'm1c0-stella': ContentAudioFallback.text,
+          'm1c0-zero1': ContentAudioFallback.text,
+          'stella-1estrela': ContentAudioFallback.text,
+          'zero1-ajuda-erros': ContentAudioFallback.text,
         };
         final readyCues = resources.where((cue) => !cue.pending);
         expect({for (final cue in readyCues) cue.id: cue.asset}, readyAssets);
         for (final cue in readyCues) {
-          expect(cue.fallback, isNull);
+          expect(cue.fallback, readyFallbacks[cue.id]);
           expect(cue.text, isNotEmpty);
           expect(File(cue.asset!).existsSync(), isTrue);
         }
@@ -352,9 +361,13 @@ void main() {
       'comando não suportado': (json) =>
           ((_course(json)['practice']! as Map)['shortcuts'] as Map)['F1'] =
               'runCode',
-      'recurso pendente com asset pronto': (json) =>
-          (_course(json)['audioResources']! as List).first['asset'] =
-              'assets/audio/not-produced.wav',
+      'recurso pendente com asset pronto': (json) {
+        final resources = (_course(json)['audioResources']! as List)
+            .cast<Map<String, Object?>>();
+        resources.firstWhere(
+          (cue) => cue['id'] == 'module1-overview',
+        )['asset'] = 'assets/audio/not-produced.wav';
+      },
       'systemClick usado como voz': (json) =>
           (_course(json)['audioResources']! as List).first['fallback'] =
               'systemClick',

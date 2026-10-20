@@ -25,6 +25,7 @@ final class DvxThemeTokens extends ThemeExtension<DvxThemeTokens> {
     required this.focusWidth,
     required this.borderWidth,
     required this.highContrast,
+    required this.outline,
   });
 
   final Color accent;
@@ -35,6 +36,7 @@ final class DvxThemeTokens extends ThemeExtension<DvxThemeTokens> {
   final double focusWidth;
   final double borderWidth;
   final bool highContrast;
+  final Color outline;
 
   @override
   DvxThemeTokens copyWith({
@@ -46,6 +48,7 @@ final class DvxThemeTokens extends ThemeExtension<DvxThemeTokens> {
     double? focusWidth,
     double? borderWidth,
     bool? highContrast,
+    Color? outline,
   }) => DvxThemeTokens(
     accent: accent ?? this.accent,
     success: success ?? this.success,
@@ -55,6 +58,7 @@ final class DvxThemeTokens extends ThemeExtension<DvxThemeTokens> {
     focusWidth: focusWidth ?? this.focusWidth,
     borderWidth: borderWidth ?? this.borderWidth,
     highContrast: highContrast ?? this.highContrast,
+    outline: outline ?? this.outline,
   );
 
   @override
@@ -69,6 +73,7 @@ final class DvxThemeTokens extends ThemeExtension<DvxThemeTokens> {
       focusWidth: focusWidth + (other.focusWidth - focusWidth) * t,
       borderWidth: borderWidth + (other.borderWidth - borderWidth) * t,
       highContrast: t < 0.5 ? highContrast : other.highContrast,
+      outline: Color.lerp(outline, other.outline, t)!,
     );
   }
 }

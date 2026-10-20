@@ -8,7 +8,7 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 ## Brand
 
-`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets usam preferencialmente `ColorScheme` ou `DvxThemeTokens`, nunca essas constantes diretamente. Open Sans é empacotada como asset local, acompanhada da licença OFL.
+`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets usam preferencialmente `ColorScheme` ou `DvxThemeTokens`, nunca essas constantes diretamente. Open Sans é a fonte do texto corrido; Fredoka é usada nos títulos e nomes de missão via estilos semânticos de título e headline do `TextTheme`. Ambas são empacotadas como assets locais com suas licenças OFL.
 
 ## Tema do aplicativo
 

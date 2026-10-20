@@ -96,14 +96,36 @@ abstract final class DvxAppTheme {
         .apply(bodyColor: textPrimary, displayColor: textPrimary)
         .copyWith(
           displayLarge: base.textTheme.displayLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w700,
             height: 1.05,
           ),
+          displayMedium: base.textTheme.displayMedium?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
+          displaySmall: base.textTheme.displaySmall?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
+          headlineLarge: base.textTheme.headlineLarge?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
           headlineMedium: base.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w700,
+          ),
+          headlineSmall: base.textTheme.headlineSmall?.copyWith(
+            fontFamily: 'Fredoka',
           ),
           titleLarge: base.textTheme.titleLarge?.copyWith(
+            fontFamily: 'Fredoka',
             fontWeight: FontWeight.w700,
+          ),
+          titleMedium: base.textTheme.titleMedium?.copyWith(
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w600,
+          ),
+          titleSmall: base.textTheme.titleSmall?.copyWith(
+            fontFamily: 'Fredoka',
           ),
           labelLarge: base.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
@@ -193,6 +215,7 @@ abstract final class DvxAppTheme {
           focusWidth: highContrast ? 4 : 3,
           borderWidth: highContrast ? 2 : 1,
           highContrast: highContrast,
+          outline: outline,
         ),
       ],
     );

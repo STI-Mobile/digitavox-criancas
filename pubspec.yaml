@@ -34,6 +34,16 @@ flutter:
           weight: 600
         - asset: assets/fonts/open_sans/OpenSans-Bold.ttf
           weight: 700
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/fredoka/Fredoka-Variable.ttf
+          weight: 400
+        - asset: assets/fonts/fredoka/Fredoka-Variable.ttf
+          weight: 500
+        - asset: assets/fonts/fredoka/Fredoka-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/fredoka/Fredoka-Variable.ttf
+          weight: 700
 
   assets:
     - assets/content/

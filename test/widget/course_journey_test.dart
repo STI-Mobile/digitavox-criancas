@@ -357,6 +357,7 @@ void main() {
         find.bySemanticsLabel('Você ganhou 3 de 3 estrelas.'),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.star), findsNWidgets(6));
       expect(find.textContaining('Precisão 100'), findsNothing);
       await tester.ensureVisible(find.text('Ouvir diário de bordo'));
       await tester.tap(find.text('Ouvir diário de bordo'));
