@@ -531,10 +531,21 @@
               "exercises": [
                 {
                   "id": "m1c10-corrida",
-                  "title": "Corrida de Energia",
+                  "title": "Corrida de Energia - ex1",
                   "type": "phrase",
                   "prompt": "Digite todas as palavras do banco.",
                   "expectedInput": "a as da das ah fala sala asas",
+                  "minimumRepetitions": 1,
+                  "spellOut": false,
+                  "repetitionSeparator": " ",
+                  "trailingSeparator": ""
+                },
+                {
+                  "id": "m1c10-corrida2",
+                  "title": "Corrida de Energia - ex2",
+                  "type": "phrase",
+                  "prompt": "Digite todas as palavras do banco.",
+                  "expectedInput": "gfg jkj lçl",
                   "minimumRepetitions": 1,
                   "spellOut": false,
                   "repetitionSeparator": " ",
@@ -569,7 +580,10 @@
             "ah",
             "sala",
             "fala",
-            "asas"
+            "asas",
+            "gfg",
+            "jkj",
+            "lçl"
           ],
           "completionEvent": {
             "id": "m1-decolagem",
@@ -1046,7 +1060,7 @@
         {
           "id": "zero1-ajuda-erros",
           "type": "speech",
-          "text": "Vamos com calma. Continue sem apagar. Se precisar de ajuda, pressione F1.",
+          "text": "Vamos com calma. Continue sem apagar. Se precisar de ajuda, tecle F1.",
           "speaker": "zero1",
           "pending": true,
           "fallback": "text"

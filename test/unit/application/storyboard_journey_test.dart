@@ -234,8 +234,12 @@ void main() {
     await engine.completeModuleEvent();
     expect(engine.stage, JourneyStage.module);
     engine.openLesson(module, race);
-    engine.openExercise(module, race, race.exercises.single);
+    engine.openExercise(module, race, race.exercises.first);
     await pumpEventQueue();
+    await typeCurrentExercise();
+    engine.continueAfterExercise();
+    await pumpEventQueue();
+    expect(engine.exercise, race.exercises[1]);
     await typeCurrentExercise();
     expect(engine.missionCount, 8);
     expect(engine.completedMissionCount, 8);

@@ -48,6 +48,9 @@ void main() {
           'sala',
           'fala',
           'asas',
+          'gfg',
+          'jkj',
+          'lçl',
         });
         expect(module.allowedKeys.join(), 'asdfghjklç ');
       },
@@ -64,7 +67,7 @@ void main() {
         ['ah', 'fala', 'sala', 'asas'],
         ['a sala', 'as asas', 'a fala', 'da sala', 'das asas'],
         ['asdfg çlkjh', 'a fala', 'as asas da sala'],
-        ['a as da das ah fala sala asas'],
+        ['a as da das ah fala sala asas', 'gfg jkj lçl'],
       ];
       const repetitions = [
         [10, 10],
@@ -75,7 +78,7 @@ void main() {
         [8, 8, 8, 8],
         [6, 6, 6, 6, 6],
         [5, 5, 5],
-        [1],
+        [1, 1],
       ];
       const criteria = [70, 85, 85, 85, 90, 90, 90, 90, 85];
       const seconds = [15, 12, 12, 12, 10, 10, 10, 8, 5];
@@ -234,12 +237,13 @@ void main() {
         863,
       );
       expect(() => code.inputForRepetition(13), throwsRangeError);
-      final optional = lessons.last.exercises.single;
-      expect(optional.inputForRepetition(1).endsWith(' '), isFalse);
-      expect(
-        optional.effectiveTimeLimitSeconds(defaultSecondsPerCharacter: 5),
-        5 * (optional.expectedInput!.runes.length + 1) - 1,
-      );
+      for (final optional in lessons.last.exercises) {
+        expect(optional.inputForRepetition(1).endsWith(' '), isFalse);
+        expect(
+          optional.effectiveTimeLimitSeconds(defaultSecondsPerCharacter: 5),
+          5 * (optional.expectedInput!.runes.length + 1) - 1,
+        );
+      }
     });
 
     test('tempo explícito e tempo por caractere substituem defaults', () {
