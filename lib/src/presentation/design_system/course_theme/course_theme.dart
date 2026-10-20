@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
-import '../brand/brand_colors.dart';
 
 @immutable
 final class DvxCourseThemeData {
@@ -33,9 +32,8 @@ abstract interface class DvxCourseTheme {
 final class SpaceCourseTheme implements DvxCourseTheme {
   const SpaceCourseTheme();
 
-  static const spaceNavy = Color(0xFF142B4A);
-  static const cosmicPurple = Color(0xFF6657A8);
-  static const star = Color(0xFFF5C451);
+  static const cosmicBlue = Color(0xFF3DF2FF);
+  static const star = Color(0xFFFFC42E);
 
   @override
   String get id => 'space';
@@ -44,19 +42,19 @@ final class SpaceCourseTheme implements DvxCourseTheme {
   DvxCourseThemeData resolve(AppThemePreference appTheme) => switch (appTheme) {
     AppThemePreference.standard => const DvxCourseThemeData(
       id: 'space',
-      background: Color(0xFFE8F2F5),
-      foreground: Color(0xFF172124),
-      decorativePrimary: Color(0xFFCCDCE8),
-      decorativeSecondary: cosmicPurple,
-      reward: BrandColors.uspYellow,
+      background: Color(0xFFFFF4F7),
+      foreground: Color(0xFF2B0B1E),
+      decorativePrimary: Color(0xFFF6D9E3),
+      decorativeSecondary: Color(0xFF00707F),
+      reward: Color(0xFFFFC42E),
       reduceDecoration: false,
     ),
     AppThemePreference.dark => const DvxCourseThemeData(
       id: 'space',
-      background: Color(0xFF07111F),
-      foreground: Color(0xFFF4F7FA),
-      decorativePrimary: spaceNavy,
-      decorativeSecondary: cosmicPurple,
+      background: Color(0xFF2B0B1E),
+      foreground: Color(0xFFFFF6EC),
+      decorativePrimary: Color(0xFF4A1634),
+      decorativeSecondary: cosmicBlue,
       reward: star,
       reduceDecoration: false,
     ),
@@ -65,8 +63,8 @@ final class SpaceCourseTheme implements DvxCourseTheme {
       background: Color(0xFF000000),
       foreground: Color(0xFFFFFFFF),
       decorativePrimary: Color(0xFF000000),
-      decorativeSecondary: Color(0xFF00D9F5),
-      reward: Color(0xFFFFD000),
+      decorativeSecondary: Color(0xFFFFFF00),
+      reward: Color(0xFFFFFF00),
       reduceDecoration: true,
     ),
   };
@@ -82,20 +80,20 @@ final class NeutralCourseTheme implements DvxCourseTheme {
   DvxCourseThemeData resolve(AppThemePreference appTheme) => switch (appTheme) {
     AppThemePreference.standard => const DvxCourseThemeData(
       id: 'default',
-      background: Color(0xFFF4F8FA),
-      foreground: Color(0xFF172124),
-      decorativePrimary: Color(0xFFF4F8FA),
-      decorativeSecondary: BrandColors.uspBlue,
-      reward: BrandColors.uspYellow,
+      background: Color(0xFFFFF4F7),
+      foreground: Color(0xFF2B0B1E),
+      decorativePrimary: Color(0xFFF6D9E3),
+      decorativeSecondary: Color(0xFF00707F),
+      reward: Color(0xFFFFC42E),
       reduceDecoration: true,
     ),
     AppThemePreference.dark => const DvxCourseThemeData(
       id: 'default',
-      background: Color(0xFF07111F),
-      foreground: Color(0xFFF4F7FA),
-      decorativePrimary: Color(0xFF07111F),
-      decorativeSecondary: BrandColors.uspLightBlue,
-      reward: BrandColors.uspYellow,
+      background: Color(0xFF2B0B1E),
+      foreground: Color(0xFFFFF6EC),
+      decorativePrimary: Color(0xFF4A1634),
+      decorativeSecondary: Color(0xFF3DF2FF),
+      reward: Color(0xFFFFC42E),
       reduceDecoration: true,
     ),
     AppThemePreference.highContrast => const DvxCourseThemeData(
@@ -103,8 +101,8 @@ final class NeutralCourseTheme implements DvxCourseTheme {
       background: Color(0xFF000000),
       foreground: Color(0xFFFFFFFF),
       decorativePrimary: Color(0xFF000000),
-      decorativeSecondary: Color(0xFF00D9F5),
-      reward: Color(0xFFFFD000),
+      decorativeSecondary: Color(0xFFFFFF00),
+      reward: Color(0xFFFFFF00),
       reduceDecoration: true,
     ),
   };

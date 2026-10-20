@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
-import '../brand/brand_colors.dart';
 import '../tokens/dvx_tokens.dart';
 
 abstract final class DvxAppTheme {
@@ -9,45 +8,48 @@ abstract final class DvxAppTheme {
       switch (preference) {
         AppThemePreference.standard => _build(
           brightness: Brightness.light,
-          background: const Color(0xFFF4F8FA),
-          surface: const Color(0xFFFFFFFF),
-          surfaceVariant: const Color(0xFFE8F2F5),
-          primary: const Color(0xFF087A91),
-          secondary: BrandColors.uspBlue,
-          accent: BrandColors.uspYellow,
-          textPrimary: const Color(0xFF172124),
-          textSecondary: const Color(0xFF526166),
-          success: const Color(0xFF287A4D),
-          error: const Color(0xFFB3261E),
-          focus: const Color(0xFFE19A00),
+          background: const Color(0xFFFFF4F7),
+          surface: const Color(0xFFF6D9E3),
+          surfaceVariant: const Color(0xFFF6D9E3),
+          primary: const Color(0xFF2B0B1E),
+          secondary: const Color(0xFF00707F),
+          accent: const Color(0xFFFFC42E),
+          textPrimary: const Color(0xFF2B0B1E),
+          textSecondary: const Color(0xFF2B0B1E),
+          success: const Color(0xFF00707F),
+          error: const Color(0xFFB34700),
+          focus: const Color(0xFF2B0B1E),
+          outline: const Color(0xFF2B0B1E),
         ),
         AppThemePreference.dark => _build(
           brightness: Brightness.dark,
-          background: const Color(0xFF07111F),
-          surface: const Color(0xFF101D2D),
-          surfaceVariant: const Color(0xFF172A3D),
-          primary: BrandColors.uspLightBlue,
-          secondary: const Color(0xFF72D6E3),
-          accent: BrandColors.uspYellow,
-          textPrimary: const Color(0xFFF4F7FA),
-          textSecondary: const Color(0xFFBBC8D4),
-          success: const Color(0xFF5DD39E),
-          error: const Color(0xFFFF8A80),
-          focus: const Color(0xFFFFD166),
+          background: const Color(0xFF2B0B1E),
+          surface: const Color(0xFF4A1634),
+          surfaceVariant: const Color(0xFF4A1634),
+          primary: const Color(0xFFFFC42E),
+          secondary: const Color(0xFF3DF2FF),
+          accent: const Color(0xFFFFC42E),
+          textPrimary: const Color(0xFFFFF6EC),
+          textSecondary: const Color(0xFFFFF6EC),
+          success: const Color(0xFF3DF2FF),
+          error: const Color(0xFFFF9F43),
+          focus: const Color(0xFFFFC42E),
+          outline: const Color(0xFFFFF6EC),
         ),
         AppThemePreference.highContrast => _build(
           brightness: Brightness.dark,
           background: const Color(0xFF000000),
           surface: const Color(0xFF000000),
-          surfaceVariant: const Color(0xFF121212),
-          primary: const Color(0xFF00D9F5),
-          secondary: const Color(0xFF00D9F5),
-          accent: const Color(0xFFFFD000),
+          surfaceVariant: const Color(0xFF000000),
+          primary: const Color(0xFFFFFF00),
+          secondary: const Color(0xFFFFFF00),
+          accent: const Color(0xFFFFFF00),
           textPrimary: const Color(0xFFFFFFFF),
           textSecondary: const Color(0xFFFFFFFF),
-          success: const Color(0xFF00FF66),
-          error: const Color(0xFFFF5252),
+          success: const Color(0xFFFFFF00),
+          error: const Color(0xFFFFFF00),
           focus: const Color(0xFFFFFF00),
+          outline: const Color(0xFFFFFFFF),
           highContrast: true,
         ),
       };
@@ -65,6 +67,7 @@ abstract final class DvxAppTheme {
     required Color success,
     required Color error,
     required Color focus,
+    required Color outline,
     bool highContrast = false,
   }) {
     final scheme = ColorScheme(
@@ -79,7 +82,7 @@ abstract final class DvxAppTheme {
       onSurface: textPrimary,
       tertiary: accent,
       onTertiary: _contrasting(accent),
-      outline: highContrast ? textPrimary : textSecondary,
+      outline: highContrast ? Colors.white : outline,
       outlineVariant: highContrast ? focus : surfaceVariant,
     );
     final base = ThemeData(

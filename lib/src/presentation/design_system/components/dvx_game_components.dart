@@ -56,28 +56,12 @@ final class _CourseBackdrop extends StatelessWidget {
     return ExcludeSemantics(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [theme.background, theme.decorativePrimary],
-          ),
+          color: theme.background
         ),
-        child: Stack(
-          children: [
-            _star(const Alignment(-0.84, -0.88), 5),
-            _star(const Alignment(0.76, -0.72), 4),
-            _star(const Alignment(-0.66, 0.16), 3),
-            _star(const Alignment(0.88, 0.52), 5),
-          ],
         ),
-      ),
-    );
+      );
   }
 
-  Widget _star(Alignment alignment, double size) => Align(
-    alignment: alignment,
-    child: Icon(Icons.star, size: size, color: theme.reward.withAlpha(150)),
-  );
 }
 
 final class DvxGameCard extends StatelessWidget {
