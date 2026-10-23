@@ -86,10 +86,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Alterar tema visual. Escuro');
 
-      // Wrap from the first toolbar control to the last module and back.
+      // Wrap from the first toolbar control to the course-introduction action.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Navegação'));
+      expect(_focusedLabel(), 'Rever introdução do curso');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Alterar tema visual. Escuro');

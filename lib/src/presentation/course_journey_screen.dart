@@ -194,7 +194,6 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
   );
 
   List<Widget> _course() {
-    
     final engine = widget.engine;
     if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
       final scene = engine.scene!;
@@ -230,7 +229,11 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
         ),
         const SizedBox(height: DvxSpacing.md),
       ],
-      if (engine.scene != null)
+      if (engine.scene != null) ...[
+        Text(engine.scene!.text),
+        const SizedBox(height: DvxSpacing.sm),
+        ..._narrationControls(),
+      ],
       Text(
         '${engine.completedMissionCount} de ${engine.missionCount} missões concluídas',
       ),
@@ -275,18 +278,18 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               '${module.lessons.where((lesson) => !engine.isOptionalLesson(lesson)).length} missões · Abrir módulo',
           onPressed: () => engine.openModule(module),
         ),
-        const SizedBox(height: DvxSpacing.md),
-        KeyboardNavigationLabel(
-          label: 'Rever introdução do curso',
-          child: OutlinedButton.icon(
-            onPressed: () {
-              setState(() => _courseIntroductionComplete = false);
-              engine.openCourse();
-            },
-            icon: const Icon(Icons.replay),
-            label: const Text('Rever introdução'),
-          ),
+      const SizedBox(height: DvxSpacing.md),
+      KeyboardNavigationLabel(
+        label: 'Rever introdução do curso',
+        child: OutlinedButton.icon(
+          onPressed: () {
+            setState(() => _courseIntroductionComplete = false);
+            engine.openCourse();
+          },
+          icon: const Icon(Icons.replay),
+          label: const Text('Rever introdução'),
         ),
+      ),
     ];
   }
 
@@ -329,8 +332,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
       const SizedBox(height: DvxSpacing.md),
     ];
   }
+
   List<Widget> _module() => [
-    
     if (engine.scene != null) ...[
       Text(engine.scene!.text),
       const SizedBox(height: DvxSpacing.md),
@@ -368,7 +371,6 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
             ? () => engine.openLesson(engine.module!, lesson)
             : null,
       ),
-      
   ];
 
   Widget? _missionFooter() {
@@ -485,7 +487,7 @@ final class _CourseIntroduction extends StatefulWidget {
     required this.secondText,
     required this.secondCues,
     required this.onComplete,
-    required this.narrationControls
+    required this.narrationControls,
   });
 
   final CourseJourneyEngine engine;
@@ -536,83 +538,82 @@ final class _CourseIntroductionState extends State<_CourseIntroduction> {
         ? widget.secondCharacter
         : widget.firstCharacter;
     final text = _showingSecondSpeaker ? widget.secondText : widget.firstText;
-    return 
-    Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       spacing: DvxSpacing.md,
       children: [
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Semantics(
-              image: true,
-              label: character.imageDescription,
-              child: ExcludeSemantics(
-                child: ClipOval(
-                  child: Image.asset(
-                    character.imageAsset,
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const SizedBox(width: 72, height: 72),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: DvxSpacing.md),
-            Expanded(
-              child: Semantics(
-                container: true,
-                liveRegion: true,
-                label: '${character.name} diz: $text',
-                child: ExcludeSemantics(
-                  child: DvxGameCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            character.name,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        const SizedBox(height: DvxSpacing.sm),
-                        Text(text),
-                      ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  image: true,
+                  label: character.imageDescription,
+                  child: ExcludeSemantics(
+                    child: ClipOval(
+                      child: Image.asset(
+                        character.imageAsset,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox(width: 72, height: 72),
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: DvxSpacing.md),
+                Expanded(
+                  child: Semantics(
+                    container: true,
+                    liveRegion: true,
+                    label: '${character.name} diz: $text',
+                    child: ExcludeSemantics(
+                      child: DvxGameCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                character.name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            const SizedBox(height: DvxSpacing.sm),
+                            Text(text),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: DvxSpacing.lg),
+            KeyboardNavigationLabel(
+              label: _showingSecondSpeaker
+                  ? 'Continuar para o curso'
+                  : 'Continuar para a fala de ${widget.secondCharacter.name}',
+              child: FilledButton(
+                key: ValueKey(
+                  _showingSecondSpeaker
+                      ? 'continue-to-course'
+                      : 'continue-to-${widget.secondCharacter.name}',
+                ),
+                autofocus: true,
+                onPressed: _continue,
+                child: const Text('Continuar'),
               ),
             ),
           ],
         ),
-        const SizedBox(height: DvxSpacing.lg),
-        KeyboardNavigationLabel(
-          label: _showingSecondSpeaker
-              ? 'Continuar para o curso'
-              : 'Continuar para a fala de ${widget.secondCharacter.name}',
-          child: FilledButton(
-            key: ValueKey(
-              _showingSecondSpeaker
-                  ? 'continue-to-course'
-                  : 'continue-to-${widget.secondCharacter.name}',
-            ),
-            autofocus: true,
-            onPressed: _continue,
-            child: const Text('Continuar'),
-          ),
-        ),
-      ],
-    ),
         ...widget.narrationControls(
           cues: _showingSecondSpeaker ? widget.secondCues : widget.firstCues,
-        )
+        ),
       ],
     );
   }
