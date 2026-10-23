@@ -43,6 +43,25 @@ final class CourseJourneyEngine extends ChangeNotifier {
   Set<String> _attemptExerciseIds = <String>{};
 
   JourneyStage get stage => _stage;
+  bool get hasCharacterIntroduction {
+    final currentScene = course.scene;
+    if (course.isDemo ||
+        currentScene == null ||
+        currentScene.text.trim().isEmpty ||
+        currentScene.instruction.trim().isEmpty) {
+      return false;
+    }
+
+    bool hasKnownSpeaker(List<ContentAudioCue> cues) => cues.any(
+      (cue) =>
+          cue.type == ContentAudioCueType.speech &&
+          course.characters.any((character) => character.id == cue.speaker),
+    );
+
+    return hasKnownSpeaker(currentScene.narrationCues) &&
+        hasKnownSpeaker(currentScene.instructionCues);
+  }
+
   CourseModule? get module => _module;
   Lesson? get lesson => _lesson;
   Exercise? get exercise => _exercise;

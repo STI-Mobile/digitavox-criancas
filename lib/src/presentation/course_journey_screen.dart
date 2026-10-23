@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../application/course_journey_engine.dart';
+import '../domain/content/course_catalog.dart';
 import '../domain/progress/student_progress.dart';
 import 'course_navigation_tile.dart';
 import 'course_scene.dart';
@@ -13,7 +14,7 @@ import 'design_system/tokens/dvx_tokens.dart';
 import 'exercise_screen.dart';
 import 'keyboard_navigation.dart';
 
-final class CourseJourneyScreen extends StatelessWidget {
+final class CourseJourneyScreen extends StatefulWidget {
   const CourseJourneyScreen({
     required this.engine,
     required this.onThemePreferenceChanged,
@@ -23,16 +24,36 @@ final class CourseJourneyScreen extends StatelessWidget {
   final CourseJourneyEngine engine;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
+  @override
+  State<CourseJourneyScreen> createState() => _CourseJourneyScreenState();
+}
+
+final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
+  bool _courseIntroductionComplete = false;
+
+  CourseJourneyEngine get engine => widget.engine;
+
+  CourseCharacter? _characterFor(List<ContentAudioCue> cues) {
+    final speaker = cues
+        .where((cue) => cue.type == ContentAudioCueType.speech)
+        .map((cue) => cue.speaker)
+        .whereType<String>()
+        .firstOrNull;
+    return widget.engine.course.characters
+        .where((character) => character.id == speaker)
+        .firstOrNull;
+  }
+
   Future<void> _selectTheme(AppThemePreference preference) async {
-    await engine.catalog.updateThemePreference(preference);
-    onThemePreferenceChanged(preference);
+    await widget.engine.catalog.updateThemePreference(preference);
+    widget.onThemePreferenceChanged(preference);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
-        engine.canGoBack) {
-      engine.back();
+        widget.engine.canGoBack) {
+      widget.engine.back();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -40,41 +61,42 @@ final class CourseJourneyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: engine,
+    animation: widget.engine,
     builder: (context, _) => KeyboardNavigation(
-      key: ValueKey('keyboard-${engine.locationKey}'),
-      onNavigate: () => unawaited(engine.stopNarration()),
-      onAnnounce: engine.courseAudio.speakText,
+      key: ValueKey('keyboard-${widget.engine.locationKey}'),
+      onNavigate: () => unawaited(widget.engine.stopNarration()),
+      onAnnounce: widget.engine.courseAudio.speakText,
       child: Focus(
         canRequestFocus: false,
         onKeyEvent: _handleKeyEvent,
         child: PopScope(
-          canPop: !engine.canGoBack,
+          canPop: !widget.engine.canGoBack,
           onPopInvokedWithResult: (didPop, result) {
-            if (!didPop) engine.back();
+            if (!didPop) widget.engine.back();
           },
           child: Builder(
             builder: (context) {
               final preference =
-                  engine.catalog.progress.settings.themePreference;
-              final courseTheme = DvxCourseThemes.resolve(engine.course.themeId)
-                  .resolve(preference);
+                  widget.engine.catalog.progress.settings.themePreference;
+              final courseTheme = DvxCourseThemes.resolve(
+                widget.engine.course.themeId,
+              ).resolve(preference);
               return DvxGameScaffold(
                 courseTheme: courseTheme,
-                bottomNavigationBar: engine.stage == JourneyStage.lesson
+                bottomNavigationBar: widget.engine.stage == JourneyStage.lesson
                     ? _missionFooter()
                     : null,
-                leading: engine.canGoBack
+                leading: widget.engine.canGoBack
                     ? KeyboardNavigationLabel(
-                        label: switch (engine.stage) {
+                        label: switch (widget.engine.stage) {
                           JourneyStage.exercise => 'Voltar à missão',
                           JourneyStage.lesson ||
                           JourneyStage.moduleCompletion => 'Voltar ao módulo',
                           _ => 'Voltar ao curso',
                         },
                         child: IconButton(
-                          onPressed: engine.back,
-                          tooltip: switch (engine.stage) {
+                          onPressed: widget.engine.back,
+                          tooltip: switch (widget.engine.stage) {
                             JourneyStage.exercise => 'Voltar à missão',
                             JourneyStage.lesson ||
                             JourneyStage.moduleCompletion => 'Voltar ao módulo',
@@ -84,37 +106,37 @@ final class CourseJourneyScreen extends StatelessWidget {
                         ),
                       )
                     : null,
-                title: switch (engine.stage) {
+                title: switch (widget.engine.stage) {
                   JourneyStage.course => 'Digitavox',
                   JourneyStage.module => 'Módulo',
                   JourneyStage.lesson => 'Missão',
                   JourneyStage.exercise =>
-                    engine.currentLessonCompleted
+                    widget.engine.currentLessonCompleted
                         ? 'Missão concluída'
-                        : engine.lesson!.title,
+                        : widget.engine.lesson!.title,
                   JourneyStage.moduleCompletion => 'Conclusão do módulo',
                 },
-                actions: engine.stage == JourneyStage.exercise
+                actions: widget.engine.stage == JourneyStage.exercise
                     ? const <Widget>[]
                     : [
                         DvxThemeSelector(
                           preference: preference,
                           onSelected: _selectTheme,
-                          onAnnounce: engine.courseAudio.speakText,
+                          onAnnounce: widget.engine.courseAudio.speakText,
                         ),
                       ],
                 body: Semantics(
-                  key: ValueKey(engine.locationKey),
+                  key: ValueKey(widget.engine.locationKey),
                   scopesRoute: true,
                   namesRoute: true,
                   label:
-                      engine.stage == JourneyStage.exercise &&
-                          engine.currentLessonCompleted
-                      ? 'Missão concluída. ${engine.lesson!.title}'
-                      : engine.title,
+                      widget.engine.stage == JourneyStage.exercise &&
+                          widget.engine.currentLessonCompleted
+                      ? 'Missão concluída. ${widget.engine.lesson!.title}'
+                      : widget.engine.title,
                   explicitChildNodes: true,
                   child: SingleChildScrollView(
-                    key: PageStorageKey(engine.locationKey),
+                    key: PageStorageKey(widget.engine.locationKey),
                     padding: const EdgeInsets.all(DvxSpacing.lg),
                     child: Center(
                       child: ConstrainedBox(
@@ -122,11 +144,12 @@ final class CourseJourneyScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (engine.stage != JourneyStage.exercise) ...[
+                            if (widget.engine.stage !=
+                                JourneyStage.exercise) ...[
                               Semantics(
                                 header: true,
                                 child: Text(
-                                  engine.title,
+                                  widget.engine.title,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineMedium,
@@ -134,25 +157,25 @@ final class CourseJourneyScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: DvxSpacing.md),
                             ],
-                            if (engine.stage == JourneyStage.lesson) ...[
+                            if (widget.engine.stage == JourneyStage.lesson) ...[
                               CourseScene(
-                                scene: engine.scene,
-                                character: engine.character,
-                                illustration: engine.illustration,
+                                scene: widget.engine.scene,
+                                character: widget.engine.character,
+                                illustration: widget.engine.illustration,
                               ),
                               ..._narrationControls(),
                             ],
-                            ...switch (engine.stage) {
+                            ...switch (widget.engine.stage) {
                               JourneyStage.course => _course(),
                               JourneyStage.module => _module(),
                               JourneyStage.lesson => _lesson(),
                               JourneyStage.moduleCompletion => [
-                                _ModuleCompletion(engine: engine),
+                                _ModuleCompletion(engine: widget.engine),
                               ],
                               JourneyStage.exercise => [
                                 ExerciseScreen(
-                                  key: ValueKey(engine.session),
-                                  engine: engine,
+                                  key: ValueKey(widget.engine.session),
+                                  engine: widget.engine,
                                 ),
                               ],
                             },
@@ -171,6 +194,33 @@ final class CourseJourneyScreen extends StatelessWidget {
   );
 
   List<Widget> _course() {
+    
+    final engine = widget.engine;
+    if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
+      final scene = engine.scene!;
+      final firstCues = scene.narrationCues
+          .where((cue) => cue.type == ContentAudioCueType.speech)
+          .toList(growable: false);
+      final secondCues = scene.instructionCues
+          .where((cue) => cue.type == ContentAudioCueType.speech)
+          .toList(growable: false);
+      final firstCharacter = _characterFor(firstCues)!;
+      final secondCharacter = _characterFor(secondCues)!;
+      return [
+        _CourseIntroduction(
+          engine: engine,
+          firstCharacter: firstCharacter,
+          firstText: scene.text,
+          firstCues: firstCues,
+          secondCharacter: secondCharacter,
+          secondText: scene.instruction,
+          secondCues: secondCues,
+          onComplete: () => setState(() => _courseIntroductionComplete = true),
+          narrationControls: _narrationControls,
+        ),
+      ];
+    }
+
     final target = engine.resumeTarget;
     return [
       if (engine.course.isDemo) ...[
@@ -181,28 +231,6 @@ final class CourseJourneyScreen extends StatelessWidget {
         const SizedBox(height: DvxSpacing.md),
       ],
       if (engine.scene != null)
-        ExpansionTile(
-          key: PageStorageKey('course-story-${engine.course.id}'),
-          title: const Text('Apresentação do curso'),
-          initiallyExpanded: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(DvxSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(engine.scene!.text),
-                  if (engine.scene!.instruction.isNotEmpty) ...[
-                    const SizedBox(height: DvxSpacing.md),
-                    Text(engine.scene!.instruction),
-                  ],
-                ],
-              ),
-            ),
-            ..._narrationControls(),
-          ],
-        ),
-      const SizedBox(height: DvxSpacing.md),
       Text(
         '${engine.completedMissionCount} de ${engine.missionCount} missões concluídas',
       ),
@@ -247,18 +275,44 @@ final class CourseJourneyScreen extends StatelessWidget {
               '${module.lessons.where((lesson) => !engine.isOptionalLesson(lesson)).length} missões · Abrir módulo',
           onPressed: () => engine.openModule(module),
         ),
+        const SizedBox(height: DvxSpacing.md),
+        KeyboardNavigationLabel(
+          label: 'Rever introdução do curso',
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() => _courseIntroductionComplete = false);
+              engine.openCourse();
+            },
+            icon: const Icon(Icons.replay),
+            label: const Text('Rever introdução'),
+          ),
+        ),
     ];
   }
 
-  List<Widget> _narrationControls() => [
-    if (engine.canReplayNarration) ...[
+  List<Widget> _narrationControls({List<ContentAudioCue>? cues}) {
+    final configuration = cues == null
+        ? null
+        : CourseAudioConfiguration(start: cues);
+    final canReplay = configuration == null
+        ? engine.canReplayNarration
+        : engine.courseAudio.hasCues(configuration, CourseAudioEvent.start);
+
+    if (!canReplay) return const [];
+
+    Future<void> replay() => configuration == null
+        ? engine.replayNarration()
+        : engine.courseAudio.play(configuration, CourseAudioEvent.start);
+
+    return [
       Wrap(
+        alignment: WrapAlignment.center,
         spacing: DvxSpacing.sm,
         children: [
           KeyboardNavigationLabel(
             label: 'Ouvir apresentação',
             child: OutlinedButton.icon(
-              onPressed: engine.replayNarration,
+              onPressed: () => unawaited(replay()),
               icon: const Icon(Icons.volume_up_outlined),
               label: const Text('Ouvir apresentação'),
             ),
@@ -273,10 +327,10 @@ final class CourseJourneyScreen extends StatelessWidget {
         ],
       ),
       const SizedBox(height: DvxSpacing.md),
-    ],
-  ];
-
+    ];
+  }
   List<Widget> _module() => [
+    
     if (engine.scene != null) ...[
       Text(engine.scene!.text),
       const SizedBox(height: DvxSpacing.md),
@@ -314,6 +368,7 @@ final class CourseJourneyScreen extends StatelessWidget {
             ? () => engine.openLesson(engine.module!, lesson)
             : null,
       ),
+      
   ];
 
   Widget? _missionFooter() {
@@ -417,6 +472,149 @@ final class CourseJourneyScreen extends StatelessWidget {
           ),
         ),
     ];
+  }
+}
+
+final class _CourseIntroduction extends StatefulWidget {
+  const _CourseIntroduction({
+    required this.engine,
+    required this.firstCharacter,
+    required this.firstText,
+    required this.firstCues,
+    required this.secondCharacter,
+    required this.secondText,
+    required this.secondCues,
+    required this.onComplete,
+    required this.narrationControls
+  });
+
+  final CourseJourneyEngine engine;
+  final CourseCharacter firstCharacter;
+  final String firstText;
+  final List<ContentAudioCue> firstCues;
+  final CourseCharacter secondCharacter;
+  final String secondText;
+  final List<ContentAudioCue> secondCues;
+  final VoidCallback onComplete;
+  final List<Widget> Function({List<ContentAudioCue>? cues}) narrationControls;
+
+  @override
+  State<_CourseIntroduction> createState() => _CourseIntroductionState();
+}
+
+final class _CourseIntroductionState extends State<_CourseIntroduction> {
+  bool _showingSecondSpeaker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_play(widget.firstCues));
+  }
+
+  Future<void> _play(List<ContentAudioCue> cues) async {
+    await widget.engine.stopNarration();
+    if (!mounted) return;
+    await widget.engine.courseAudio.play(
+      CourseAudioConfiguration(start: cues),
+      CourseAudioEvent.start,
+    );
+  }
+
+  void _continue() {
+    if (!_showingSecondSpeaker) {
+      setState(() => _showingSecondSpeaker = true);
+      unawaited(_play(widget.secondCues));
+      return;
+    }
+    unawaited(widget.engine.stopNarration());
+    widget.onComplete();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final character = _showingSecondSpeaker
+        ? widget.secondCharacter
+        : widget.firstCharacter;
+    final text = _showingSecondSpeaker ? widget.secondText : widget.firstText;
+    return 
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      spacing: DvxSpacing.md,
+      children: [
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Semantics(
+              image: true,
+              label: character.imageDescription,
+              child: ExcludeSemantics(
+                child: ClipOval(
+                  child: Image.asset(
+                    character.imageAsset,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox(width: 72, height: 72),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: DvxSpacing.md),
+            Expanded(
+              child: Semantics(
+                container: true,
+                liveRegion: true,
+                label: '${character.name} diz: $text',
+                child: ExcludeSemantics(
+                  child: DvxGameCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            character.name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        const SizedBox(height: DvxSpacing.sm),
+                        Text(text),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: DvxSpacing.lg),
+        KeyboardNavigationLabel(
+          label: _showingSecondSpeaker
+              ? 'Continuar para o curso'
+              : 'Continuar para a fala de ${widget.secondCharacter.name}',
+          child: FilledButton(
+            key: ValueKey(
+              _showingSecondSpeaker
+                  ? 'continue-to-course'
+                  : 'continue-to-${widget.secondCharacter.name}',
+            ),
+            autofocus: true,
+            onPressed: _continue,
+            child: const Text('Continuar'),
+          ),
+        ),
+      ],
+    ),
+        ...widget.narrationControls(
+          cues: _showingSecondSpeaker ? widget.secondCues : widget.firstCues,
+        )
+      ],
+    );
   }
 }
 

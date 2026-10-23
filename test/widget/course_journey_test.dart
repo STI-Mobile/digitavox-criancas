@@ -19,6 +19,51 @@ import '../support/recording_audio_guidance.dart';
 
 void main() {
   testWidgets(
+    'course introduction shows Stella then ZERO-1 before the module list',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      await _pumpDemo(
+        tester,
+        repository: _createRepository(),
+        catalog: const AssetCourseCatalog(
+          assetPath: 'assets/content/exploradores_espaciais.json',
+        ),
+        audio: audio,
+      );
+
+      expect(
+        find.textContaining('Uma tempestade solar varreu a galáxia'),
+        findsOneWidget,
+      );
+      final stellaPortrait = find.bySemanticsLabel(
+        'Comandante Stella, guia humana da Academia Galáctica.',
+      );
+      expect(stellaPortrait, findsOneWidget);
+      expect(
+        tester.getSemantics(stellaPortrait).flagsCollection.isImage,
+        isTrue,
+      );
+      expect(find.textContaining('Bip! Zero Um na escuta'), findsNothing);
+      expect(audio.playedCues.whereType<SpeechCue>().single.id, 'm1c0-stella');
+
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Uma tempestade solar varreu a galáxia'),
+        findsNothing,
+      );
+      expect(find.textContaining('Bip! Zero Um na escuta'), findsOneWidget);
+      expect(audio.playedCues.whereType<SpeechCue>().last.id, 'm1c0-zero1');
+
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Módulo 1 · A Nave Adormecida'), findsOneWidget);
+      expect(find.text('Continuar'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'keyboard menus cycle, announce selection and activate with Enter',
     (tester) async {
       final audio = RecordingAudioGuidance();
@@ -217,14 +262,7 @@ void main() {
     'restores click feedback during typing and keeps it off menu actions',
     (tester) async {
       final audio = RecordingAudioGuidance();
-      await _pumpDemo(
-        tester,
-        repository: _createRepository(),
-        audio: audio,
-        catalog: const AssetCourseCatalog(
-          assetPath: 'assets/content/exploradores_espaciais.json',
-        ),
-      );
+      await _pumpDemo(tester, repository: _createRepository(), audio: audio);
       await _startCourse(tester);
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
@@ -765,6 +803,12 @@ void main() {
 }
 
 Future<void> _startCourse(WidgetTester tester) async {
+  if (find.text('Continuar').evaluate().isNotEmpty) {
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+  }
   await tester.ensureVisible(find.text('Começar curso'));
   await tester.tap(find.text('Começar curso'));
   await tester.pumpAndSettle();

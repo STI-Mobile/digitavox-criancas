@@ -57,7 +57,9 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
         courseAudio: widget.courseAudio,
       );
     });
-    unawaited(_engine!.start());
+    if (!_engine!.hasCharacterIntroduction) {
+      unawaited(_engine!.start());
+    }
   }
 
   @override
