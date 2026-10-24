@@ -13,6 +13,10 @@ concurrency:
   group: beta-distribution-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Builds 1-99 are reserved for manual uploads, such as the first Play release.
+  BUILD_NUMBER_BASE: 100
+
 jobs:
   android:
     name: Android - Play Internal Testing
@@ -58,7 +62,10 @@ jobs:
           EOF
 
       - name: Build Android beta bundle
-        run: make build-android-beta BUILD_NUMBER="${{ github.run_number }}"
+        run: |
+          build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
+          echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          make build-android-beta BUILD_NUMBER="$build_number"
 
       - name: Publish to Google Play Internal Testing
         uses: r0adkll/upload-google-play@v1
@@ -68,7 +75,7 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           tracks: internal
           status: completed
-          releaseName: beta-${{ github.run_number }}
+          releaseName: beta-${{ env.BUILD_NUMBER }}
 
   ios:
     name: iOS - TestFlight
@@ -111,7 +118,9 @@ jobs:
           cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
 
       - name: Build iOS beta archive
-        run: make build-ios-beta BUILD_NUMBER="${{ github.run_number }}"
+        run: |
+          build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
+          make build-ios-beta BUILD_NUMBER="$build_number"
 
       - name: Locate IPA
         id: ipa
