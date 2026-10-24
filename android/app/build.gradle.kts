@@ -40,7 +40,7 @@ if (releaseArtifactTaskRequested && missingReleaseSigningValues.isNotEmpty()) {
 }
 
 android {
-    namespace = "br.org.digitavox.digitavox_criancas"
+    namespace = "br.usp.digitavox_criancas"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -51,7 +51,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "br.org.digitavox.digitavox_criancas"
+        applicationId = "br.usp.digitavox_criancas"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
