@@ -29,6 +29,24 @@ make build-android-beta BUILD_NUMBER=42
 make build-ios-beta BUILD_NUMBER=42
 ```
 
+## Número do build
+
+O mesmo número é usado como `versionCode` no Android e `CFBundleVersion` no
+iOS. O workflow calcula `BUILD_NUMBER_BASE + github.run_number`, com base
+`100`. Os números de 1 a 99 ficam reservados para uploads manuais; o primeiro
+upload no Play Console deve usar `BUILD_NUMBER=1`.
+
+O `versionCode` é único no app inteiro, em todos os tracks do Play, e não pode
+ser reutilizado mesmo após excluir um build. Por isso:
+
+- se um job falhar, use "Re-run failed jobs"; "Re-run all jobs" reutiliza o
+  mesmo `run_number` e o Play recusa o job que já tinha publicado;
+- renomear ou recriar o workflow reinicia o `run_number`; ajuste a base para
+  um valor acima do último build publicado;
+- builds beta usam `APP_ENV=beta` e não podem ser promovidos para produção. A
+  distribuição de produção precisará de números próprios no mesmo contador,
+  definidos junto com o workflow de produção.
+
 Os comandos de beta exigem credenciais de assinatura válidas. O Android recusa
 um build release se `storeFile`, `storePassword`, `keyAlias` ou `keyPassword`
 não estiverem disponíveis em `android/key.properties` ou como propriedades
@@ -58,7 +76,10 @@ Configure os seguintes valores nesse Environment:
 | Secret | `APPSTORE_API_PRIVATE_KEY` | Conteúdo da chave privada `.p8` da API |
 
 As credenciais Apple devem corresponder ao bundle ID
-`br.org.digitavox.digitavoxCriancas`. A chave da App Store Connect deve ter ao
+`br.usp.digitavox-criancas`. O app Android usa o application ID
+`br.usp.digitavox_criancas`, que também é o `packageName` publicado no Play
+Console. Os dois identificadores não podem mudar depois do registro nas lojas.
+A chave da App Store Connect deve ter ao
 menos a permissão App Manager. A primeira versão Android precisa existir no
 Play Console antes de a API poder publicar no track `internal`.
 
