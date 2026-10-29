@@ -39,7 +39,6 @@ void main() {
     expect(theme.colorScheme.outlineVariant, const Color(0xFF4A1634));
     expect(theme.colorScheme.secondary, const Color(0xFF3DF2FF));
     expect(theme.focusColor, const Color(0xFFFFC42E));
-
   });
 
   test('resolves High Contrast with stronger focus and black background', () {

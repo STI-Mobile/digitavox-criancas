@@ -156,7 +156,9 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
               ElevatedButton(
                 onPressed: () => _openCourse(course),
                 child: Padding(
-                  padding:  EdgeInsets.symmetric(vertical:context.appSpacing.sm),
+                  padding: EdgeInsets.symmetric(
+                    vertical: context.appSpacing.sm,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -170,7 +172,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
                   ),
                 ),
               ),
-               SizedBox(height: context.appSpacing.sm),
+              SizedBox(height: context.appSpacing.sm),
             ],
           ],
         ),
@@ -178,4 +180,3 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
     ),
   );
 }
-

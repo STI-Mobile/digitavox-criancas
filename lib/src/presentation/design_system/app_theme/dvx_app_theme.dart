@@ -48,7 +48,7 @@ final class DvxAppSpacing extends ThemeExtension<DvxAppSpacing> {
 }
 
 @immutable
-final class DvxAppRadius extends ThemeExtension<DvxAppRadius>{
+final class DvxAppRadius extends ThemeExtension<DvxAppRadius> {
   const DvxAppRadius({this.sm = 8, this.md = 16, this.lg = 24});
 
   final double sm;
@@ -56,15 +56,8 @@ final class DvxAppRadius extends ThemeExtension<DvxAppRadius>{
   final double lg;
 
   @override
-  DvxAppRadius copyWith({
-    double? sm,
-    double? md,
-    double? lg,
-  }) => DvxAppRadius(
-    sm: sm ?? this.sm,
-    md: md ?? this.md,
-    lg: lg ?? this.lg,
-  );
+  DvxAppRadius copyWith({double? sm, double? md, double? lg}) =>
+      DvxAppRadius(sm: sm ?? this.sm, md: md ?? this.md, lg: lg ?? this.lg);
 
   @override
   DvxAppRadius lerp(covariant DvxAppRadius? other, double t) {
@@ -300,9 +293,6 @@ abstract final class DvxAppTheme {
 }
 
 extension DvxAppThemeContext on BuildContext {
-  DvxAppSpacing get appSpacing =>
-      Theme.of(this).extension<DvxAppSpacing>()!;
-  DvxAppRadius get appRadius =>
-        Theme.of(this).extension<DvxAppRadius>()!;
+  DvxAppSpacing get appSpacing => Theme.of(this).extension<DvxAppSpacing>()!;
+  DvxAppRadius get appRadius => Theme.of(this).extension<DvxAppRadius>()!;
 }
-
