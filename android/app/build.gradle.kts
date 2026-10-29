@@ -6,37 +6,40 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val signingProperties = Properties()
-val signingPropertiesFile = rootProject.file("key.properties")
-if (signingPropertiesFile.exists()) {
-    signingPropertiesFile.inputStream().use(signingProperties::load)
+val distributionFlavors = listOf("dev", "prod")
+val signingValueNames = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+
+// Each store app has its own upload key, read from key-<flavor>.properties or
+// from -Pdigitavox.signing.<flavor>.<name>.
+fun releaseSigningValues(flavor: String): Map<String, String?> {
+    val properties = Properties()
+    val propertiesFile = rootProject.file("key-$flavor.properties")
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use(properties::load)
+    }
+    return signingValueNames.associateWith { name ->
+        providers.gradleProperty("digitavox.signing.$flavor.$name").orNull
+            ?: properties.getProperty(name)
+    }
 }
 
-fun signingValue(name: String): String? =
-    providers.gradleProperty("digitavox.signing.$name").orNull
-        ?: signingProperties.getProperty(name)
+val releaseSigning = distributionFlavors.associateWith(::releaseSigningValues)
+val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(':') }
 
-val releaseStoreFile = signingValue("storeFile")
-val releaseStorePassword = signingValue("storePassword")
-val releaseKeyAlias = signingValue("keyAlias")
-val releaseKeyPassword = signingValue("keyPassword")
-val missingReleaseSigningValues = mapOf(
-    "storeFile" to releaseStoreFile,
-    "storePassword" to releaseStorePassword,
-    "keyAlias" to releaseKeyAlias,
-    "keyPassword" to releaseKeyPassword,
-).filterValues { it.isNullOrBlank() }.keys
-
-val releaseArtifactTaskRequested = gradle.startParameter.taskNames.any { taskName ->
-    taskName.substringAfterLast(':').matches(
-        Regex("(assemble|bundle|package|sign).*Release.*"),
-    )
-}
-if (releaseArtifactTaskRequested && missingReleaseSigningValues.isNotEmpty()) {
-    throw GradleException(
-        "Release signing requires ${missingReleaseSigningValues.joinToString()}. " +
-            "Create android/key.properties or provide -Pdigitavox.signing.<name>.",
-    )
+for ((flavor, values) in releaseSigning) {
+    val flavorName = flavor.replaceFirstChar(Char::uppercase)
+    // Tasks without a flavor name, such as assembleRelease, build every flavor.
+    val releaseArtifactTaskRequested = requestedTaskNames.any { taskName ->
+        taskName.matches(Regex("(assemble|bundle|package|sign)($flavorName)?Release.*"))
+    }
+    val missingValues = values.filterValues { it.isNullOrBlank() }.keys
+    if (releaseArtifactTaskRequested && missingValues.isNotEmpty()) {
+        throw GradleException(
+            "Release signing for the $flavor flavor requires ${missingValues.joinToString()}. " +
+                "Create android/key-$flavor.properties or provide " +
+                "-Pdigitavox.signing.$flavor.<name>.",
+        )
+    }
 }
 
 android {
@@ -65,19 +68,29 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            if (missingReleaseSigningValues.isEmpty()) {
-                storeFile = file(requireNotNull(releaseStoreFile))
-                storePassword = requireNotNull(releaseStorePassword)
-                keyAlias = requireNotNull(releaseKeyAlias)
-                keyPassword = requireNotNull(releaseKeyPassword)
+        for ((flavor, values) in releaseSigning) {
+            create(flavor) {
+                if (values.values.none { it.isNullOrBlank() }) {
+                    storeFile = file(requireNotNull(values["storeFile"]))
+                    storePassword = requireNotNull(values["storePassword"])
+                    keyAlias = requireNotNull(values["keyAlias"])
+                    keyPassword = requireNotNull(values["keyPassword"])
+                }
             }
         }
     }
 
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("release")
+    // See docs/adr/0005-apps-separados-dev-prod.md.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("dev") {
+            dimension = "distribution"
+            applicationIdSuffix = ".dev"
+            signingConfig = signingConfigs.getByName("dev")
+        }
+        create("prod") {
+            dimension = "distribution"
+            signingConfig = signingConfigs.getByName("prod")
         }
     }
 }
