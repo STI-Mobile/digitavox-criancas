@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'src/app.dart';
 import 'src/app_environment.dart';
@@ -16,7 +17,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final environment = AppEnvironment.fromBuild(
     isDebugBuild: kDebugMode,
-    configuredValue: const String.fromEnvironment('APP_ENV'),
+    flavor: appFlavor,
   );
 
   runApp(
