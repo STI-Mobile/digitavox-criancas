@@ -79,6 +79,8 @@ jobs:
 
   ios:
     name: iOS - TestFlight
+    # Repository variable: environment variables are not available to job-level if.
+    if: vars.IOS_DISTRIBUTION_ENABLED == 'true'
     runs-on: macos-latest
     timeout-minutes: 45
     environment: distribution-dev
