@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_guidance_coordinator.dart';
 import 'package:digitavox_criancas/src/application/audio/audio_guidance_services.dart';
@@ -82,6 +84,28 @@ void main() {
         throwsA(isA<InvalidAudioCueException>()),
       );
     });
+
+    test(
+      'encaminha cliques simples e duplos somente ao canal de SFX',
+      () async {
+        await coordinator.play(const ClickCue(id: 'correct'));
+        await coordinator.play(
+          const ClickCue(id: 'incorrect', doubleClick: true),
+        );
+        expect(events.where((event) => event.startsWith('sfx.click:')), [
+          'sfx.click:single',
+          'sfx.click:double',
+        ]);
+        expect(
+          events.where((event) => event.startsWith('tts.speak:')),
+          isEmpty,
+        );
+        expect(
+          events.where((event) => event.startsWith('asset.play:')),
+          isEmpty,
+        );
+      },
+    );
 
     test('reproduz SfxCue somente pelo SfxPlayer', () async {
       await coordinator.play(
@@ -182,6 +206,43 @@ void main() {
         ]);
       },
     );
+
+    for (final (channel, cue) in <(String, AudioCue)>[
+      (
+        'asset',
+        const SpeechCue(id: 'old', text: 'Antiga', audioAsset: 'old.wav'),
+      ),
+      ('sfx', const SfxCue(id: 'old', asset: 'old.wav')),
+      ('music', const MusicCue(id: 'old', asset: 'old.wav')),
+    ]) {
+      test(
+        'cancelamento durante configuração de $channel impede reprodução tardia',
+        () async {
+          final volumeReady = Completer<void>();
+          assetPlayer.volumeDelay = volumeReady.future;
+          sfxPlayer.volumeDelay = volumeReady.future;
+          musicPlayer.volumeDelay = volumeReady.future;
+          final oldPlayback = coordinator.play(cue);
+          for (var attempt = 0; attempt < 20; attempt++) {
+            if (events.any((event) => event.startsWith('$channel.volume:'))) {
+              break;
+            }
+            await Future<void>.delayed(Duration.zero);
+          }
+          expect(
+            events.any((event) => event.startsWith('$channel.volume:')),
+            isTrue,
+          );
+          await coordinator.cancelSequence();
+          await coordinator.play(
+            const SpeechCue(id: 'selection', text: 'Nova seleção'),
+          );
+          volumeReady.complete();
+          await oldPlayback;
+          expect(_playEvents(events), ['tts.speak:Nova seleção']);
+        },
+      );
+    }
 
     test('dispose libera todos os recursos', () async {
       await coordinator.dispose();

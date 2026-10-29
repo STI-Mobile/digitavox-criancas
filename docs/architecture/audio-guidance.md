@@ -26,10 +26,11 @@ Audio Guidance é a infraestrutura genérica responsável por executar unidades 
 
 ## Arquitetura e cues
 
-`AudioCue` é uma classe selada da camada de aplicação. Seus três tipos permitem despacho seguro sem expor plugins:
+`AudioCue` é uma classe selada da camada de aplicação. Seus tipos permitem despacho seguro sem expor plugins:
 
 - `SpeechCue`: possui `id`, texto, asset opcional e `speaker` opcional. `speaker` é metadata opaca e não altera a reprodução.
 - `SfxCue`: possui `id` e asset. Efeitos nunca usam TTS.
+- `ClickCue`: solicita um clique discreto, simples ou duplo, executado pelo mesmo canal de SFX. Não depende de asset e não usa TTS.
 - `MusicCue`: possui `id` e asset e usa uma fronteira diferente de SFX.
 
 O `AudioGuidanceCoordinator` recebe `TextToSpeechService`, `AssetAudioPlayer`, `SfxPlayer` e `MusicPlayer` por injeção. Ele é o único ponto que escolhe como executar cada cue. A raiz de composição cria implementações concretas independentes; testes fornecem fakes e não acessam áudio real.
@@ -49,7 +50,7 @@ Não foi adicionada dependência. A implementação nativa preserva Swift Packag
 
 ## SFX e Music
 
-SFX usa exclusivamente `SfxPlayer`. Uma falha é propagada como `AudioServiceException` e nunca aciona TTS.
+SFX usa exclusivamente `SfxPlayer`. Assets seguem `play`; `ClickCue` segue `playClick`, que usa `SystemSoundType.click` na infraestrutura. O padrão original do app é um clique para acerto e dois cliques separados por 120 ms para erro. O clique já emitido não pode ser interrompido, mas cancelamento ou nova reprodução invalida o segundo pulso pendente. O volume do clique é controlado pelo sistema. Uma falha é propagada como `AudioServiceException` e nunca aciona TTS.
 
 Music possui operações básicas de reprodução, pausa, volume e parada por meio de `MusicPlayer`. A implementação inicial reutiliza a tecnologia de assets, mas recebe uma instância própria. Não há playlists, crossfade ou mixagem avançada.
 
@@ -65,7 +66,8 @@ O coordenador usa uma geração monotônica como token simples de cancelamento:
 - `stop` interrompe os players e invalida continuações pendentes;
 - `cancelSequence` faz o mesmo e registra `audio_sequence_cancelled`;
 - uma nova sequência recebe outra geração;
-- callbacks de uma geração antiga não iniciam cues posteriores.
+- callbacks de uma geração antiga não iniciam cues posteriores;
+- o token também é conferido após a configuração assíncrona de volume, antes de iniciar assets de fala, SFX ou música. Uma navegação que interrompe essa configuração não deixa o áudio antigo começar depois da nova seleção.
 
 Não existe scheduler ou fila global. A semântica é deliberadamente determinística: um novo comando de reprodução substitui o anterior.
 

@@ -37,3 +37,9 @@ ios/.symlinks/
 ios/**/DerivedData/
 ios/**/xcuserdata/
 ios/Runner/GeneratedPluginRegistrant.*
+macos/flutter
+
+# Linux
+linux/flutter
+
+analysis_options.yaml

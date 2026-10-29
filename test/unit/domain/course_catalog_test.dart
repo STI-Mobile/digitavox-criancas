@@ -53,6 +53,32 @@ void main() {
       );
     });
 
+    test('parses lesson accuracy and speed criteria from schema 3', () {
+      final catalog = _validCatalog()..['schemaVersion'] = 3;
+      final lesson =
+          (((catalog['courses']! as List).single
+                          as Map<String, Object?>)['modules']!
+                      as List)
+                  .single
+              as Map<String, Object?>;
+      final lessonJson =
+          ((lesson['lessons']! as List).single as Map<String, Object?>)
+            ..['accuracy'] = 70
+            ..['secChar'] = 15;
+
+      final parsed = CourseCatalogDocument.fromJson(catalog)
+          .courses
+          .single
+          .modules
+          .single
+          .lessons
+          .single;
+
+      expect(parsed.accuracy, 70);
+      expect(parsed.secChar, 15);
+      expect(lessonJson['accuracy'], 70);
+    });
+
     test('rejects duplicate exercise ids', () {
       final catalog = _validCatalog();
       final courses = catalog['courses']! as List<Object?>;

@@ -13,8 +13,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: DvxAppTheme.resolve(AppThemePreference.standard),
-        home: const Scaffold(
-          body: Column(
+        home: DvxGameScaffold(
+          courseTheme: const NeutralCourseTheme().resolve(
+            AppThemePreference.standard,
+          ),
+          title: 'Teste',
+          body: const Column(
             children: [
               DvxFeedback(
                 kind: DvxFeedbackKind.waiting,
@@ -54,8 +58,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: DvxAppTheme.resolve(AppThemePreference.dark),
-        home: const Scaffold(
-          body: DvxKeyPrompt(value: 'ASDFG', nextCharacter: 'a'),
+        home: DvxGameScaffold(
+          courseTheme: const NeutralCourseTheme().resolve(
+            AppThemePreference.dark,
+          ),
+          title: 'Teste',
+          body: const DvxKeyPrompt(value: 'ASDFG', nextCharacter: 'a'),
         ),
       ),
     );

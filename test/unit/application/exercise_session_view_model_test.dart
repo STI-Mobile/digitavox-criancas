@@ -10,7 +10,7 @@ void main() {
       final evaluations = <bool>[];
       final viewModel = _session(
         exercise: _sequence,
-        onCompleted: () async => completions++,
+        onCompleted: (_) async => completions++,
         onInputEvaluated: (correct) async => evaluations.add(correct),
       );
       addTearDown(viewModel.dispose);
@@ -33,7 +33,7 @@ void main() {
     },
   );
 
-  test('gives contextual help after four consecutive errors', () async {
+  test('offers help after three consecutive errors', () async {
     final viewModel = _session(
       exercise: const Exercise(
         id: 'sequence',
@@ -45,14 +45,13 @@ void main() {
     );
     addTearDown(viewModel.dispose);
 
-    for (var index = 0; index < 4; index++) {
+    for (var index = 0; index < 3; index++) {
       await viewModel.handleInput('x');
     }
 
-    expect(viewModel.consecutiveErrors, 4);
-    expect(viewModel.expectedCharacter, 'e');
-    expect(viewModel.announcement, startsWith('Excesso de erros'));
-    expect(viewModel.announcement, contains('seta para direita'));
+    expect(viewModel.consecutiveErrors, 3);
+    expect(viewModel.expectedCharacter, 'd');
+    expect(viewModel.announcement, startsWith('Precisa de ajuda?'));
     expect(viewModel.announcement, contains('F1'));
   });
 
@@ -67,7 +66,7 @@ void main() {
         expectedInput: 'a',
         minimumRepetitions: 3,
       ),
-      onCompleted: () async => completions++,
+      onCompleted: (_) async => completions++,
     );
     addTearDown(viewModel.dispose);
 
@@ -149,16 +148,18 @@ const _sequence = Exercise(
   type: ExerciseType.keySequence,
   prompt: 'Digite A e B.',
   expectedInput: 'ab',
+  spellOut: true,
 );
 
 ExerciseSessionViewModel _session({
   Exercise exercise = _exercise,
-  Future<void> Function()? onCompleted,
+  Future<void> Function(int accuracyPercent)? onCompleted,
   Future<void> Function(bool correct)? onInputEvaluated,
   DateTime Function()? now,
 }) => ExerciseSessionViewModel(
   exercise: exercise,
-  onCompleted: onCompleted ?? () async {},
+  onCompleted: onCompleted ?? (_) async {},
   onInputEvaluated: onInputEvaluated ?? (_) async {},
   now: now,
+  onAttemptStarted: () async => 1,
 );

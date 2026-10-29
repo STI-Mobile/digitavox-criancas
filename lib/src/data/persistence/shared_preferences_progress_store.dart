@@ -3,11 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'local_progress_repository.dart';
 
 final class SharedPreferencesProgressStore implements ProgressDocumentStore {
-  SharedPreferencesProgressStore({SharedPreferencesAsync? preferences})
-    : _preferences = preferences ?? SharedPreferencesAsync();
+  SharedPreferencesProgressStore({
+    this.storageKey = 'digitavox.student_progress',
+    SharedPreferencesAsync? preferences,
+  }) : _preferences = preferences ?? SharedPreferencesAsync();
 
-  static const String storageKey = 'digitavox.student_progress';
-
+  final String storageKey;
   final SharedPreferencesAsync _preferences;
 
   @override
