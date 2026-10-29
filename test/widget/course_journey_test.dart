@@ -7,7 +7,7 @@ import 'package:digitavox_criancas/src/data/persistence/local_progress_repositor
 import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
-import 'package:digitavox_criancas/src/presentation/design_system/tokens/dvx_tokens.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/tokens/accessibility_tokens.dart';
 import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -789,7 +789,10 @@ void main() {
 
     context = tester.element(find.text('Digitavox'));
 
-    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
+    expect(
+      Theme.of(context).extension<DvxAccessibilityTokens>()!.highContrast,
+      isTrue,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
@@ -798,7 +801,10 @@ void main() {
 
     context = tester.element(find.text('Digitavox'));
 
-    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
+    expect(
+      Theme.of(context).extension<DvxAccessibilityTokens>()!.highContrast,
+      isTrue,
+    );
   });
 }
 

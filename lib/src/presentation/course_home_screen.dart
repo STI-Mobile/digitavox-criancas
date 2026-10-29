@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:digitavox_criancas/src/presentation/design_system/app_theme/dvx_app_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../application/course_audio_orchestrator.dart';
@@ -9,7 +10,6 @@ import '../domain/content/course_catalog.dart';
 import '../domain/progress/progress_repository.dart';
 import '../domain/progress/student_progress.dart';
 import 'course_journey_screen.dart';
-import 'design_system/tokens/dvx_tokens.dart';
 
 final class CourseHomeScreen extends StatefulWidget {
   const CourseHomeScreen({
@@ -49,10 +49,16 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
     await _catalog.initialize();
     if (!mounted || _catalog.status != CourseCatalogStatus.ready) return;
     if (_catalog.courses.isEmpty) return;
+    if (_catalog.courses.length == 1) {
+      _openCourse(_catalog.courses.single);
+    }
+  }
+
+  void _openCourse(Course course) {
     widget.onThemePreferenceChanged(_catalog.progress.settings.themePreference);
     setState(() {
       _engine = CourseJourneyEngine(
-        course: _catalog.courses.first,
+        course: course,
         catalog: _catalog,
         courseAudio: widget.courseAudio,
       );
@@ -96,7 +102,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
             builder: (context, _) {
               if (_catalog.status == CourseCatalogStatus.failure) {
                 return Padding(
-                  padding: const EdgeInsets.all(DvxSpacing.lg),
+                  padding: EdgeInsets.all(context.appSpacing.lg),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -104,7 +110,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
                         liveRegion: true,
                         child: Text(_catalog.errorMessage!),
                       ),
-                      const SizedBox(height: DvxSpacing.md),
+                      SizedBox(height: context.appSpacing.md),
                       ElevatedButton(
                         onPressed: _initialize,
                         child: const Text('Tentar novamente'),
@@ -117,6 +123,10 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
                   _catalog.courses.isEmpty) {
                 return const Text('Nenhum curso disponível.');
               }
+              if (_catalog.status == CourseCatalogStatus.ready &&
+                  _catalog.courses.length > 1) {
+                return _courseSelection();
+              }
               return Semantics(
                 label: 'Carregando conteúdo de demonstração',
                 liveRegion: true,
@@ -128,4 +138,44 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
       ),
     );
   }
+
+  Widget _courseSelection() => SingleChildScrollView(
+    padding: EdgeInsets.all(context.appSpacing.lg),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Escolha um curso',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            SizedBox(height: context.appSpacing.md),
+            for (final course in _catalog.courses) ...[
+              ElevatedButton(
+                onPressed: () => _openCourse(course),
+                child: Padding(
+                  padding:  EdgeInsets.symmetric(vertical:context.appSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(course.title),
+                      SizedBox(height: context.appSpacing.sm),
+                      Text(
+                        '${course.modules.length} '
+                        '${course.modules.length == 1 ? 'módulo' : 'módulos'}',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+               SizedBox(height: context.appSpacing.sm),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
 }
+

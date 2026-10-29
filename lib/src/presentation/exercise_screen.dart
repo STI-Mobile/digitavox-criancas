@@ -7,7 +7,7 @@ import '../application/course_journey_engine.dart';
 import '../application/exercise_session_view_model.dart';
 import '../infrastructure/input/physical_keyboard_input_interpreter.dart';
 import 'design_system/components/dvx_game_components.dart';
-import 'design_system/tokens/dvx_tokens.dart';
+import 'design_system/course_theme/course_theme.dart';
 import 'keyboard_navigation.dart';
 import 'lesson_completion_screen.dart';
 
@@ -207,6 +207,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
         child: AnimatedBuilder(
           animation: _viewModel,
           builder: (context, _) {
+            final spacing = context.courseTheme.spacing;
             if (_viewModel.completionError != null) {
               return _ExerciseOutcome(
                 title: 'Resultado aguardando salvamento',
@@ -276,25 +277,25 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: DvxSpacing.sm),
+                SizedBox(height: spacing.sm),
                 Text(_viewModel.exercise.prompt, textAlign: TextAlign.center),
-                const SizedBox(height: DvxSpacing.md),
+                SizedBox(height: spacing.md),
                 DvxKeyPrompt(
                   value: expected,
                   nextCharacter: _viewModel.expectedCharacter,
                 ),
-                const SizedBox(height: DvxSpacing.md),
+                SizedBox(height: spacing.md),
                 if (_viewModel.totalRepetitions > 1)
                   Text(
                     'Repetição ${_viewModel.currentRepetition} de ${_viewModel.totalRepetitions}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                const SizedBox(height: DvxSpacing.md),
+                SizedBox(height: spacing.md),
                 Wrap(
                   alignment: WrapAlignment.center,
-                  spacing: DvxSpacing.sm,
-                  runSpacing: DvxSpacing.sm,
+                  spacing: spacing.sm,
+                  runSpacing: spacing.sm,
                   children: [
                     if (_viewModel.isPaused && !_viewModel.helpVisible)
                       KeyboardNavigationLabel(
@@ -333,14 +334,14 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                 ),
                 if (_viewModel.helpVisible)
                   _ExerciseShortcutHelp(shortcuts: _shortcutActions),
-                const SizedBox(height: DvxSpacing.md),
+                SizedBox(height: spacing.md),
                 Text(
                   'Ao sair, os exercícios concluídos ficam salvos. '
                   'Este exercício recomeça quando você voltar.',
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: DvxSpacing.md),
+                SizedBox(height: spacing.md),
                 DvxGameCard(
                   key: _guidanceKey,
                   child: Column(
@@ -353,7 +354,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ),
-                      const SizedBox(height: DvxSpacing.sm),
+                      SizedBox(height: spacing.sm),
                       Semantics(
                         container: true,
                         label: 'F1 — ajuda e atalhos. Seta para baixo — próxima letra e dedo. Seta para cima — repetir o exercício.',
@@ -364,10 +365,10 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                         ),
                       ),
                       if (_viewModel.isPaused) ...[
-                        const SizedBox(height: DvxSpacing.sm),
+                        SizedBox(height: spacing.sm),
                         const Text('Prática pausada. O tempo está parado.'),
                       ],
-                      const SizedBox(height: DvxSpacing.md),
+                      SizedBox(height: spacing.md),
                       DvxFeedback(
                         kind: switch (_viewModel.status) {
                           ExerciseSessionStatus.waitingForInput =>
@@ -447,12 +448,13 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final spacing = context.courseTheme.spacing;
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
         child: Padding(
-          padding: const EdgeInsets.all(DvxSpacing.md),
+          padding: EdgeInsets.all(spacing.md),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -464,7 +466,7 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
                   style: theme.textTheme.headlineMedium,
                 ),
               ),
-              const SizedBox(height: DvxSpacing.md),
+              SizedBox(height: spacing.md),
               Semantics(
                 liveRegion: true,
                 label: widget.message,
@@ -476,7 +478,7 @@ final class _ExerciseOutcomeState extends State<_ExerciseOutcome> {
                   ),
                 ),
               ),
-              const SizedBox(height: DvxSpacing.lg),
+              SizedBox(height: spacing.lg),
               KeyboardNavigationLabel(
                 label: widget.actionLabel,
                 child: FilledButton.icon(
@@ -522,6 +524,7 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final items = [
       for (final shortcut in shortcuts.entries)
         '${shortcut.key} — ${_descriptions[shortcut.value] ?? shortcut.value}',
@@ -546,10 +549,10 @@ final class _ExerciseShortcutHelp extends StatelessWidget {
                 'Ajuda · tempo pausado',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: DvxSpacing.sm),
+              SizedBox(height: spacing.sm),
               for (final item in items)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
+                  padding: EdgeInsets.only(bottom: spacing.sm),
                   child: Text(item),
                 ),
             ],

@@ -4,7 +4,8 @@ import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:flutter/material.dart';
 
 import 'design_system/components/dvx_game_components.dart';
-import 'design_system/tokens/dvx_tokens.dart';
+import 'design_system/course_theme/course_theme.dart';
+import 'design_system/tokens/accessibility_tokens.dart';
 import 'keyboard_navigation.dart';
 
 final class LessonCompletionScreen extends StatefulWidget {
@@ -102,6 +103,8 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final spacing = context.courseTheme.spacing;
+    final accessibility = context.accessibilityTokens;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -117,7 +120,7 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                 style: theme.textTheme.headlineMedium,
               ),
             ),
-            const SizedBox(height: DvxSpacing.md),
+            SizedBox(height: spacing.md),
             DvxGameCard(
               child: Text(
                 widget.message,
@@ -125,7 +128,7 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                 style: theme.textTheme.titleMedium,
               ),
             ),
-            const SizedBox(height: DvxSpacing.md),
+            SizedBox(height: spacing.md),
             Semantics(
               container: true,
               label: 'Você ganhou ${widget.earnedStars} de 3 estrelas.',
@@ -140,14 +143,14 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                           children: [
                             Icon(
                               Icons.star,
-                              color: context.dvxTokens.outline,
+                              color: context.courseTheme.resolvedOutline,
                               size: 36,
                             ),
                             Icon(
                               Icons.star,
-                              color: context.dvxTokens.accent,
-                              size: (context.dvxTokens.borderWidth > 0)
-                                  ? 36 - context.dvxTokens.borderWidth * 8
+                              color: context.courseTheme.reward,
+                              size: (accessibility.borderWidth > 0)
+                                  ? 36 - accessibility.borderWidth * 8
                                   : 36 - 6,
                             ),
                           ],
@@ -155,14 +158,14 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                       else
                         Icon(
                           Icons.star_outline,
-                          color: context.dvxTokens.accent,
+                          color: context.courseTheme.reward,
                           size: 36,
                         ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: DvxSpacing.lg),
+            SizedBox(height: spacing.lg),
             KeyboardNavigationLabel(
               label: widget.actionLabel,
               child: FilledButton.icon(
@@ -179,7 +182,7 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: DvxSpacing.sm),
+            SizedBox(height: spacing.sm),
             KeyboardNavigationLabel(
               label: 'Ouvir diário de bordo',
               child: OutlinedButton.icon(

@@ -11,6 +11,7 @@ import 'package:digitavox_criancas/src/presentation/course_journey_screen.dart';
 import 'package:digitavox_criancas/src/presentation/course_scene.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/app_theme/dvx_app_theme.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/components/dvx_game_components.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/course_theme/course_theme.dart';
 import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -361,8 +362,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: DvxAppTheme.resolve(AppThemePreference.highContrast),
-        home: const Scaffold(
-          body: SingleChildScrollView(
+        home: DvxGameScaffold(
+          courseTheme: const SpaceCourseTheme().resolve(
+            AppThemePreference.highContrast,
+          ),
+          title: 'Teste',
+          body: const SingleChildScrollView(
             child: DvxKeyPrompt(value: 'as asas da sala', nextCharacter: 'a'),
           ),
         ),

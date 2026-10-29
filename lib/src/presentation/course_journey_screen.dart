@@ -10,7 +10,6 @@ import 'course_navigation_tile.dart';
 import 'course_scene.dart';
 import 'design_system/components/dvx_game_components.dart';
 import 'design_system/course_theme/course_theme.dart';
-import 'design_system/tokens/dvx_tokens.dart';
 import 'exercise_screen.dart';
 import 'keyboard_navigation.dart';
 
@@ -84,7 +83,10 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               return DvxGameScaffold(
                 courseTheme: courseTheme,
                 bottomNavigationBar: widget.engine.stage == JourneyStage.lesson
-                    ? _missionFooter()
+                    ? Builder(
+                        builder: (context) =>
+                            _missionFooter(context) ?? const SizedBox.shrink(),
+                      )
                     : null,
                 leading: widget.engine.canGoBack
                     ? KeyboardNavigationLabel(
@@ -125,65 +127,72 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
                           onAnnounce: widget.engine.courseAudio.speakText,
                         ),
                       ],
-                body: Semantics(
-                  key: ValueKey(widget.engine.locationKey),
-                  scopesRoute: true,
-                  namesRoute: true,
-                  label:
-                      widget.engine.stage == JourneyStage.exercise &&
-                          widget.engine.currentLessonCompleted
-                      ? 'Missão concluída. ${widget.engine.lesson!.title}'
-                      : widget.engine.title,
-                  explicitChildNodes: true,
-                  child: SingleChildScrollView(
-                    key: PageStorageKey(widget.engine.locationKey),
-                    padding: const EdgeInsets.all(DvxSpacing.lg),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 760),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (widget.engine.stage !=
-                                JourneyStage.exercise) ...[
-                              Semantics(
-                                header: true,
-                                child: Text(
-                                  widget.engine.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium,
-                                ),
-                              ),
-                              const SizedBox(height: DvxSpacing.md),
-                            ],
-                            if (widget.engine.stage == JourneyStage.lesson) ...[
-                              CourseScene(
-                                scene: widget.engine.scene,
-                                character: widget.engine.character,
-                                illustration: widget.engine.illustration,
-                              ),
-                              ..._narrationControls(),
-                            ],
-                            ...switch (widget.engine.stage) {
-                              JourneyStage.course => _course(),
-                              JourneyStage.module => _module(),
-                              JourneyStage.lesson => _lesson(),
-                              JourneyStage.moduleCompletion => [
-                                _ModuleCompletion(engine: widget.engine),
+                body: Builder(
+                  builder: (context) {
+                    return Semantics(
+                      key: ValueKey(widget.engine.locationKey),
+                      scopesRoute: true,
+                      namesRoute: true,
+                      label:
+                          widget.engine.stage == JourneyStage.exercise &&
+                              widget.engine.currentLessonCompleted
+                          ? 'Missão concluída. ${widget.engine.lesson!.title}'
+                          : widget.engine.title,
+                      explicitChildNodes: true,
+                      child: SingleChildScrollView(
+                        key: PageStorageKey(widget.engine.locationKey),
+                        padding: EdgeInsets.all(context.courseTheme.spacing.lg),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 760),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (widget.engine.stage !=
+                                    JourneyStage.exercise) ...[
+                                  Semantics(
+                                    header: true,
+                                    child: Text(
+                                      widget.engine.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: context.courseTheme.spacing.md,
+                                  ),
+                                ],
+                                if (widget.engine.stage ==
+                                    JourneyStage.lesson) ...[
+                                  CourseScene(
+                                    scene: widget.engine.scene,
+                                    character: widget.engine.character,
+                                    illustration: widget.engine.illustration,
+                                  ),
+                                  ..._narrationControls(context),
+                                ],
+                                ...switch (widget.engine.stage) {
+                                  JourneyStage.course => _course(context),
+                                  JourneyStage.module => _module(context),
+                                  JourneyStage.lesson => _lesson(context),
+                                  JourneyStage.moduleCompletion => [
+                                    _ModuleCompletion(engine: widget.engine),
+                                  ],
+                                  JourneyStage.exercise => [
+                                    ExerciseScreen(
+                                      key: ValueKey(widget.engine.session),
+                                      engine: widget.engine,
+                                    ),
+                                  ],
+                                },
                               ],
-                              JourneyStage.exercise => [
-                                ExerciseScreen(
-                                  key: ValueKey(widget.engine.session),
-                                  engine: widget.engine,
-                                ),
-                              ],
-                            },
-                          ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               );
             },
@@ -193,7 +202,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     ),
   );
 
-  List<Widget> _course() {
+  List<Widget> _course(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final engine = widget.engine;
     if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
       final scene = engine.scene!;
@@ -215,7 +225,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           secondText: scene.instruction,
           secondCues: secondCues,
           onComplete: () => setState(() => _courseIntroductionComplete = true),
-          narrationControls: _narrationControls,
+          narrationControls: ({cues}) =>
+              _narrationControls(context, cues: cues),
         ),
       ];
     }
@@ -227,17 +238,17 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           label: 'Aviso: conteúdo de demonstração, não é conteúdo pedagógico definitivo.',
           child: const Text('DEMO'),
         ),
-        const SizedBox(height: DvxSpacing.md),
+        SizedBox(height: spacing.md),
       ],
       if (engine.scene != null) ...[
         Text(engine.scene!.text),
-        const SizedBox(height: DvxSpacing.sm),
-        ..._narrationControls(),
+        SizedBox(height: spacing.sm),
+        ..._narrationControls(context),
       ],
       Text(
         '${engine.completedMissionCount} de ${engine.missionCount} missões concluídas',
       ),
-      const SizedBox(height: DvxSpacing.lg),
+      SizedBox(height: spacing.lg),
       if (target != null || engine.hasPendingModuleCompletion) ...[
         KeyboardNavigationLabel(
           label: engine.hasPendingModuleCompletion
@@ -258,7 +269,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
             ),
           ),
         ),
-        const SizedBox(height: DvxSpacing.sm),
+        SizedBox(height: spacing.sm),
         if (target != null) Text('Próxima missão: ${target.lesson.title}'),
       ] else
         Text(
@@ -266,7 +277,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               ? 'Curso concluído! Abra um módulo para praticar novamente.'
               : 'Nenhum exercício pendente disponível. Você pode explorar os módulos e refazer atividades concluídas.',
         ),
-      const SizedBox(height: DvxSpacing.lg),
+      SizedBox(height: spacing.lg),
       for (final (index, module) in engine.course.modules.indexed)
         CourseNavigationTile(
           autofocus:
@@ -278,7 +289,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               '${module.lessons.where((lesson) => !engine.isOptionalLesson(lesson)).length} missões · Abrir módulo',
           onPressed: () => engine.openModule(module),
         ),
-      const SizedBox(height: DvxSpacing.md),
+      SizedBox(height: spacing.md),
       KeyboardNavigationLabel(
         label: 'Rever introdução do curso',
         child: OutlinedButton.icon(
@@ -293,7 +304,11 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     ];
   }
 
-  List<Widget> _narrationControls({List<ContentAudioCue>? cues}) {
+  List<Widget> _narrationControls(
+    BuildContext context, {
+    List<ContentAudioCue>? cues,
+  }) {
+    final spacing = context.courseTheme.spacing;
     final configuration = cues == null
         ? null
         : CourseAudioConfiguration(start: cues);
@@ -310,7 +325,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     return [
       Wrap(
         alignment: WrapAlignment.center,
-        spacing: DvxSpacing.sm,
+        spacing: spacing.sm,
         children: [
           KeyboardNavigationLabel(
             label: 'Ouvir apresentação',
@@ -329,51 +344,55 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           ),
         ],
       ),
-      const SizedBox(height: DvxSpacing.md),
+      SizedBox(height: spacing.md),
     ];
   }
 
-  List<Widget> _module() => [
-    if (engine.scene != null) ...[
-      Text(engine.scene!.text),
-      const SizedBox(height: DvxSpacing.md),
-    ],
-    if (engine.isModuleReadyForCompletion) ...[
-      KeyboardNavigationLabel(
-        label: 'Concluir módulo',
-        child: FilledButton(
-          autofocus: true,
-          onPressed: () => engine.openModuleCompletion(engine.module!),
-          child: const Text('Concluir módulo'),
+  List<Widget> _module(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
+    return [
+      if (engine.scene != null) ...[
+        Text(engine.scene!.text),
+        SizedBox(height: spacing.md),
+      ],
+      if (engine.isModuleReadyForCompletion) ...[
+        KeyboardNavigationLabel(
+          label: 'Concluir módulo',
+          child: FilledButton(
+            autofocus: true,
+            onPressed: () => engine.openModuleCompletion(engine.module!),
+            child: const Text('Concluir módulo'),
+          ),
         ),
-      ),
-      const SizedBox(height: DvxSpacing.md),
-    ],
-    for (final (index, lesson) in engine.module!.lessons.indexed)
-      CourseNavigationTile(
-        autofocus:
-            !engine.isModuleReadyForCompletion &&
-            engine.isLessonUnlocked(lesson) &&
-            index == 0,
-        title: lesson.title,
-        description: !engine.isLessonUnlocked(lesson)
-            ? 'Bloqueada · Conclua a missão anterior para continuar.'
-            : engine.completedIn(lesson) == lesson.exercises.length
-            ? 'Concluída · Praticar novamente'
-            : engine.isOptionalLesson(lesson)
-            ? 'Opcional · Jogar quando quiser'
-            : engine.completedIn(lesson) > 0
-            ? 'Em andamento · Continuar missão'
-            : 'Disponível · Começar missão',
-        earnedStars: engine.earnedStarsFor(lesson),
-        completed: engine.isLessonCompleted(lesson),
-        onPressed: engine.isLessonUnlocked(lesson)
-            ? () => engine.openLesson(engine.module!, lesson)
-            : null,
-      ),
-  ];
+        SizedBox(height: spacing.md),
+      ],
+      for (final (index, lesson) in engine.module!.lessons.indexed)
+        CourseNavigationTile(
+          autofocus:
+              !engine.isModuleReadyForCompletion &&
+              engine.isLessonUnlocked(lesson) &&
+              index == 0,
+          title: lesson.title,
+          description: !engine.isLessonUnlocked(lesson)
+              ? 'Bloqueada · Conclua a missão anterior para continuar.'
+              : engine.completedIn(lesson) == lesson.exercises.length
+              ? 'Concluída · Praticar novamente'
+              : engine.isOptionalLesson(lesson)
+              ? 'Opcional · Jogar quando quiser'
+              : engine.completedIn(lesson) > 0
+              ? 'Em andamento · Continuar missão'
+              : 'Disponível · Começar missão',
+          earnedStars: engine.earnedStarsFor(lesson),
+          completed: engine.isLessonCompleted(lesson),
+          onPressed: engine.isLessonUnlocked(lesson)
+              ? () => engine.openLesson(engine.module!, lesson)
+              : null,
+        ),
+    ];
+  }
 
-  Widget? _missionFooter() {
+  Widget? _missionFooter(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final lesson = engine.lesson!;
     final pending = engine.pendingIn(lesson);
     final completed = engine.completedIn(lesson);
@@ -395,9 +414,9 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: DvxSpacing.lg,
-          vertical: DvxSpacing.sm,
+        padding: EdgeInsets.symmetric(
+          horizontal: spacing.lg,
+          vertical: spacing.sm,
         ),
         child: Center(
           heightFactor: 1,
@@ -419,7 +438,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     );
   }
 
-  List<Widget> _lesson() {
+  List<Widget> _lesson(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final lesson = engine.lesson!;
     final completed = engine.completedIn(lesson);
     final pending = engine.pendingIn(lesson);
@@ -429,13 +449,13 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     );
     return [
       Text('${lesson.exercises.length} exercícios nesta missão'),
-      const SizedBox(height: DvxSpacing.sm),
+      SizedBox(height: spacing.sm),
       if (completed > 0) ...[
         DvxProgressIndicator(
           completed: completed,
           total: lesson.exercises.length,
         ),
-        const SizedBox(height: DvxSpacing.md),
+        SizedBox(height: spacing.md),
       ],
       if (pending == null)
         Text(
@@ -443,7 +463,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               ? 'Missão concluída! Você pode praticar novamente.'
               : 'Conclua a missão anterior para liberar esta atividade.',
         ),
-      const SizedBox(height: DvxSpacing.md),
+      SizedBox(height: spacing.md),
       ExpansionTile(
         key: PageStorageKey('mission-exercises-${lesson.id}'),
         title: const Text('Exercícios da missão'),
@@ -534,13 +554,14 @@ final class _CourseIntroductionState extends State<_CourseIntroduction> {
 
   @override
   Widget build(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final character = _showingSecondSpeaker
         ? widget.secondCharacter
         : widget.firstCharacter;
     final text = _showingSecondSpeaker ? widget.secondText : widget.firstText;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
-      spacing: DvxSpacing.md,
+      spacing: spacing.md,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -565,7 +586,7 @@ final class _CourseIntroductionState extends State<_CourseIntroduction> {
                     ),
                   ),
                 ),
-                const SizedBox(width: DvxSpacing.md),
+                SizedBox(width: spacing.md),
                 Expanded(
                   child: Semantics(
                     container: true,
@@ -583,7 +604,7 @@ final class _CourseIntroductionState extends State<_CourseIntroduction> {
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
-                            const SizedBox(height: DvxSpacing.sm),
+                            SizedBox(height: spacing.sm),
                             Text(text),
                           ],
                         ),
@@ -593,7 +614,7 @@ final class _CourseIntroductionState extends State<_CourseIntroduction> {
                 ),
               ],
             ),
-            const SizedBox(height: DvxSpacing.lg),
+            SizedBox(height: spacing.lg),
             KeyboardNavigationLabel(
               label: _showingSecondSpeaker
                   ? 'Continuar para o curso'
@@ -654,6 +675,7 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
   Widget build(BuildContext context) {
     final engine = widget.engine;
     final error = _error ?? engine.moduleCompletionError;
+    final spacing = context.courseTheme.spacing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -664,12 +686,12 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
         ),
         for (final reward in engine.moduleRewardLabels)
           Padding(
-            padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
+            padding: EdgeInsets.only(bottom: spacing.sm),
             child: Text(reward),
           ),
         if (error != null) ...[
           Semantics(liveRegion: true, child: Text(error)),
-          const SizedBox(height: DvxSpacing.md),
+          SizedBox(height: spacing.md),
         ],
         KeyboardNavigationLabel(
           label: 'Voltar ao módulo',
@@ -679,7 +701,7 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
             child: Text(_saving ? 'Salvando...' : 'Voltar ao módulo'),
           ),
         ),
-        const SizedBox(height: DvxSpacing.sm),
+        SizedBox(height: spacing.sm),
         KeyboardNavigationLabel(
           label: 'Ouvir cerimônia novamente',
           child: OutlinedButton.icon(

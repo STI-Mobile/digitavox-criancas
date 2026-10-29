@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../domain/content/course_catalog.dart';
 import 'design_system/components/dvx_game_components.dart';
-import 'design_system/tokens/dvx_tokens.dart';
+import 'design_system/course_theme/course_theme.dart';
 
 /// Narrative and illustration belong to the mission briefing, never practice.
 final class CourseScene extends StatelessWidget {
@@ -19,6 +19,7 @@ final class CourseScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final illustration = this.illustration;
     final character = this.character;
     final imageAsset = illustration?.imageAsset ?? character?.imageAsset;
@@ -48,11 +49,11 @@ final class CourseScene extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: DvxSpacing.md),
+          SizedBox(height: spacing.md),
         ],
         if (scene != null) ...[
           Text(scene.text),
-          const SizedBox(height: DvxSpacing.md),
+          SizedBox(height: spacing.md),
           if (scene.instruction.isNotEmpty) ...[
             DvxGameCard(
               child: Column(
@@ -65,12 +66,12 @@ final class CourseScene extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  const SizedBox(height: DvxSpacing.sm),
+                  SizedBox(height: spacing.sm),
                   Text(scene.instruction),
                 ],
               ),
             ),
-            const SizedBox(height: DvxSpacing.md),
+            SizedBox(height: spacing.md),
           ],
         ],
       ],

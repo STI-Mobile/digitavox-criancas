@@ -1,7 +1,81 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
-import '../tokens/dvx_tokens.dart';
+import '../tokens/accessibility_tokens.dart';
+
+@immutable
+final class DvxAppSpacing extends ThemeExtension<DvxAppSpacing> {
+  const DvxAppSpacing({
+    this.xs = 4,
+    this.sm = 8,
+    this.md = 16,
+    this.lg = 24,
+    this.xl = 32,
+  });
+
+  final double xs;
+  final double sm;
+  final double md;
+  final double lg;
+  final double xl;
+
+  @override
+  DvxAppSpacing copyWith({
+    double? xs,
+    double? sm,
+    double? md,
+    double? lg,
+    double? xl,
+  }) => DvxAppSpacing(
+    xs: xs ?? this.xs,
+    sm: sm ?? this.sm,
+    md: md ?? this.md,
+    lg: lg ?? this.lg,
+    xl: xl ?? this.xl,
+  );
+
+  @override
+  DvxAppSpacing lerp(covariant DvxAppSpacing? other, double t) {
+    if (other == null) return this;
+    return DvxAppSpacing(
+      xs: xs + (other.xs - xs) * t,
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+      xl: xl + (other.xl - xl) * t,
+    );
+  }
+}
+
+@immutable
+final class DvxAppRadius extends ThemeExtension<DvxAppRadius>{
+  const DvxAppRadius({this.sm = 8, this.md = 16, this.lg = 24});
+
+  final double sm;
+  final double md;
+  final double lg;
+
+  @override
+  DvxAppRadius copyWith({
+    double? sm,
+    double? md,
+    double? lg,
+  }) => DvxAppRadius(
+    sm: sm ?? this.sm,
+    md: md ?? this.md,
+    lg: lg ?? this.lg,
+  );
+
+  @override
+  DvxAppRadius lerp(covariant DvxAppRadius? other, double t) {
+    if (other == null) return this;
+    return DvxAppRadius(
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+    );
+  }
+}
 
 abstract final class DvxAppTheme {
   static ThemeData resolve(AppThemePreference preference) =>
@@ -70,6 +144,8 @@ abstract final class DvxAppTheme {
     required Color outline,
     bool highContrast = false,
   }) {
+    final spacing = DvxAppSpacing();
+    final radius = DvxAppRadius();
     final scheme = ColorScheme(
       brightness: brightness,
       primary: primary,
@@ -134,10 +210,10 @@ abstract final class DvxAppTheme {
           bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
         );
     final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(DvxRadius.md),
+      borderRadius: BorderRadius.circular(radius.md),
     );
     final cardShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(DvxRadius.md),
+      borderRadius: BorderRadius.circular(radius.md),
       side: highContrast
           ? BorderSide(color: textPrimary, width: 2)
           : BorderSide.none,
@@ -206,17 +282,13 @@ abstract final class DvxAppTheme {
       ),
       focusColor: focus,
       extensions: <ThemeExtension<dynamic>>[
-        DvxThemeTokens(
-          accent: accent,
-          success: success,
-          focus: focus,
-          textSecondary: textSecondary,
-          surfaceVariant: surfaceVariant,
+        DvxAccessibilityTokens(
           focusWidth: highContrast ? 4 : 3,
           borderWidth: highContrast ? 2 : 1,
           highContrast: highContrast,
-          outline: outline,
         ),
+        spacing,
+        radius,
       ],
     );
   }
@@ -226,3 +298,11 @@ abstract final class DvxAppTheme {
       ? Colors.white
       : Colors.black;
 }
+
+extension DvxAppThemeContext on BuildContext {
+  DvxAppSpacing get appSpacing =>
+      Theme.of(this).extension<DvxAppSpacing>()!;
+  DvxAppRadius get appRadius =>
+        Theme.of(this).extension<DvxAppRadius>()!;
+}
+
