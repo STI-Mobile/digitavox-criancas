@@ -1,4 +1,4 @@
-name: Beta distribution
+name: Dev distribution
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: beta-distribution-${{ github.ref }}
+  group: dev-distribution-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -22,7 +22,7 @@ jobs:
     name: Android - Play Internal Testing
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: beta-distribution
+    environment: distribution-dev
 
     steps:
       - name: Checkout
@@ -52,36 +52,36 @@ jobs:
           test -n "$KEYSTORE_PASSWORD"
           test -n "$KEY_ALIAS"
           test -n "$KEY_PASSWORD"
-          keystore_path="$RUNNER_TEMP/digitavox-upload.jks"
+          keystore_path="$RUNNER_TEMP/digitavox-dev-upload.jks"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
-          cat > android/key.properties <<EOF
+          cat > android/key-dev.properties <<EOF
           storeFile=$keystore_path
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
           EOF
 
-      - name: Build Android beta bundle
+      - name: Build Android dev bundle
         run: |
           build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
           echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
-          make build-android-beta BUILD_NUMBER="$build_number"
+          make build-android-dev BUILD_NUMBER="$build_number"
 
       - name: Publish to Google Play Internal Testing
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: br.usp.digitavox_criancas
-          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          packageName: br.usp.digitavox_criancas.dev
+          releaseFiles: build/app/outputs/bundle/devRelease/app-dev-release.aab
           tracks: internal
           status: completed
-          releaseName: beta-${{ env.BUILD_NUMBER }}
+          releaseName: dev-${{ env.BUILD_NUMBER }}
 
   ios:
     name: iOS - TestFlight
     runs-on: macos-latest
     timeout-minutes: 45
-    environment: beta-distribution
+    environment: distribution-dev
 
     steps:
       - name: Checkout
@@ -109,18 +109,29 @@ jobs:
       - name: Install provisioning profile
         env:
           PROFILE_BASE64: ${{ secrets.APPSTORE_PROVISIONING_PROFILE_BASE64 }}
+          # Must match PROVISIONING_PROFILE_SPECIFIER in the Release-dev configuration.
+          EXPECTED_PROFILE_NAME: Digitavox Criancas Dev App Store
         run: |
           test -n "$PROFILE_BASE64"
           profile_path="$RUNNER_TEMP/digitavox.mobileprovision"
           printf '%s' "$PROFILE_BASE64" | base64 -D > "$profile_path"
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          uuid="$(security cms -D -i "$profile_path" | plutil -extract UUID raw -)"
-          cp "$profile_path" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+          profile_plist="$RUNNER_TEMP/digitavox-profile.plist"
+          security cms -D -i "$profile_path" > "$profile_plist"
+          profile_name="$(plutil -extract Name raw "$profile_plist")"
+          if [ "$profile_name" != "$EXPECTED_PROFILE_NAME" ]; then
+            echo "::error::Provisioning profile is named '$profile_name', expected '$EXPECTED_PROFILE_NAME'."
+            exit 1
+          fi
+          uuid="$(plutil -extract UUID raw "$profile_plist")"
+          # Xcode 16+ and flutter build ipa read profiles from this directory.
+          profiles_dir="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$profiles_dir"
+          cp "$profile_path" "$profiles_dir/$uuid.mobileprovision"
 
-      - name: Build iOS beta archive
+      - name: Build iOS dev archive
         run: |
           build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
-          make build-ios-beta BUILD_NUMBER="$build_number"
+          make build-ios-dev BUILD_NUMBER="$build_number"
 
       - name: Locate IPA
         id: ipa

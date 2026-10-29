@@ -1,4 +1,4 @@
-.PHONY: bootstrap setup format format-check analyze lint test test-unit test-widget test-integration coverage check build-android build-android-beta build-ios-beta
+.PHONY: bootstrap setup format format-check analyze lint test test-unit test-widget test-integration coverage check build-android build-android-dev build-ios-dev
 
 BUILD_NUMBER ?=
 BUILD_NUMBER_ARGUMENT = $(if $(BUILD_NUMBER),--build-number=$(BUILD_NUMBER))
@@ -36,10 +36,10 @@ coverage:
 check: format-check analyze test
 
 build-android:
-	flutter build apk --debug
+	flutter build apk --debug --flavor dev
 
-build-android-beta:
-	flutter build appbundle --release --dart-define=APP_ENV=beta $(BUILD_NUMBER_ARGUMENT)
+build-android-dev:
+	flutter build appbundle --release --flavor dev $(BUILD_NUMBER_ARGUMENT)
 
-build-ios-beta:
-	flutter build ipa --release --export-method app-store --dart-define=APP_ENV=beta $(BUILD_NUMBER_ARGUMENT)
+build-ios-dev:
+	flutter build ipa --release --flavor dev --export-method app-store $(BUILD_NUMBER_ARGUMENT)
