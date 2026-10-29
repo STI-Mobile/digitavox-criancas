@@ -39,7 +39,9 @@ O comando valida formatação, análise estática com warnings fatais e testes u
 | `make test-widget` | Rodar somente testes de widget |
 | `make test-integration` | Rodar integração em um dispositivo disponível |
 | `make coverage` | Gerar `coverage/lcov.info` |
-| `make build-android` | Gerar APK Android de debug |
+| `make build-android` | Gerar APK Android de debug do flavor dev |
+| `make build-android-dev` | Gerar AAB Android dev assinado |
+| `make build-ios-dev` | Gerar IPA iOS dev assinado |
 | `make check` | Executar a validação principal local |
 
 ## Organização
@@ -62,13 +64,16 @@ O fluxo de dependências e os pontos de extensão estão em [Arquitetura](docs/a
 - [Acessibilidade](docs/accessibility.md)
 - [Modelo de conteúdo](docs/content-model.md)
 - [Estratégia de testes](docs/testing.md)
+- [Distribuição](docs/distribution.md)
 - [ADR 0001: Flutter + MVVM](docs/adr/0001-flutter-mvvm.md)
 - [ADR 0002: persistência local do progresso](docs/adr/0002-persistencia-local-progresso.md)
 - [ADR 0003: arquitetura de áudio](docs/adr/0003-arquitetura-audio.md)
+- [ADR 0004: engine de jornada guiado pelo catálogo](docs/adr/0004-engine-jornada-json.md)
+- [ADR 0005: apps separados para desenvolvimento e produção](docs/adr/0005-apps-separados-dev-prod.md)
 - [Audio Guidance](docs/architecture/audio-guidance.md)
 - [Integração Course Audio](docs/architecture/course-audio-integration.md)
 - [Contrato para agentes](AGENTS.md)
 
 ## Estado atual
 
-Em debug, o app carrega um Demo Course técnico que usa o mesmo parser, engine, ViewModels e progresso da jornada normal. A configuração declarativa produz Speech e SFX via Course Audio Orchestration, incluindo asset, fallback TTS, sequenciamento e cancelamento. Em release, o catálogo técnico fica desabilitado. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.
+Em debug e no app dev, o app carrega um Demo Course técnico que usa o mesmo parser, engine, ViewModels e progresso da jornada normal. O app dev é um app separado nas lojas, gerado pelo flavor `dev`, que mantém o aviso DEMO e existe somente para testes. No flavor `prod` em release, o catálogo técnico fica desabilitado. A configuração declarativa produz Speech e SFX via Course Audio Orchestration, incluindo asset, fallback TTS, sequenciamento e cancelamento. Áudio narrativo e VoiceOver/TalkBack permanecem canais arquiteturalmente separados. Ainda não há conteúdo pedagógico definitivo, sincronização em nuvem, backend ou importação de pacotes externos.

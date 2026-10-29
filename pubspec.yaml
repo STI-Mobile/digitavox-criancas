@@ -20,6 +20,9 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  # See docs/adr/0005-apps-separados-dev-prod.md.
+  default-flavor: dev
+
   config:
     enable-swift-package-manager: true
 

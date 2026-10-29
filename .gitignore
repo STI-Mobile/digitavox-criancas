@@ -25,6 +25,7 @@ android/app/debug/
 android/app/profile/
 android/app/release/
 android/key.properties
+android/key-*.properties
 *.jks
 *.keystore
 
@@ -37,3 +38,6 @@ ios/.symlinks/
 ios/**/DerivedData/
 ios/**/xcuserdata/
 ios/Runner/GeneratedPluginRegistrant.*
+*.p12
+*.mobileprovision
+AuthKey_*.p8

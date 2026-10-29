@@ -6,6 +6,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('keeps text and control colors at WCAG AA contrast', () {
+    for (final preference in AppThemePreference.values) {
+      final scheme = DvxAppTheme.resolve(preference).colorScheme;
+
+      expect(
+        _contrastRatio(scheme.onSurface, scheme.surface),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(scheme.onPrimary, scheme.primary),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(scheme.onSecondary, scheme.secondary),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(scheme.onError, scheme.error),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
   testWidgets('renders every feedback state with text and an icon', (
     tester,
   ) async {
@@ -80,4 +103,17 @@ void main() {
     expect(find.byIcon(Icons.star), findsNothing);
     expect(find.text('Conteúdo'), findsOneWidget);
   });
+}
+
+double _contrastRatio(Color first, Color second) {
+  final firstLuminance = first.computeLuminance();
+  final secondLuminance = second.computeLuminance();
+  final lighter = firstLuminance > secondLuminance
+      ? firstLuminance
+      : secondLuminance;
+  final darker = firstLuminance > secondLuminance
+      ? secondLuminance
+      : firstLuminance;
+
+  return (lighter + 0.05) / (darker + 0.05);
 }

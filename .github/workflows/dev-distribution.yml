@@ -1,0 +1,152 @@
+name: Dev distribution
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Builds 1-99 are reserved for manual uploads, such as the first Play release.
+  BUILD_NUMBER_BASE: 100
+
+jobs:
+  android:
+    name: Android - Play Internal Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: distribution-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Bootstrap
+        run: make bootstrap
+
+      - name: Validate
+        run: make check
+
+      - name: Restore Android signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          keystore_path="$RUNNER_TEMP/digitavox-dev-upload.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          cat > android/key-dev.properties <<EOF
+          storeFile=$keystore_path
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build Android dev bundle
+        run: |
+          build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
+          echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          make build-android-dev BUILD_NUMBER="$build_number"
+
+      - name: Publish to Google Play Internal Testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: br.usp.digitavox_criancas.dev
+          releaseFiles: build/app/outputs/bundle/devRelease/app-dev-release.aab
+          tracks: internal
+          status: completed
+          releaseName: dev-${{ env.BUILD_NUMBER }}
+
+  ios:
+    name: iOS - TestFlight
+    # Repository variable: environment variables are not available to job-level if.
+    if: vars.IOS_DISTRIBUTION_ENABLED == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    environment: distribution-dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Bootstrap
+        run: make bootstrap
+
+      - name: Validate
+        run: make check
+
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 }}
+          p12-password: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD }}
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.APPSTORE_PROVISIONING_PROFILE_BASE64 }}
+          # Must match PROVISIONING_PROFILE_SPECIFIER in the Release-dev configuration.
+          EXPECTED_PROFILE_NAME: Digitavox Criancas Dev App Store
+        run: |
+          test -n "$PROFILE_BASE64"
+          profile_path="$RUNNER_TEMP/digitavox.mobileprovision"
+          printf '%s' "$PROFILE_BASE64" | base64 -D > "$profile_path"
+          profile_plist="$RUNNER_TEMP/digitavox-profile.plist"
+          security cms -D -i "$profile_path" > "$profile_plist"
+          profile_name="$(plutil -extract Name raw "$profile_plist")"
+          if [ "$profile_name" != "$EXPECTED_PROFILE_NAME" ]; then
+            echo "::error::Provisioning profile is named '$profile_name', expected '$EXPECTED_PROFILE_NAME'."
+            exit 1
+          fi
+          uuid="$(plutil -extract UUID raw "$profile_plist")"
+          # Xcode 16+ and flutter build ipa read profiles from this directory.
+          profiles_dir="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$profiles_dir"
+          cp "$profile_path" "$profiles_dir/$uuid.mobileprovision"
+
+      - name: Build iOS dev archive
+        run: |
+          build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
+          make build-ios-dev BUILD_NUMBER="$build_number"
+
+      - name: Locate IPA
+        id: ipa
+        run: |
+          ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
+          test -n "$ipa_path"
+          echo "path=$ipa_path" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to TestFlight
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: ${{ steps.ipa.outputs.path }}
+          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          wait-for-processing: true
