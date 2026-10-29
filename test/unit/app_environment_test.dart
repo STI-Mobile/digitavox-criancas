@@ -3,10 +3,10 @@ import 'package:digitavox_criancas/src/app_environment.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('debug exposes the technical fixture regardless of APP_ENV', () {
+  test('debug exposes the technical fixture regardless of flavor', () {
     final environment = AppEnvironment.fromBuild(
       isDebugBuild: true,
-      configuredValue: 'beta',
+      flavor: 'prod',
     );
 
     expect(environment, AppEnvironment.debug);
@@ -17,13 +17,13 @@ void main() {
     );
   });
 
-  test('beta exposes the technical fixture in a distributable build', () {
+  test('dev exposes the technical fixture in a distributable build', () {
     final environment = AppEnvironment.fromBuild(
       isDebugBuild: false,
-      configuredValue: 'beta',
+      flavor: 'dev',
     );
 
-    expect(environment, AppEnvironment.beta);
+    expect(environment, AppEnvironment.dev);
     expect(environment.exposesTechnicalDemo, isTrue);
     expect(
       bootstrap.createCourseCatalogForEnvironment(environment).enabled,
@@ -31,13 +31,13 @@ void main() {
     );
   });
 
-  test('release excludes the technical fixture by default', () {
+  test('prod excludes the technical fixture from release builds', () {
     final environment = AppEnvironment.fromBuild(
       isDebugBuild: false,
-      configuredValue: '',
+      flavor: 'prod',
     );
 
-    expect(environment, AppEnvironment.release);
+    expect(environment, AppEnvironment.prod);
     expect(environment.exposesTechnicalDemo, isFalse);
     expect(
       bootstrap.createCourseCatalogForEnvironment(environment).enabled,
@@ -45,13 +45,12 @@ void main() {
     );
   });
 
-  test('rejects unsupported release environment values', () {
-    expect(
-      () => AppEnvironment.fromBuild(
-        isDebugBuild: false,
-        configuredValue: 'staging',
-      ),
-      throwsArgumentError,
-    );
+  test('rejects release builds without a known flavor', () {
+    for (final flavor in [null, '', 'staging']) {
+      expect(
+        () => AppEnvironment.fromBuild(isDebugBuild: false, flavor: flavor),
+        throwsArgumentError,
+      );
+    }
   });
 }
