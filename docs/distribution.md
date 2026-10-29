@@ -130,8 +130,9 @@ localmente, instale o certificado e o profile nesse Mac.
    Store `Digitavox Criancas Dev App Store` para esse App ID.
 2. No App Store Connect, crie o app com esse bundle ID, se ainda não existir.
 3. Crie uma chave da API do App Store Connect com permissão App Manager.
-4. Cadastre os valores no Environment `distribution-dev` e publique pelo
-   workflow; o TestFlight aceita o primeiro build pela API.
+4. Cadastre os valores no Environment `distribution-dev`, crie a variable de
+   repositório `IOS_DISTRIBUTION_ENABLED=true` e publique pelo workflow; o
+   TestFlight aceita o primeiro build pela API.
 5. Crie o grupo de testers internos e preencha as informações de teste. Testers
    externos exigem Beta App Review.
 
@@ -146,19 +147,32 @@ app no console.
 3. No app dev do Play Console, crie uma versão em Testes internos e envie
    `build/app/outputs/bundle/devRelease/app-dev-release.aab`. Confirme que o
    console mostra o package `br.usp.digitavox_criancas.dev`.
-4. Aceite o Play App Signing e preencha as declarações exigidas para app
-   infantil: público-alvo, política de Famílias, segurança de dados e política
-   de privacidade.
+4. Confirme em Integridade do app que a assinatura é feita pelo Play App
+   Signing, ativado por padrão em apps novos sem etapa de aceite. As
+   declarações exigidas para app infantil ficam em Política > Conteúdo do app,
+   fora do fluxo da versão: público-alvo, política de Famílias, segurança de
+   dados e política de privacidade.
 5. Cadastre os testers na lista do track interno.
-6. Conceda à conta de serviço do workflow acesso ao app dev.
+6. Conceda acesso à conta de serviço do workflow pela conta de desenvolvedor,
+   em Usuários e permissões: convide o e-mail `client_email` do JSON da conta
+   de serviço e conceda permissões somente ao app dev, incluindo lançar em
+   tracks de teste. A conta de serviço é criada no Google Cloud, com a Google
+   Play Android Developer API ativada no projeto. A conta atual,
+   `github-dev-distribution`, está no projeto Painel Gestor USP.
 
 ## GitHub Actions
 
 O workflow [dev-distribution.yml](../.github/workflows/dev-distribution.yml) é
 executado após push em `develop` ou manualmente. A execução manual só aparece
 no GitHub depois que o workflow existir no branch padrão. Os dois jobs usam o
-Environment protegido `distribution-dev`, executam `make check` e publicam
-independentemente.
+Environment `distribution-dev`, restrito ao branch `develop` e sem revisores
+obrigatórios para que a publicação seja automática, executam `make check` e
+publicam independentemente.
+
+O job de iOS só executa quando a variable de repositório
+`IOS_DISTRIBUTION_ENABLED` vale `true`. Ela precisa ser de repositório, porque
+a condição do job é avaliada antes de o Environment ser carregado. Mantenha-a
+ausente até concluir o primeiro build no TestFlight.
 
 Configure os seguintes valores nesse Environment:
 
