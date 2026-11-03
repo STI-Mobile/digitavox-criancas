@@ -1,0 +1,73 @@
+{
+  "nome": "Digitavox Crianças · Identidade visual",
+  "versao": "1.0",
+  "data": "2026-10-17",
+  "paleta": "Vinho Estelar",
+  "cores": {
+    "escuro": {
+      "fundo": "#2B0B1E",
+      "painel": "#4A1634",
+      "texto": "#FFF6EC",
+      "teclaAlvo": "#FFC42E",
+      "acerto": "#3DF2FF",
+      "erro": "#FF9F43",
+      "contorno": "#FFF6EC"
+    },
+    "claro": {
+      "fundo": "#FFF4F7",
+      "painel": "#F6D9E3",
+      "texto": "#2B0B1E",
+      "teclaAlvo": "#FFC42E",
+      "acerto": "#00707F",
+      "erro": "#B34700",
+      "contorno": "#2B0B1E"
+    },
+    "altoContraste": {
+      "fundo": "#000000",
+      "texto": "#FFFFFF",
+      "destaque": "#FFFF00",
+      "contorno": "#FFFFFF"
+    }
+  },
+  "contrasteWCAG": {
+    "escuro": {
+      "texto": 16.8,
+      "teclaAlvo": 11.3,
+      "acerto": 13.1,
+      "erro": 8.8
+    },
+    "claro": {
+      "texto": 16.7,
+      "acerto": 5.4,
+      "erro": 5.1
+    }
+  },
+  "regras": [
+    "Modo escuro é o padrão; modo claro e alto contraste são opções do usuário.",
+    "A tecla-alvo #FFC42E nunca leva texto direto sobre o fundo claro: no modo claro usa contorno #2B0B1E.",
+    "Acerto e erro nunca dependem só da cor: usar também símbolo (✓ / !) e som.",
+    "Erro não é punitivo: laranja, não vermelho."
+  ],
+  "tipografia": {
+    "texto": {
+      "familia": "Open Sans",
+      "fonte": "Google Fonts",
+      "licenca": "SIL OFL / Apache 2.0"
+    },
+    "titulos": {
+      "familia": "Fredoka",
+      "fonte": "Google Fonts",
+      "licenca": "SIL OFL"
+    }
+  },
+  "personagens": {
+    "stellaUniforme": "vinho",
+    "aliensEstilo": "desenho chapado",
+    "aliensModulo1": [
+      "Blib-Blub",
+      "Zorp",
+      "Nebulon"
+    ],
+    "comandanteNoModulo1": false
+  }
+}

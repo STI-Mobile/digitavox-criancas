@@ -1,53 +1,122 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
-import '../brand/brand_colors.dart';
-import '../tokens/dvx_tokens.dart';
+import '../tokens/accessibility_tokens.dart';
+
+@immutable
+final class DvxAppSpacing extends ThemeExtension<DvxAppSpacing> {
+  const DvxAppSpacing({
+    this.xs = 4,
+    this.sm = 8,
+    this.md = 16,
+    this.lg = 24,
+    this.xl = 32,
+  });
+
+  final double xs;
+  final double sm;
+  final double md;
+  final double lg;
+  final double xl;
+
+  @override
+  DvxAppSpacing copyWith({
+    double? xs,
+    double? sm,
+    double? md,
+    double? lg,
+    double? xl,
+  }) => DvxAppSpacing(
+    xs: xs ?? this.xs,
+    sm: sm ?? this.sm,
+    md: md ?? this.md,
+    lg: lg ?? this.lg,
+    xl: xl ?? this.xl,
+  );
+
+  @override
+  DvxAppSpacing lerp(covariant DvxAppSpacing? other, double t) {
+    if (other == null) return this;
+    return DvxAppSpacing(
+      xs: xs + (other.xs - xs) * t,
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+      xl: xl + (other.xl - xl) * t,
+    );
+  }
+}
+
+@immutable
+final class DvxAppRadius extends ThemeExtension<DvxAppRadius> {
+  const DvxAppRadius({this.sm = 8, this.md = 16, this.lg = 24});
+
+  final double sm;
+  final double md;
+  final double lg;
+
+  @override
+  DvxAppRadius copyWith({double? sm, double? md, double? lg}) =>
+      DvxAppRadius(sm: sm ?? this.sm, md: md ?? this.md, lg: lg ?? this.lg);
+
+  @override
+  DvxAppRadius lerp(covariant DvxAppRadius? other, double t) {
+    if (other == null) return this;
+    return DvxAppRadius(
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+    );
+  }
+}
 
 abstract final class DvxAppTheme {
   static ThemeData resolve(AppThemePreference preference) =>
       switch (preference) {
         AppThemePreference.standard => _build(
           brightness: Brightness.light,
-          background: const Color(0xFFF4F8FA),
-          surface: const Color(0xFFFFFFFF),
-          surfaceVariant: const Color(0xFFE8F2F5),
-          primary: const Color(0xFF087A91),
-          secondary: BrandColors.uspBlue,
-          accent: BrandColors.uspYellow,
-          textPrimary: const Color(0xFF172124),
-          textSecondary: const Color(0xFF526166),
-          success: const Color(0xFF287A4D),
-          error: const Color(0xFFB3261E),
-          focus: const Color(0xFFE19A00),
+          background: const Color(0xFFFFF4F7),
+          surface: const Color(0xFFF6D9E3),
+          surfaceVariant: const Color(0xFFF6D9E3),
+          primary: const Color(0xFF2B0B1E),
+          secondary: const Color(0xFF00707F),
+          accent: const Color(0xFFFFC42E),
+          textPrimary: const Color(0xFF2B0B1E),
+          textSecondary: const Color(0xFF2B0B1E),
+          success: const Color(0xFF00707F),
+          error: const Color(0xFFB34700),
+          focus: const Color(0xFF2B0B1E),
+          outline: const Color(0xFF2B0B1E),
         ),
         AppThemePreference.dark => _build(
           brightness: Brightness.dark,
-          background: const Color(0xFF07111F),
-          surface: const Color(0xFF101D2D),
-          surfaceVariant: const Color(0xFF172A3D),
-          primary: BrandColors.uspLightBlue,
-          secondary: const Color(0xFF72D6E3),
-          accent: BrandColors.uspYellow,
-          textPrimary: const Color(0xFFF4F7FA),
-          textSecondary: const Color(0xFFBBC8D4),
-          success: const Color(0xFF5DD39E),
-          error: const Color(0xFFFF8A80),
-          focus: const Color(0xFFFFD166),
+          background: const Color(0xFF2B0B1E),
+          surface: const Color(0xFF4A1634),
+          surfaceVariant: const Color(0xFF4A1634),
+          primary: const Color(0xFFFFC42E),
+          secondary: const Color(0xFF3DF2FF),
+          accent: const Color(0xFFFFC42E),
+          textPrimary: const Color(0xFFFFF6EC),
+          textSecondary: const Color(0xFFFFF6EC),
+          success: const Color(0xFF3DF2FF),
+          error: const Color(0xFFFF9F43),
+          focus: const Color(0xFFFFC42E),
+          outline: const Color(0xFFFFF6EC),
         ),
         AppThemePreference.highContrast => _build(
           brightness: Brightness.dark,
           background: const Color(0xFF000000),
           surface: const Color(0xFF000000),
-          surfaceVariant: const Color(0xFF121212),
-          primary: const Color(0xFF00D9F5),
-          secondary: const Color(0xFF00D9F5),
-          accent: const Color(0xFFFFD000),
+          surfaceVariant: const Color(0xFF000000),
+          primary: const Color(0xFFFFFF00),
+          secondary: const Color(0xFFFFFF00),
+          accent: const Color(0xFFFFFF00),
           textPrimary: const Color(0xFFFFFFFF),
           textSecondary: const Color(0xFFFFFFFF),
-          success: const Color(0xFF00FF66),
-          error: const Color(0xFFFF5252),
+          success: const Color(0xFFFFFF00),
+          error: const Color(0xFFFFFF00),
           focus: const Color(0xFFFFFF00),
+          outline: const Color(0xFFFFFFFF),
           highContrast: true,
         ),
       };
@@ -65,8 +134,11 @@ abstract final class DvxAppTheme {
     required Color success,
     required Color error,
     required Color focus,
+    required Color outline,
     bool highContrast = false,
   }) {
+    final spacing = DvxAppSpacing();
+    final radius = DvxAppRadius();
     final scheme = ColorScheme(
       brightness: brightness,
       primary: primary,
@@ -79,7 +151,7 @@ abstract final class DvxAppTheme {
       onSurface: textPrimary,
       tertiary: accent,
       onTertiary: _contrasting(accent),
-      outline: highContrast ? textPrimary : textSecondary,
+      outline: highContrast ? Colors.white : outline,
       outlineVariant: highContrast ? focus : surfaceVariant,
     );
     final base = ThemeData(
@@ -93,14 +165,36 @@ abstract final class DvxAppTheme {
         .apply(bodyColor: textPrimary, displayColor: textPrimary)
         .copyWith(
           displayLarge: base.textTheme.displayLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w700,
             height: 1.05,
           ),
+          displayMedium: base.textTheme.displayMedium?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
+          displaySmall: base.textTheme.displaySmall?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
+          headlineLarge: base.textTheme.headlineLarge?.copyWith(
+            fontFamily: 'Fredoka',
+          ),
           headlineMedium: base.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w700,
+          ),
+          headlineSmall: base.textTheme.headlineSmall?.copyWith(
+            fontFamily: 'Fredoka',
           ),
           titleLarge: base.textTheme.titleLarge?.copyWith(
+            fontFamily: 'Fredoka',
             fontWeight: FontWeight.w700,
+          ),
+          titleMedium: base.textTheme.titleMedium?.copyWith(
+            fontFamily: 'Fredoka',
+            fontWeight: FontWeight.w600,
+          ),
+          titleSmall: base.textTheme.titleSmall?.copyWith(
+            fontFamily: 'Fredoka',
           ),
           labelLarge: base.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
@@ -109,10 +203,10 @@ abstract final class DvxAppTheme {
           bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.4),
         );
     final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(DvxRadius.md),
+      borderRadius: BorderRadius.circular(radius.md),
     );
     final cardShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(DvxRadius.md),
+      borderRadius: BorderRadius.circular(radius.md),
       side: highContrast
           ? BorderSide(color: textPrimary, width: 2)
           : BorderSide.none,
@@ -181,16 +275,13 @@ abstract final class DvxAppTheme {
       ),
       focusColor: focus,
       extensions: <ThemeExtension<dynamic>>[
-        DvxThemeTokens(
-          accent: accent,
-          success: success,
-          focus: focus,
-          textSecondary: textSecondary,
-          surfaceVariant: surfaceVariant,
+        DvxAccessibilityTokens(
           focusWidth: highContrast ? 4 : 3,
           borderWidth: highContrast ? 2 : 1,
           highContrast: highContrast,
         ),
+        spacing,
+        radius,
       ],
     );
   }
@@ -199,4 +290,9 @@ abstract final class DvxAppTheme {
       ThemeData.estimateBrightnessForColor(color) == Brightness.dark
       ? Colors.white
       : Colors.black;
+}
+
+extension DvxAppThemeContext on BuildContext {
+  DvxAppSpacing get appSpacing => Theme.of(this).extension<DvxAppSpacing>()!;
+  DvxAppRadius get appRadius => Theme.of(this).extension<DvxAppRadius>()!;
 }

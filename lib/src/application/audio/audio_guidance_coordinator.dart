@@ -105,8 +105,11 @@ final class AudioGuidanceCoordinator implements AudioGuidance {
 
   Future<void> _playCue(AudioCue cue, int generation) => switch (cue) {
     SpeechCue() => _playSpeech(cue, generation),
-    SfxCue() => _playSfx(cue),
-    MusicCue() => _playMusic(cue),
+    SfxCue() => _playSfx(cue, generation),
+    ClickCue(:final doubleClick) => _sfxPlayer.playClick(
+      doubleClick: doubleClick,
+    ),
+    MusicCue() => _playMusic(cue, generation),
   };
 
   Future<void> _playSpeech(SpeechCue cue, int generation) async {
@@ -116,6 +119,7 @@ final class AudioGuidanceCoordinator implements AudioGuidance {
         await _speechAssetPlayer.setVolume(
           audioConfiguration.speechAssetVolume,
         );
+        if (!_isCurrent(generation)) return;
         await _speechAssetPlayer.play(asset);
         return;
       } on AudioServiceException {
@@ -139,13 +143,15 @@ final class AudioGuidanceCoordinator implements AudioGuidance {
     await _textToSpeechService.speak(text);
   }
 
-  Future<void> _playSfx(SfxCue cue) async {
+  Future<void> _playSfx(SfxCue cue, int generation) async {
     await _sfxPlayer.setVolume(audioConfiguration.sfxVolume);
+    if (!_isCurrent(generation)) return;
     await _sfxPlayer.play(cue.asset);
   }
 
-  Future<void> _playMusic(MusicCue cue) async {
+  Future<void> _playMusic(MusicCue cue, int generation) async {
     await _musicPlayer.setVolume(audioConfiguration.musicVolume);
+    if (!_isCurrent(generation)) return;
     await _musicPlayer.play(cue.asset);
   }
 
@@ -193,6 +199,8 @@ final class AudioGuidanceCoordinator implements AudioGuidance {
             'SpeechCue precisa de texto ou audioAsset.',
           );
         }
+      case ClickCue():
+        break;
       case SfxCue(:final asset) || MusicCue(:final asset):
         if (asset.trim().isEmpty) {
           throw const InvalidAudioCueException(

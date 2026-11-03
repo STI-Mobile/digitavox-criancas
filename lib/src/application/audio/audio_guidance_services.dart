@@ -51,6 +51,8 @@ abstract interface class AssetAudioPlayer {
 abstract interface class SfxPlayer {
   Future<void> play(String asset);
 
+  Future<void> playClick({bool doubleClick = false});
+
   Future<void> setVolume(double volume);
 
   Future<void> stop();

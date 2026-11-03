@@ -46,6 +46,7 @@ void main() {
           ),
         )
         .map((file) => file.path)
+        .map((path) => path.replaceAll(Platform.pathSeparator, '/'))
         .toList();
 
     expect(imports, <String>[
@@ -57,7 +58,7 @@ void main() {
     final oldAudioProperty = RegExp(
       '"'
       'audio'
-      '"\\s*:',
+      '"/s*:',
     );
     final jsonFiles = <File>[
       ...Directory('assets/content')

@@ -7,15 +7,20 @@ void main() {
     'saves and restores progress through the persistence contract',
     () async {
       final repository = InMemoryProgressRepository();
-      final progress = const StudentProgress().completeExercise(
-        courseId: 'course-1',
-        lessonId: 'lesson-1',
-        exerciseId: 'exercise-1',
-      );
+      final progress = const StudentProgress()
+          .startLessonAttempt(courseId: 'course-1', lessonId: 'lesson-1')
+          .recordExerciseResult(
+            courseId: 'course-1',
+            lessonId: 'lesson-1',
+            exerciseId: 'exercise-1',
+            accuracyPercent: 100,
+            lessonAccuracyPercent: 90,
+            lessonExerciseIds: const ['exercise-1'],
+          );
 
       await repository.save(progress);
 
-      expect((await repository.load()).totalStars, 1);
+      expect((await repository.load()).totalStars, 3);
     },
   );
 }

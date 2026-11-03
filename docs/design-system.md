@@ -8,19 +8,21 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 ## Brand
 
-`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets usam preferencialmente `ColorScheme` ou `DvxThemeTokens`, nunca essas constantes diretamente. Open Sans é empacotada como asset local, acompanhada da licença OFL.
+`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets não usam essas constantes diretamente. Open Sans é a fonte do texto corrido; Fredoka é usada nos títulos e nomes de missão via estilos semânticos de título e headline do `TextTheme`. Ambas são empacotadas como assets locais com suas licenças OFL.
 
 ## Tema do aplicativo
 
 `DvxAppTheme.resolve` produz um `ThemeData` Material 3 para:
 
-- `standard`: interface clara;
-- `dark`: superfícies escuras e interação cyan;
+- `standard`: tema **Claro**, com interface clara;
+- `dark`: tema **Escuro**, padrão inicial, com superfícies escuras e interação cyan;
 - `highContrast`: preto, branco, cyan e foco amarelo, com bordas reforçadas.
 
-`ColorScheme` representa conceitos Material. `DvxThemeTokens`, uma `ThemeExtension`, contém accent, success, focus, texto secundário, surface variant e espessuras semânticas. `DvxSpacing` e `DvxRadius` evitam medidas repetidas. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
+`DvxAppTheme.resolve` define a aparência das superfícies globais, como seleção de perfil e seleção de curso. Dentro de uma jornada, `DvxGameScaffold` aplica a paleta e as formas do tema do curso ao `ColorScheme`, aos textos, cartões, botões e indicadores Material. `DvxCourseThemeData` também contém escalas próprias de espaçamento e raio; componentes da jornada leem esses valores do tema resolvido, permitindo personalização por curso. O curso monocromático, por exemplo, usa medidas distintas.
 
-A preferência `AppThemePreference` integra `AppSettings`. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento persistido está no schema 2; documentos schema 1 são migrados ao carregar (`highContrastEnabled` vira a preferência correspondente).
+`DvxAccessibilityTokens` contém somente métricas e estado globais de acessibilidade: espessura de foco, borda reforçada e modo de alto contraste. Eles permanecem ativos ao aplicar a paleta do curso. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
+
+A preferência `AppThemePreference` integra `AppSettings`. Novos perfis e a seleção de perfis começam no tema Escuro; escolhas já salvas são respeitadas. O tema Claro mantém o identificador persistido `standard`, sem alteração do formato do documento. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento de progresso está no schema 4; documentos 1, 2 e 3 são migrados ao carregar (`highContrastEnabled` do schema 1 vira a preferência correspondente). A versão do progresso é independente da versão do catálogo de conteúdo.
 
 ## Tema do curso
 
@@ -40,12 +42,26 @@ O domínio guarda apenas o identificador. `DvxCourseThemes`, na apresentação, 
 - `DvxFeedback`: espera, acerto, erro e conclusão com cor, ícone, texto e live region;
 - `DvxProgressIndicator`: progresso textual e visual;
 - `DvxStars`: recompensa com rótulo semântico;
-- `DvxThemeSelector`: seleção acessível e persistida dos três temas.
+- `DvxThemeSelector`: seleção acessível e persistida dos três temas. Percorrer as opções por setas ou Tab anuncia seus nomes pelo coordenador de áudio, antes de confirmar; o tema aplicado só muda na seleção.
 
-Botões continuam nativos. Seus temas garantem alvos mínimos e borda de foco, mais forte em alto contraste; wrappers sem semântica adicional não foram criados.
+Botões e itens do seletor continuam nativos. Os anúncios observam o foco sem criar novas paradas de teclado nem substituir ações e estados semânticos. Seus temas garantem alvos mínimos e borda de foco, mais forte em alto contraste.
 
-## Migração atual
+## Padrões de tela
 
-O fluxo de curso, módulo, lição e exercício usa `DvxGameScaffold`, tokens, tema do curso e componentes compartilhados. Cores literais e `TextStyle` com tamanhos próprios permanecem somente dentro da implementação do Design System. Áudio narrativo, teclado físico, engine, persistência de progresso e semântica existente não foram movidos para componentes visuais.
+O fluxo usa `DvxGameScaffold`, tokens, tema do curso e componentes compartilhados. As diferenças entre fases são de informação e composição, sem duplicar regras do curso:
 
-Validação manual com VoiceOver e TalkBack, em dispositivo físico e nos três temas, continua necessária antes de considerar a experiência pedagógica aprovada.
+- Seleção de cursos: quando o catálogo contém mais de um curso, oferece uma lista explícita para escolha; um curso único abre diretamente.
+- Curso: ação principal de começar/continuar, progresso por missões obrigatórias e apresentação expansível.
+- Módulo: mapa/lista de missões com estados textuais de disponível, em andamento, concluída e bloqueada; bônus separado do progresso obrigatório.
+- Apresentação da missão: ilustração local, narrativa de Stella e instrução de ZERO-1; uma ação principal de começar/continuar. A lista de atividades é secundária.
+- Prática: cabeçalho compacto, instrução, alvo, posição/repetição, feedback discreto, ajuda e pausa. Não repetir ilustração da missão, retrato do guia, breadcrumb completo, texto de abertura ou seletor de tema dentro da execução.
+- Resultado: conquista e ação seguinte; a lista completa de estatísticas abre no Diário de bordo. Um erro de tecla não produz uma tela de reprovação.
+- Conclusão do módulo: cena da cerimônia, conquistas e ação de retorno; sem espaço de digitação avaliado.
+
+Personagens e ilustrações são recursos diferentes no catálogo. `CourseScene` resolve a imagem da cena local, e `CourseJourneyEngine.illustration` não herda a imagem de um ancestral para a prática. Texto e narração compartilham referências canônicas. Imagem não transporta uma instrução que esteja ausente dos canais textual e semântico.
+
+A prática termina com uma caixa de ajuda que mantém F1 e as consultas por setas visíveis. A seta para baixo mostra a próxima letra/dedo, e a seta para cima mostra o exercício. O texto da consulta usa feedback semântico e a caixa é trazida para a área visível sem mudar o foco de digitação.
+
+Cores literais e medidas específicas ficam nos componentes/tokens. Botões continuam nativos, com destinos e rótulos explícitos. Áudio, teclado, progressão e persistência permanecem fora dos componentes visuais.
+
+Texto ampliado, foco, contraste e ausência de overflow são verificáveis por testes e inspeção das telas. Validação manual com VoiceOver e TalkBack em dispositivo físico e nos três temas continua pendente; screenshots não comprovam operabilidade com leitores de tela.

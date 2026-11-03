@@ -66,6 +66,7 @@ final class FakeAssetAudioPlayer implements AssetAudioPlayer {
   final Set<String> failingAssets = <String>{};
   bool autoComplete = true;
   bool disposed = false;
+  Future<void>? volumeDelay;
   Completer<void>? _activePlayback;
 
   @override
@@ -83,6 +84,7 @@ final class FakeAssetAudioPlayer implements AssetAudioPlayer {
   @override
   Future<void> setVolume(double volume) async {
     events.add('asset.volume:$volume');
+    await volumeDelay;
   }
 
   @override
@@ -114,6 +116,7 @@ final class FakeSfxPlayer implements SfxPlayer {
   final Set<String> failingAssets = <String>{};
   bool autoComplete = true;
   bool disposed = false;
+  Future<void>? volumeDelay;
   Completer<void>? _activePlayback;
 
   @override
@@ -129,8 +132,14 @@ final class FakeSfxPlayer implements SfxPlayer {
   }
 
   @override
+  Future<void> playClick({bool doubleClick = false}) async {
+    events.add(doubleClick ? 'sfx.click:double' : 'sfx.click:single');
+  }
+
+  @override
   Future<void> setVolume(double volume) async {
     events.add('sfx.volume:$volume');
+    await volumeDelay;
   }
 
   @override
@@ -160,6 +169,7 @@ final class FakeMusicPlayer implements MusicPlayer {
 
   final List<String> events;
   bool disposed = false;
+  Future<void>? volumeDelay;
 
   @override
   Future<void> play(String asset) async {
@@ -174,6 +184,7 @@ final class FakeMusicPlayer implements MusicPlayer {
   @override
   Future<void> setVolume(double volume) async {
     events.add('music.volume:$volume');
+    await volumeDelay;
   }
 
   @override

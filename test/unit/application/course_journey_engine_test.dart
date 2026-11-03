@@ -47,17 +47,20 @@ void main() {
       'key-a',
       'key-b',
     ]);
-    engine.resume();
+    _startPending(engine);
     expect(engine.exercise!.id, 'key-f');
     await engine.session!.handleInput('f');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.exercise!.id, 'sequence-fj');
     await engine.session!.handleInput('f');
     await engine.session!.handleInput('j');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.exercise!.id, 'key-j');
     expect(engine.session!.status, ExerciseSessionStatus.waitingForInput);
     await engine.session!.handleInput('j');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.stage, JourneyStage.lesson);
     expect(engine.lesson!.id, 'left-hand');
@@ -67,13 +70,15 @@ void main() {
       engine.pendingIn(engine.lesson!)!,
     );
     await engine.session!.handleInput('a');
+    engine.continueAfterExercise();
     await pumpEventQueue();
     expect(engine.module!.id, 'exploration');
     expect(engine.lesson!.id, 'new-key');
-    engine.resume();
+    _startPending(engine);
     await engine.session!.handleInput('b');
+    engine.continueAfterExercise();
     await pumpEventQueue();
-    expect(engine.stage, JourneyStage.lesson);
+    expect(engine.stage, JourneyStage.module);
     expect(engine.resumeTarget, isNull);
     expect(engine.completedCount, 5);
     expect(engine.exerciseCount, 5);
@@ -106,7 +111,7 @@ void main() {
   test(
     'restores the next pending exercise and does not duplicate completion',
     () async {
-      engine.resume();
+      _startPending(engine);
       final first = engine.exercise!;
       final lesson = engine.lesson!;
       final module = engine.module!;
@@ -115,7 +120,7 @@ void main() {
       engine.openExercise(module, lesson, first);
       await engine.session!.handleInput('f');
       await pumpEventQueue();
-      expect((await repository.load()).totalStars, 1);
+      expect((await repository.load()).totalStars, 0);
       engine.dispose();
       catalog.dispose();
       catalog = CourseCatalogViewModel(
@@ -128,7 +133,7 @@ void main() {
         catalog: catalog,
         courseAudio: courseAudio,
       );
-      engine.resume();
+      _startPending(engine);
       expect(engine.exercise!.id, 'sequence-fj');
       engine.back();
       expect(engine.stage, JourneyStage.lesson);
@@ -161,20 +166,21 @@ void main() {
         (audioGuidance.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/sensors.wav',
       );
-      engine.resume();
+      _startPending(engine);
       await pumpEventQueue();
       expect(
         (audioGuidance.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/key_f.wav',
       );
       await engine.session!.handleInput('f');
+      engine.continueAfterExercise();
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
       await engine.session!.handleInput('f');
       await engine.session!.handleInput('j');
+      engine.continueAfterExercise();
       await pumpEventQueue();
-      expect(engine.character!.id, 'explorer');
-      expect(engine.character!.imageAsset, 'assets/images/demo/explorer.png');
+      expect(engine.character, isNull); // No ancestor illustration in practice.
       expect(
         (audioGuidance.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/key_j.wav',
@@ -194,7 +200,7 @@ void main() {
   test(
     'rapid navigation cancels stale audio and does not award progress',
     () async {
-      engine.resume();
+      _startPending(engine);
       final oldSession = engine.session!;
       engine.back();
       engine.back();
@@ -217,12 +223,13 @@ void main() {
         operation: 'playSequence',
         cause: 'falha simulada',
       );
-      engine.resume();
+      _startPending(engine);
       await pumpEventQueue();
       await engine.session!.handleInput('f');
+      engine.continueAfterExercise();
       await pumpEventQueue();
       expect(engine.exercise!.id, 'sequence-fj');
-      expect((await repository.load()).totalStars, 1);
+      expect((await repository.load()).totalStars, 0);
     },
   );
 
@@ -274,4 +281,12 @@ void main() {
       expect(engine.stage, JourneyStage.course);
     },
   );
+}
+
+void _startPending(CourseJourneyEngine engine) {
+  engine.resume();
+  expect(engine.stage, JourneyStage.lesson);
+  final target = engine.pendingIn(engine.lesson!);
+  expect(target, isNotNull);
+  engine.openExercise(engine.module!, engine.lesson!, target!);
 }

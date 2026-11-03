@@ -2,45 +2,49 @@
 
 ## Direção
 
-O projeto adota MVVM pragmático. A arquitetura separa responsabilidades que já existem, sem reproduzir todas as camadas de Clean Architecture.
+O projeto adota MVVM pragmático: apresentação → aplicação → domínio. A composição injeta implementações de dados e infraestrutura que satisfazem contratos do domínio. Não há um framework adicional de regras ou navegação.
 
-```text
-presentation → application → domain
-       composition ↘ data / infrastructure → domain contracts
-```
+- **Presentation** renderiza estado, encaminha ações e mantém semântica/foco dos widgets.
+- **Application** contém ViewModels, `CourseJourneyEngine`, coordenação de sessões e eventos.
+- **Domain** define modelos de conteúdo, validação, regras de progresso e contratos das fronteiras técnicas.
+- **Data** implementa persistência e compatibilidade do documento salvo.
+- **Infrastructure** carrega assets e integra teclado, áudio e APIs de plataforma.
+- **Content** contém escolhas pedagógicas e narrativas em dados versionados, sem código de widget.
 
-- **Presentation** renderiza estado, coleta ações e mantém acessibilidade dos widgets.
-- **Application** contém ViewModels, estado observável e coordenação de operações.
-- **Domain** define conteúdo, validação, progressão e contratos mínimos para fronteiras externas.
-- **Data** implementa persistência sem vazar tecnologia ao domínio.
-- **Infrastructure** integra assets, plataforma e formatos externos.
-- **Content** vive em dados versionados, não em árvores de widgets.
+`main.dart` é a raiz de composição. A seleção de perfil entrega um `ProgressRepository` local durável por perfil; testes sem requisito de durabilidade usam `InMemoryProgressRepository`.
 
-`main.dart` é a raiz de composição: escolhe implementações concretas e as injeta no app.
+## Conteúdo e jornada
 
-## Decisões atuais
+`CourseCatalogDocument` lê schemas 2, 3 e 4. Schema 4 exige configuração concreta da prática, referências canônicas, critérios, pré-requisitos e optionalidade. Campos desconhecidos, capacidades sem executor, referências inválidas, ciclos e conteúdo fora das teclas/corpus declarados são rejeitados antes da UI. Consulte [content-model.md](content-model.md), [course.schema.json](course.schema.json) e ADR 0005.
 
-- `ChangeNotifier` do SDK sustenta o primeiro ViewModel; não há necessidade concreta de gerenciador de estado externo.
-- O catálogo implementa `CourseCatalog`, pois carregamento por asset e um futuro pacote externo são uma fronteira real.
-- A persistência implementa `ProgressRepository`. A composição principal usa `LocalProgressRepository`, com um documento JSON versionado salvo por `SharedPreferencesAsync`; a implementação em memória permanece disponível para testes.
-- `StudentProgressCodec` valida explicitamente cursos, lições, exercícios concluídos, estrelas e configurações. Documento ausente, corrompido ou com schema desconhecido resulta em progresso vazio; falhas do armazenamento não são silenciadas.
-- Modelos de progresso são imutáveis para tornar transições previsíveis e testáveis.
-- O catálogo possui `schemaVersion`, versão do curso e validação na entrada.
-- O Design System reside na apresentação e combina tokens institucionais, um dos três temas acessíveis do aplicativo e uma identidade de curso resolvida por identificador semântico. O domínio conhece somente `themeId` e a preferência persistida, nunca cores ou tipos Flutter. Consulte `docs/design-system.md`.
-- `CourseJourneyEngine` interpreta a hierarquia e a ordem do catálogo, mantém a etapa atual e coordena retomada, avanço, retorno, sessão de exercício, cena e personagem. As telas enviam comandos ao engine; o conteúdo não é convertido em regras de widgets. Consulte o ADR 0004 e `docs/course.schema.json`.
-- Eventos de teclado físico são filtrados na infraestrutura, avaliados por uma regra de domínio e coordenados por `ExerciseSessionViewModel`; widgets apenas encaminham a entrada e apresentam o estado.
-- A sessão de exercício distingue espera, erro, acerto e conclusão. A conclusão delega a atualização ao ViewModel do catálogo, preservando a infraestrutura existente de progresso.
-- Áudio declarado pelo curso segue `CourseAudioConfiguration` → `CourseAudioOrchestrator` → `AudioCue` → `AudioGuidance`. O engine emite contexto e eventos, mas não conhece assets físicos, TTS ou players. Consulte `docs/architecture/course-audio-integration.md`.
-- Áudio gravado do curso, futura fala dinâmica e acessibilidade do sistema são responsabilidades distintas. `Semantics`, VoiceOver e TalkBack não são mecanismos narrativos do curso.
-- `AudioGuidanceCoordinator` oferece cues genéricos tipados, sequenciamento, cancelamento e fallback de fala gravada para TTS nativo. O contrato `AudioGuidance` permite integrar e testar consumidores sem plugin. Consulte `docs/architecture/audio-guidance.md`.
-- Cada primeira conclusão ainda concede uma estrela pela regra mínima do harness. Essa regra é provisória e não representa pontuação baseada em desempenho.
+O storyboard fornecido pelo usuário é a autoridade para Exploradores Espaciais; as imagens são referências visuais. Assets sonoros em produção são explicitamente pendentes. Fixtures técnicas permanecem distintas do conteúdo do curso. A composição atual ainda limita o catálogo ao modo debug por `DevelopmentCourseCatalog`; esta alteração não habilita distribuição release nem importação remota.
 
-## Pontos de extensão
+`CourseJourneyEngine` interpreta curso → módulo → missão/lição → atividade/exercício, preservando ordem dos arrays, pré-requisitos e aprovação. `resume()` abre a apresentação da missão do primeiro exercício obrigatório pendente. A conclusão de módulo usa `JourneyStage.moduleCompletion` e `ContentEvent`; não exige exercício artificial. Concessão de recompensas é idempotente, e bônus opcionais não participam da conclusão obrigatória.
 
-- Evolução do progresso: incrementar o schema, definir migração ou fallback e cobrir compatibilidade antes de alterar o formato persistido.
-- Pacotes de escola: implementar outro `CourseCatalog`, incluindo segurança, migração e origem do pacote quando os requisitos existirem.
-- Exercícios: estender o schema e o domínio, depois criar apresentação especializada por tipo.
-- Fala dinâmica: validar conteúdo de cursos reais sobre o contrato declarativo já integrado; o serviço de TTS permanece uma infraestrutura genérica.
-- Política de áudio: revisar foco, ducking e coexistência depois de testes empíricos com VoiceOver e TalkBack em dispositivos físicos.
+`ExerciseSessionViewModel` recebe exercício e configuração da prática. Mantém posição, repetição, acertos/erros, tempo ativo, pausa, ajuda e conclusão. Teclado físico é interpretado na infraestrutura. Erro consome uma posição sem exigir apagar; ajuda/pausa interrompem entrada e relógio. Um limite expirado não aprova uma tentativa parcial. Widgets não decidem estrelas, desbloqueios ou persistência.
 
-Mudanças estruturais relevantes devem receber um ADR em `docs/adr`.
+A apresentação usa padrões distintos para introdução, prática e resultado. A prática não herda ilustração nem texto longo do ancestral. Resultado deriva da sessão concluída; estatísticas completas são expostas pelo Diário de bordo. Acessibilidade, controles nativos, foco e escalonamento de texto continuam requisitos transversais.
+
+## Progresso
+
+`CourseCatalogViewModel` coordena alterações através de `ProgressRepository`; infraestrutura de armazenamento não entra nos widgets. `StudentProgressCodec` versiona e valida o documento independente do schema de conteúdo. O progresso schema 4 preserva tentativas, medições por exercício, eventos concluídos e recompensas desbloqueadas; schemas 1/2/3 são migrados sem inventar medições.
+
+A precisão da missão agrega acertos e teclas digitadas quando existem contagens para todos os resultados. Dados antigos sem contagens usam a média das precisões existentes. A média mínima e as faixas de duas/três estrelas são inclusivas e vêm do curso; `secChar` é tempo por caractere e não participa da fórmula de estrelas. A melhor conquista histórica é distinta da aprovação de uma nova tentativa.
+
+Persistem resultados de atividades concluídas; caractere, repetição e tempo em andamento permanecem em memória. `legacyLessonIds` é compatibilidade editorial declarativa: a aplicação pode reunir resultados de IDs substituídos antes da apresentação. O engine não contém IDs especiais do curso. A antiga confirmação por espaço da cerimônia não autoriza recompensas retroativas. Consulte ADR 0002 e ADR 0005.
+
+## Áudio e identidade visual
+
+Áudio segue `CourseAudioConfiguration` → `CourseAudioOrchestrator` → `AudioCue` → `AudioGuidance`. Somente adaptadores concretos conhecem players e TTS. Texto canônico de `audioResources` fornece tanto a cena acessível quanto a fala; números e eco de tecla derivam do estado real.
+
+`correctInput` e `incorrectInput` podem ser herdados entre ancestrais. `start` e `completed` permanecem locais ao contexto narrativo. Pendentes de fala usam texto/TTS; música, aliens e efeitos narrativos pendentes usam silêncio. O erro usa `systemClick` declarado como fallback técnico nativo, sem fingir um asset de efeito já produzido. Falha sonora não bloqueia teclado, avaliação, progresso ou semântica. Consulte [architecture/course-audio-integration.md](architecture/course-audio-integration.md).
+
+Áudio narrativo e leitores de tela têm finalidades diferentes: `Semantics`, VoiceOver e TalkBack não são motores de personagem. A política do coordenador evita sobreposição entre falas controladas pelo app; coexistência com leitores e foco sonoro requer validação física.
+
+O Design System combina identidade institucional, tema acessível do aplicativo e identidade de curso por `themeId`. O domínio conhece identificadores, não cores Flutter. Personagem, ilustração de cena e decoração são conceitos separados. Consulte [design-system.md](design-system.md).
+
+## Evolução
+
+Mudanças no documento salvo exigem versão, migração e testes próprios. Mudanças de conteúdo preservam IDs ou declaram aliases; novas capacidades começam no schema/domínio e precisam de executor. Pacotes externos, sincronização e abstrações adicionais só devem ser introduzidos quando houver requisitos concretos.
+
+`make check` cobre formatação, análise e testes de unidade/widgets. Verificação com VoiceOver/TalkBack, saída sonora física e calibração pedagógica com crianças permanece fora da evidência automatizada. Mudanças estruturais relevantes recebem ADR em `docs/adr`.

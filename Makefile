@@ -34,3 +34,6 @@ check: format-check analyze test
 
 build-android:
 	flutter build apk --debug
+
+run:
+	flutter run
