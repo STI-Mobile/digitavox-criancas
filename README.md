@@ -42,6 +42,10 @@ O comando valida formatação, análise estática com warnings fatais e testes u
 | `make build-android` | Gerar APK Android de debug do flavor dev |
 | `make build-android-dev` | Gerar AAB Android dev assinado |
 | `make build-ios-dev` | Gerar IPA iOS dev assinado |
+| `make setup-ios` | Instalar ferramentas locais de assinatura/publicação iOS |
+| `make ios-build FLAVOR=dev BUILD_NUMBER=1` | Sincronizar assinatura pelo Match e gerar IPA pelo Flutter |
+| `make ios-testflight FLAVOR=dev IPA="/caminho/arquivo.ipa"` | Enviar IPA existente ao TestFlight |
+| `make test-ios-tooling` | Validar seleção de assinatura por flavor no macOS |
 | `make check` | Executar a validação principal local |
 
 ## Organização

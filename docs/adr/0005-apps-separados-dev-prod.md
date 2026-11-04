@@ -37,6 +37,8 @@ O nome exibido do app `dev` contém o termo "Dev" em texto, porque testers cegos
 
 - Cada app Android tem a sua upload key, lida de `android/key-<flavor>.properties` ou das propriedades Gradle `digitavox.signing.<flavor>.<nome>`. A chave de assinatura final fica no Play App Signing de cada app.
 - No iOS, o certificado Apple Distribution pertence ao time e é compartilhado; cada bundle ID tem o seu provisioning profile App Store. O Release de cada flavor usa assinatura manual com o profile correspondente.
+- No iOS local e no CI, Fastlane Match sincroniza certificados e profiles do armazenamento privado criptografado já usado pela equipe. O vault guarda a senha de criptografia e as credenciais de acesso. O uso normal é somente leitura; criação/renovação exige comando administrativo explícito, recusado no CI. O build permanece no Flutter com SwiftPM, e a identidade é lida da configuração nativa selecionada pelo flavor. No CI, um keychain temporário recebe a assinatura e é removido ao terminar.
+- A distribuição dev depende do quality gate reutilizável do CI, incluindo testes Flutter e integração iOS em simulador. Depois do gate aprovado, cada plataforma gera, valida e publica seu próprio artefato. Validação manual de áudio/VoiceOver pertence ao core de cursos e é independente de CI/CD.
 - Cada app tem um GitHub Environment próprio, `distribution-dev` e `distribution-prod`, com os mesmos nomes de secrets e valores diferentes. `distribution-prod` exige revisores obrigatórios.
 - Cada app tem o seu contador de build. No app `dev`, o workflow usa `100 + github.run_number`, e os números de 1 a 99 ficam reservados para uploads manuais, como o primeiro upload exigido pelo Play. A numeração de `prod` será definida com o workflow de produção.
 

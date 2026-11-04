@@ -75,6 +75,9 @@ ser reutilizado mesmo após excluir um build. Por isso:
 
 - se um job falhar, use "Re-run failed jobs"; "Re-run all jobs" reutiliza o
   mesmo `run_number` e o Play recusa o job que já tinha publicado;
+- se a falha ocorrer depois de o upload ser recebido, confira o console antes
+  de repetir: o build pode estar publicado/processando mesmo com o job vermelho.
+  Nesse caso, não reenvie o mesmo número; uma nova execução recebe outro número;
 - renomear ou recriar o workflow reinicia o `run_number`; ajuste a base para
   um valor acima do último build publicado.
 
@@ -107,7 +110,7 @@ chave de assinatura final de cada app fica no Play App Signing.
 ## Assinatura iOS
 
 As configurações `Debug-*` e `Profile-*` usam assinatura automática do time
-`D2Z83QUW73`, para executar o app em aparelhos de desenvolvimento. As
+`SYF585KJR7`, para executar o app em aparelhos de desenvolvimento. As
 configurações `Release-*` usam assinatura manual com o certificado Apple
 Distribution e um provisioning profile App Store por bundle ID:
 
@@ -117,11 +120,67 @@ Distribution e um provisioning profile App Store por bundle ID:
 | `Release-prod` | `br.usp.digitavox-criancas` | `Digitavox Criancas App Store` |
 
 O nome do profile no Apple Developer precisa ser idêntico ao
-`PROVISIONING_PROFILE_SPECIFIER` do projeto; o workflow confere o nome antes do
-build. O `flutter build ipa` gera o ExportOptions de assinatura manual a partir
+`PROVISIONING_PROFILE_SPECIFIER` do projeto; o Fastlane lê esse nome da
+configuração nativa selecionada pelo flavor. O `flutter build ipa` gera o ExportOptions de assinatura manual a partir
 dessas configurações e procura o profile em
 `~/Library/Developer/Xcode/UserData/Provisioning Profiles`. Para gerar um IPA
 localmente, instale o certificado e o profile nesse Mac.
+
+### Fluxo local com Fastlane Match
+
+O Fastlane é uma dependência de ferramentas, fixada em `Gemfile.lock`; não é
+dependência embarcada no aplicativo. Ele prepara a assinatura e publica o IPA.
+O build continua sendo executado pelo Flutter, com SwiftPM.
+
+```sh
+make setup-ios
+make test-ios-tooling
+make ios-sign FLAVOR=dev
+make check
+make ios-build FLAVOR=dev BUILD_NUMBER=1
+make ios-testflight FLAVOR=dev IPA="/caminho/arquivo.ipa"
+```
+
+Escolha um build number ainda não enviado à Apple. O envio é uma ação separada:
+`ios-build` não publica, e `ios-testflight` envia o IPA existente sem reconstruir.
+O upload espera o processamento do TestFlight, mas não submete o app à revisão
+da App Store nem distribui para testers externos. Configure os grupos internos
+no App Store Connect e confirme a instalação em aparelho.
+
+O argumento `FLAVOR` é obrigatório e corresponde ao `--flavor` do Flutter.
+Bundle ID, time e nome do profile são lidos de `Release-<flavor>` no projeto
+Xcode; não são definidos pelo `.env`. O envio recusa um IPA de outro flavor.
+O catálogo de produção continua sem conteúdo aprovado; estes comandos não
+representam autorização para publicar o app prod.
+
+No Mac, o Fastlane carrega o `.env` da raiz, ignorado pelo Git. No CI, esse
+carregamento é desabilitado e os valores devem vir do Environment:
+
+| Campo | Uso |
+| --- | --- |
+| `MATCH_GIT_URL`, `MATCH_GIT_BRANCH` | Repo privado e branch dos materiais de assinatura |
+| `MATCH_PASSWORD` | Senha de criptografia do armazenamento Match |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | Autenticação HTTPS do Git privado, se necessária |
+| `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID` | Identificadores da chave de API da equipe |
+| `APP_STORE_CONNECT_KEY` | Chave `.p8`; Base64 quando `APP_STORE_CONNECT_KEY_BASE64=true` |
+| `APP_STORE_CONNECT_KEY_PATH` | Alternativa local: caminho para `.p8`, quando o conteúdo não foi fornecido |
+
+As credenciais de guarda da equipe ficam no vault. O Git privado contém os
+certificados e profiles criptografados. Não copie os valores para documentação,
+commits ou logs. A chave de API precisa permitir as operações usadas; somente
+a execução real comprova seu acesso ao app.
+
+`ios-sign` e `ios-build` usam Match somente leitura. Para criar/renovar o profile
+de um flavor na Apple e armazená-lo no repo privado, use a operação administrativa
+explícita, com as permissões de escrita correspondentes:
+
+```sh
+make ios-prepare-signing FLAVOR=dev
+```
+
+O CI usa as mesmas lanes de build e envio, com Match somente leitura e keychain
+temporário. Criação/renovação pelo comando administrativo é recusada em CI.
+Certificados e profiles não precisam ser duplicados como secrets individuais.
 
 ## Primeiro build do app dev no TestFlight
 
@@ -130,9 +189,10 @@ localmente, instale o certificado e o profile nesse Mac.
    Store `Digitavox Criancas Dev App Store` para esse App ID.
 2. No App Store Connect, crie o app com esse bundle ID, se ainda não existir.
 3. Crie uma chave da API do App Store Connect com permissão App Manager.
-4. Cadastre os valores no Environment `distribution-dev`, crie a variable de
-   repositório `IOS_DISTRIBUTION_ENABLED=true` e publique pelo workflow; o
-   TestFlight aceita o primeiro build pela API.
+4. Execute o fluxo local acima para gerar e enviar o primeiro IPA. O TestFlight
+   aceita o primeiro build pela API. A configuração do Environment e a ativação
+   de `IOS_DISTRIBUTION_ENABLED=true` devem seguir a seção GitHub Actions, após
+   validar o caminho local.
 5. Crie o grupo de testers internos e preencha as informações de teste. Testers
    externos exigem Beta App Review.
 
@@ -164,15 +224,25 @@ app no console.
 
 O workflow [dev-distribution.yml](../.github/workflows/dev-distribution.yml) é
 executado após push em `develop` ou manualmente. A execução manual só aparece
-no GitHub depois que o workflow existir no branch padrão. Os dois jobs usam o
-Environment `distribution-dev`, restrito ao branch `develop` e sem revisores
-obrigatórios para que a publicação seja automática, executam `make check` e
-publicam independentemente.
+no GitHub depois que o workflow existir no branch padrão. Primeiro ele chama
+o [CI](../.github/workflows/ci.yml) como quality gate reutilizável, sem acesso
+aos secrets de distribuição: formatação, análise, unitários/widgets, APK debug,
+testes da ferramenta iOS e integração no simulador. Se qualquer job obrigatório
+falhar, nenhum build de distribuição ou upload começa.
+
+Depois do gate aprovado, os jobs Android/iOS usam o Environment
+`distribution-dev`, restrito a `develop` e sem revisores obrigatórios. Cada job
+gera seu artefato release, valida-o, registra SHA-256 e o preserva por 14 dias
+antes de publicar no canal interno correspondente. Os jobs de plataforma são
+independentes depois do gate: falha de build/upload em uma plataforma não
+desfaz uma publicação concluída na outra. Use a reexecução apenas dos jobs com
+falha, conforme a regra de numeração.
 
 O job de iOS só executa quando a variable de repositório
 `IOS_DISTRIBUTION_ENABLED` vale `true`. Ela precisa ser de repositório, porque
-a condição do job é avaliada antes de o Environment ser carregado. Mantenha-a
-ausente até concluir o primeiro build no TestFlight.
+a condição do job é avaliada antes de o Environment ser carregado. Ela controla
+a distribuição iOS; o gate de testes iOS continua obrigatório. Habilite-a depois
+de validar o primeiro build local no TestFlight e cadastrar os valores abaixo.
 
 Configure os seguintes valores nesse Environment:
 
@@ -183,24 +253,26 @@ Configure os seguintes valores nesse Environment:
 | Secret | `ANDROID_KEY_ALIAS` | Alias da chave de upload |
 | Secret | `ANDROID_KEY_PASSWORD` | Senha da chave de upload |
 | Secret | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | JSON da conta de serviço com acesso ao app dev no Play Console |
-| Secret | `APPSTORE_CERTIFICATES_FILE_BASE64` | Certificado Apple Distribution `.p12` em Base64 |
-| Secret | `APPSTORE_CERTIFICATES_PASSWORD` | Senha do certificado `.p12` |
-| Secret | `APPSTORE_PROVISIONING_PROFILE_BASE64` | Profile `Digitavox Criancas Dev App Store` em Base64 |
-| Variable | `APPSTORE_ISSUER_ID` | Issuer ID da API do App Store Connect |
-| Variable | `APPSTORE_API_KEY_ID` | Key ID da API do App Store Connect |
-| Secret | `APPSTORE_API_PRIVATE_KEY` | Conteúdo da chave privada `.p8` da API |
+| Secret | `MATCH_PASSWORD` | Senha do armazenamento criptografado Match |
+| Secret | `MATCH_GIT_BASIC_AUTHORIZATION` | Base64 de usuário:token com leitura do repo de assinatura |
+| Secret | `APP_STORE_CONNECT_KEY` | Chave privada `.p8` da API, em Base64 |
+| Variable | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID da API do App Store Connect |
+| Variable | `APP_STORE_CONNECT_KEY_ID` | Key ID da API do App Store Connect |
 
 O certificado Apple Distribution pertence ao time e é compartilhado entre os
-apps; cada bundle ID tem o seu profile. A chave da App Store Connect deve ter
-ao menos a permissão App Manager. O Environment `distribution-prod` usará os
-mesmos nomes, com valores de produção e revisores obrigatórios.
+apps; cada bundle ID tem o seu profile. O workflow obtém os materiais pelo Match
+no repo privado da equipe; URL e branch são configuração não secreta. O keychain
+temporário é removido ao terminar, inclusive em falha. A chave da API deve permitir
+as operações do App Manager. O Environment `distribution-prod` usará os mesmos
+nomes, com os valores apropriados e revisores obrigatórios.
 
 Não registre esses valores, arquivos, perfis, certificados ou keystores no
 repositório, em issues ou em logs de CI.
 
 ## Piloto acessível
 
-Cada versão dev deve ser validada em ao menos um Android com TalkBack e um iOS
+Esta validação pertence às issues do core de cursos e não bloqueia o teste ou
+a execução de CI/CD. Cada versão dev deve ser validada em ao menos um Android com TalkBack e um iOS
 com VoiceOver. O teste manual precisa cobrir instalação/atualização, nome
 anunciado do app, aviso DEMO, fluxo de exercício, persistência ao reabrir,
 teclado físico/Bluetooth, ordem de foco, anúncios de estado, áudio com e sem

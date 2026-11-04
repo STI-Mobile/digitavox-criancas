@@ -8,6 +8,18 @@ Os testes são organizados por intenção:
 
 Use `make test` no ciclo normal e `make check` antes de concluir. `make test-integration` requer simulador/emulador ou dispositivo configurado e não faz parte do job Linux inicial de CI. `make coverage` gera `coverage/lcov.info`; não existe meta artificial de cobertura nesta fase.
 
+O workflow `ci.yml` também funciona como quality gate reutilizável da distribuição
+dev. O job Linux valida formatação, análise, testes unitários/widgets e APK de
+debug; o job macOS executa `make test-ios-tooling` e os testes de integração no
+simulador com flavor dev. O gate não recebe credenciais de distribuição. Os builds
+release e os uploads só começam após os dois jobs passarem; a compilação usada
+pelos testes de integração faz parte do próprio gate.
+
+`make test-ios-tooling` usa Ruby/Minitest no macOS para verificar o isolamento de
+bundle ID/profile por flavor e o contrato dos workflows: dependência do gate,
+ausência de secrets nos testes e publicação após o build. Testes manuais de
+VoiceOver, áudio e teclado do core de cursos são independentes da esteira de CI/CD.
+
 Ao alterar comportamento, teste a regra no nível mais baixo que forneça confiança e acrescente widget/integração apenas quando a conexão entre camadas for relevante. Evite testes que apenas repetem implementação ou inflacionam cobertura.
 
 A persistência local é validada sem depender do filesystem ou de estado global da plataforma: testes do codec cobrem serialização, round trip, migração do schema 1, JSON inválido, valores inválidos e schema desconhecido; testes do repositório cobrem primeira execução, recuperação segura, restauração e propagação de falhas reais do armazenamento. Um teste de aplicação conclui um exercício e recria ViewModel e repositório sobre o mesmo documento para representar o fechamento e a reabertura do app. O teste de integração repete o fluxo usando `SharedPreferencesAsync` no dispositivo, preservando e restaurando qualquer documento que existia antes do teste. A implementação em memória continua sendo usada quando o objetivo do teste não é verificar durabilidade.
