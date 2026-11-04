@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'src/app.dart';
+import 'src/app_environment.dart';
 import 'src/application/audio/audio_guidance_coordinator.dart';
 import 'src/data/persistence/local_progress_repository.dart';
 import 'src/data/persistence/shared_preferences_progress_store.dart';
@@ -13,15 +15,14 @@ import 'src/infrastructure/content/development_course_catalog.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  final environment = AppEnvironment.fromBuild(
+    isDebugBuild: kDebugMode,
+    flavor: appFlavor,
+  );
 
   runApp(
     DigitavoxApp(
-      courseCatalog: const DevelopmentCourseCatalog(
-        enabled: kDebugMode,
-        demoCatalog: AssetCourseCatalog(
-          assetPath: 'assets/content/integration_demo_course.json',
-        ),
-      ),
+      courseCatalog: createCourseCatalogForEnvironment(environment),
       progressRepository: LocalProgressRepository(
         store: SharedPreferencesProgressStore(),
       ),
@@ -35,3 +36,12 @@ void main() {
     ),
   );
 }
+
+DevelopmentCourseCatalog createCourseCatalogForEnvironment(
+  AppEnvironment environment,
+) => DevelopmentCourseCatalog(
+  enabled: environment.exposesTechnicalDemo,
+  demoCatalog: AssetCourseCatalog(
+    assetPath: 'assets/content/integration_demo_course.json',
+  ),
+);

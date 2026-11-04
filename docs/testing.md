@@ -8,6 +8,23 @@ Os testes são organizados por intenção:
 
 Use `make test` no ciclo normal e `make check` antes de concluir. `make test-integration` requer simulador/emulador ou dispositivo configurado e não faz parte do job Linux inicial de CI. `make coverage` gera `coverage/lcov.info`; não existe meta artificial de cobertura nesta fase.
 
+O workflow `ci.yml` também funciona como quality gate reutilizável da distribuição
+dev. O job Linux valida formatação, análise, testes unitários/widgets e APK de
+debug; o job macOS executa `make test-ios-tooling` e os testes de integração no
+simulador com flavor dev. O gate não recebe credenciais de distribuição. Os builds
+release e os uploads só começam após os dois jobs passarem; a compilação usada
+pelos testes de integração faz parte do próprio gate.
+
+No Flutter 3.47.2, o SDK isolado do CI recebe um backport oficial que corrige uma
+condição de corrida na descoberta do VM service no simulador. A origem, a licença
+e a condição para remover o ajuste estão em [tool/patches/README.md](../tool/patches/README.md).
+Os testes têm timeout explícito e logs detalhados para diagnosticar falhas reais.
+
+`make test-ios-tooling` usa Ruby/Minitest no macOS para verificar o isolamento de
+bundle ID/profile por flavor e o contrato dos workflows: dependência do gate,
+ausência de secrets nos testes e publicação após o build. Testes manuais de
+VoiceOver, áudio e teclado do core de cursos são independentes da esteira de CI/CD.
+
 Ao alterar comportamento, teste a regra no nível mais baixo que forneça confiança e acrescente widget/integração apenas quando a conexão entre camadas for relevante. Evite testes que apenas repetem implementação ou inflacionam cobertura.
 
 A persistência local é validada sem depender do filesystem ou de estado global da plataforma: testes do codec cobrem serialização, round trip, migração do schema 1, JSON inválido, valores inválidos e schema desconhecido; testes do repositório cobrem primeira execução, recuperação segura, restauração e propagação de falhas reais do armazenamento. Um teste de aplicação conclui um exercício e recria ViewModel e repositório sobre o mesmo documento para representar o fechamento e a reabertura do app. O teste de integração repete o fluxo usando `SharedPreferencesAsync` no dispositivo, preservando e restaurando qualquer documento que existia antes do teste. A implementação em memória continua sendo usada quando o objetivo do teste não é verificar durabilidade.
@@ -16,6 +33,6 @@ O Design System possui testes unitários para as paletas Standard, Dark e High C
 
 Áudio de curso é testado com um fake de `AudioGuidance`. Testes unitários cobrem parsing de `audioGuidance`, resolução ordenada para `SpeechCue`, `SfxCue` e `MusicCue`, eventos sem configuração e propagação de metadata. Testes do engine demonstram que teclado, avaliação, conclusão e persistência continuam funcionando durante reprodução ou falha. O widget test preserva as asserções semânticas e verifica cancelamento ao sair; a infraestrutura concreta possui testes próprios para asset, TTS, fallback, sequenciamento e lifecycle, sem tentar provar programaticamente a saída física do alto-falante.
 
-Para regressões de acessibilidade, verifique rótulos/estados semânticos quando útil e complemente com VoiceOver/TalkBack em fluxos afetados. Consulte `docs/accessibility.md`.
+Para regressões de acessibilidade, verifique rótulos/estados semânticos, papéis, ações, teclado físico, texto em escala 2x e contraste dos pares de cores de controle. Esses pontos são automatizados por testes de widget quando aplicável. Fala efetivamente anunciada, foco por gesto, rotor, coexistência entre áudio e leitor de tela e periféricos Bluetooth exigem validação manual com VoiceOver/TalkBack em dispositivos físicos. Consulte [Acessibilidade](accessibility.md) e [Distribuição](distribution.md).
 
 O engine de jornada é testado com `docs/examples/journey_course.json`: ordem dos arrays (inclusive reordenação), retomada após recriar estado, avanço automático e parada entre lições/módulos, atividades indisponíveis, personagens herdados/substituídos, áudio por etapa, navegação rápida e falhas de mídia. A sessão cobre avanço após erro, excesso de erros, repetição, estatísticas e atalhos. Testes de widget cobrem navegação hierárquica, retorno do sistema, nomes/ações semânticas dos botões, atalhos F1–F9, retorno por Escape, texto em escala 2 e fallback de imagem ausente. O exemplo usa caminhos de mídia ilustrativos; não comprova a presença desses assets no bundle nem a reprodução física.
