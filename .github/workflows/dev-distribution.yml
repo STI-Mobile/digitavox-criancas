@@ -18,8 +18,13 @@ env:
   BUILD_NUMBER_BASE: 100
 
 jobs:
+  quality_gate:
+    name: Quality gate
+    uses: ./.github/workflows/ci.yml
+
   android:
     name: Android - Play Internal Testing
+    needs: quality_gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: distribution-dev
@@ -37,9 +42,6 @@ jobs:
 
       - name: Bootstrap
         run: make bootstrap
-
-      - name: Validate
-        run: make check
 
       - name: Restore Android signing key
         env:
@@ -67,6 +69,21 @@ jobs:
           echo "BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
           make build-android-dev BUILD_NUMBER="$build_number"
 
+      - name: Validate and record Android artifact
+        run: |
+          artifact=build/app/outputs/bundle/devRelease/app-dev-release.aab
+          test -s "$artifact"
+          unzip -tq "$artifact"
+          sha256sum "$artifact" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Android artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-dev-${{ github.run_number }}-${{ github.run_attempt }}
+          path: build/app/outputs/bundle/devRelease/app-dev-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish to Google Play Internal Testing
         uses: r0adkll/upload-google-play@v1
         with:
@@ -79,11 +96,22 @@ jobs:
 
   ios:
     name: iOS - TestFlight
+    needs: quality_gate
     # Repository variable: environment variables are not available to job-level if.
     if: vars.IOS_DISTRIBUTION_ENABLED == 'true'
     runs-on: macos-latest
     timeout-minutes: 45
     environment: distribution-dev
+    env:
+      MATCH_GIT_URL: https://github.com/STI-USP/iOS-certificates.git
+      MATCH_GIT_BRANCH: master
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      APP_STORE_CONNECT_KEY_ID: ${{ vars.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ vars.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      APP_STORE_CONNECT_KEY_BASE64: 'true'
+      FASTLANE_SKIP_UPDATE_CHECK: '1'
 
     steps:
       - name: Checkout
@@ -96,44 +124,26 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Configure Ruby and Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Validate iOS credentials
+        run: |
+          test -n "$MATCH_PASSWORD"
+          test -n "$MATCH_GIT_BASIC_AUTHORIZATION"
+          test -n "$APP_STORE_CONNECT_KEY_ID"
+          test -n "$APP_STORE_CONNECT_ISSUER_ID"
+          test -n "$APP_STORE_CONNECT_KEY"
+
       - name: Bootstrap
         run: make bootstrap
-
-      - name: Validate
-        run: make check
-
-      - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@v7
-        with:
-          p12-file-base64: ${{ secrets.APPSTORE_CERTIFICATES_FILE_BASE64 }}
-          p12-password: ${{ secrets.APPSTORE_CERTIFICATES_PASSWORD }}
-
-      - name: Install provisioning profile
-        env:
-          PROFILE_BASE64: ${{ secrets.APPSTORE_PROVISIONING_PROFILE_BASE64 }}
-          # Must match PROVISIONING_PROFILE_SPECIFIER in the Release-dev configuration.
-          EXPECTED_PROFILE_NAME: Digitavox Criancas Dev App Store
-        run: |
-          test -n "$PROFILE_BASE64"
-          profile_path="$RUNNER_TEMP/digitavox.mobileprovision"
-          printf '%s' "$PROFILE_BASE64" | base64 -D > "$profile_path"
-          profile_plist="$RUNNER_TEMP/digitavox-profile.plist"
-          security cms -D -i "$profile_path" > "$profile_plist"
-          profile_name="$(plutil -extract Name raw "$profile_plist")"
-          if [ "$profile_name" != "$EXPECTED_PROFILE_NAME" ]; then
-            echo "::error::Provisioning profile is named '$profile_name', expected '$EXPECTED_PROFILE_NAME'."
-            exit 1
-          fi
-          uuid="$(plutil -extract UUID raw "$profile_plist")"
-          # Xcode 16+ and flutter build ipa read profiles from this directory.
-          profiles_dir="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
-          mkdir -p "$profiles_dir"
-          cp "$profile_path" "$profiles_dir/$uuid.mobileprovision"
 
       - name: Build iOS dev archive
         run: |
           build_number="$((BUILD_NUMBER_BASE + GITHUB_RUN_NUMBER))"
-          make build-ios-dev BUILD_NUMBER="$build_number"
+          make ios-build FLAVOR=dev BUILD_NUMBER="$build_number"
 
       - name: Locate IPA
         id: ipa
@@ -141,12 +151,26 @@ jobs:
           ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
           test -n "$ipa_path"
           echo "path=$ipa_path" >> "$GITHUB_OUTPUT"
+          shasum -a 256 "$ipa_path" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save iOS artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-dev-${{ github.run_number }}-${{ github.run_attempt }}
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Publish to TestFlight
-        uses: apple-actions/upload-testflight-build@v5
-        with:
-          app-path: ${{ steps.ipa.outputs.path }}
-          issuer-id: ${{ vars.APPSTORE_ISSUER_ID }}
-          api-key-id: ${{ vars.APPSTORE_API_KEY_ID }}
-          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
-          wait-for-processing: true
+        env:
+          IPA_PATH: ${{ steps.ipa.outputs.path }}
+        run: make ios-testflight FLAVOR=dev IPA="$IPA_PATH"
+
+      - name: Remove temporary signing keychain
+        if: always()
+        run: |
+          keychain="$HOME/Library/Keychains/fastlane_tmp_keychain-db"
+          if [ -f "$keychain" ]; then
+            security default-keychain -d user -s login.keychain-db
+            security delete-keychain "$keychain"
+          fi
