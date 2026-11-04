@@ -15,6 +15,11 @@ simulador com flavor dev. O gate não recebe credenciais de distribuição. Os b
 release e os uploads só começam após os dois jobs passarem; a compilação usada
 pelos testes de integração faz parte do próprio gate.
 
+No Flutter 3.47.2, o SDK isolado do CI recebe um backport oficial que corrige uma
+condição de corrida na descoberta do VM service no simulador. A origem, a licença
+e a condição para remover o ajuste estão em [tool/patches/README.md](../tool/patches/README.md).
+Os testes têm timeout explícito e logs detalhados para diagnosticar falhas reais.
+
 `make test-ios-tooling` usa Ruby/Minitest no macOS para verificar o isolamento de
 bundle ID/profile por flavor e o contrato dos workflows: dependência do gate,
 ausência de secrets nos testes e publicação após o build. Testes manuais de

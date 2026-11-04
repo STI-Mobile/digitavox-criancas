@@ -63,6 +63,9 @@ jobs:
       - name: Configure Ruby
         uses: ruby/setup-ruby@v1
 
+      - name: Apply Flutter simulator log discovery fix
+        run: bash tool/patch_flutter_ios_ci.sh
+
       - name: Validate iOS flavor selection
         run: make test-ios-tooling
 
@@ -106,9 +109,10 @@ jobs:
           PY
 
       - name: Run iOS integration tests
+        timeout-minutes: 15
         env:
           SIMULATOR_ID: ${{ steps.simulator.outputs.id }}
-        run: flutter test integration_test/app_test.dart --flavor dev -d "$SIMULATOR_ID"
+        run: flutter test integration_test/app_test.dart --flavor dev -d "$SIMULATOR_ID" --verbose
 
       - name: Stop simulator
         if: always() && steps.simulator.outputs.id != ''
