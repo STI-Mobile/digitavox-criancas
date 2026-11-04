@@ -1,0 +1,114 @@
+require "dotenv"
+require_relative "ios_release_configuration"
+
+# CI supplies its own values; never import local credentials there.
+Dotenv.load(File.expand_path("../.env", __dir__)) unless ENV["CI"].to_s.match?(/\A(true|1)\z/i)
+ENV["FASTLANE_SKIP_DOCS"] = "1"
+opt_out_usage
+default_platform(:ios)
+
+def required_value(name)
+  value = ENV[name].to_s
+  UI.user_error!("Campo obrigatório ausente: #{name}") if value.strip.empty?
+  value
+end
+
+def release_configuration(flavor)
+  IosReleaseConfiguration.load(flavor)
+rescue ArgumentError => error
+  UI.user_error!(error.message)
+end
+
+def apple_api_key
+  params = {
+    key_id: required_value("APP_STORE_CONNECT_KEY_ID"),
+    issuer_id: required_value("APP_STORE_CONNECT_ISSUER_ID"),
+    in_house: false
+  }
+  if ENV["APP_STORE_CONNECT_KEY"].to_s.empty?
+    params[:key_filepath] = required_value("APP_STORE_CONNECT_KEY_PATH")
+  else
+    params[:key_content] = ENV.fetch("APP_STORE_CONNECT_KEY")
+    params[:is_key_content_base64] = ENV.fetch("APP_STORE_CONNECT_KEY_BASE64", "true") == "true"
+  end
+  app_store_connect_api_key(params)
+end
+
+def sync_signing(config, readonly:)
+  if ENV["CI"].to_s.match?(/\A(true|1)\z/i)
+    UI.user_error!("Criação/renovação de assinatura não é permitida no CI.") unless readonly
+    setup_ci
+  end
+  required_value("MATCH_PASSWORD")
+  params = {
+    type: "appstore",
+    app_identifier: [config.fetch(:bundle_id)],
+    team_id: config.fetch(:team_id),
+    profile_name: config.fetch(:profile_name),
+    git_url: required_value("MATCH_GIT_URL"),
+    git_branch: required_value("MATCH_GIT_BRANCH"),
+    readonly: readonly,
+    api_key: apple_api_key
+  }
+  unless ENV["MATCH_GIT_BASIC_AUTHORIZATION"].to_s.empty?
+    params[:git_basic_authorization] = ENV.fetch("MATCH_GIT_BASIC_AUTHORIZATION")
+  end
+  match(params)
+end
+
+platform :ios do
+  desc "Instala a assinatura existente, sem criar certificados ou profiles"
+  lane :sign do |options|
+    config = release_configuration(options[:flavor])
+    sync_signing(config, readonly: true)
+  end
+
+  desc "Prepara o profile do flavor na Apple e no repo Match (operação administrativa)"
+  lane :prepare_signing do |options|
+    config = release_configuration(options[:flavor])
+    sync_signing(config, readonly: false)
+  end
+
+  desc "Gera um IPA assinado pelo Flutter, sem publicar"
+  lane :build do |options|
+    config = release_configuration(options[:flavor])
+    build_number = options[:build_number].to_s
+    unless build_number.match?(/\A[1-9][0-9]*\z/)
+      UI.user_error!("Informe build_number inteiro e positivo, ainda não enviado à Apple.")
+    end
+    sync_signing(config, readonly: true)
+    root = File.expand_path("..", __dir__)
+    started_at = Time.now
+    Dir.chdir(root) do
+      sh("flutter", "build", "ipa", "--release", "--flavor", config.fetch(:flavor),
+         "--export-method", "app-store", "--build-number", build_number)
+    end
+    # Flutter can finish its archive successfully while IPA export fails.
+    ipas = Dir.glob(File.join(root, "build/ios/ipa/*.ipa")).select { |path| File.mtime(path) >= started_at }
+    UI.user_error!("O build não exportou um único IPA novo. Confira a etapa de exportação.") unless ipas.length == 1
+    ipa = ipas.first
+    bundle_id = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleIdentifier")
+    actual_build = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleVersion")
+    unless bundle_id == config.fetch(:bundle_id) && actual_build.to_s == build_number
+      UI.user_error!("O IPA exportado não corresponde ao flavor/build solicitado.")
+    end
+  end
+
+  desc "Envia um IPA existente ao TestFlight, sem reconstruir nem liberar na App Store"
+  lane :testflight do |options|
+    config = release_configuration(options[:flavor])
+    ipa = File.expand_path(options[:ipa].to_s, File.expand_path("..", __dir__))
+    UI.user_error!("Informe ipa:caminho/do/arquivo.ipa existente.") unless File.file?(ipa) && File.extname(ipa) == ".ipa"
+    bundle_id = get_ipa_info_plist_value(ipa: ipa, key: "CFBundleIdentifier")
+    unless bundle_id == config.fetch(:bundle_id)
+      UI.user_error!("O IPA não pertence ao flavor selecionado. Gere o build com o mesmo --flavor.")
+    end
+    upload_to_testflight(
+      api_key: apple_api_key,
+      app_identifier: config.fetch(:bundle_id),
+      ipa: ipa,
+      skip_waiting_for_build_processing: false,
+      distribute_external: false
+    )
+  end
+end

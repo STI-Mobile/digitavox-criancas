@@ -16,6 +16,7 @@ linked_*.ds
 *.log
 *.swp
 .DS_Store
+.env
 
 # Android local/generated files
 android/.gradle/
@@ -41,3 +42,9 @@ ios/Runner/GeneratedPluginRegistrant.*
 *.p12
 *.mobileprovision
 AuthKey_*.p8
+
+# Local Ruby dependencies and Fastlane artifacts
+.bundle/
+vendor/bundle/
+fastlane/report.xml
+fastlane/README.md
