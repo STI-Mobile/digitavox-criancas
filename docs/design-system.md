@@ -10,6 +10,8 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 `BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets não usam essas constantes diretamente. Open Sans é a fonte do texto corrido; Fredoka é usada nos títulos e nomes de missão via estilos semânticos de título e headline do `TextTheme`. Ambas são empacotadas como assets locais com suas licenças OFL.
 
+Os SVGs mestres dos ícones do app ficam em [`assets/icons`](../assets/icons). A arte padrão gera os PNGs do catálogo iOS `AppIcon` e dos `mipmap` Android em `src/main/res`. A arte com a faixa DEV gera os PNGs de `AppIcon-dev` e de `src/dev/res`, os caminhos que a configuração de flavors usa para `dev`. Ao atualizar a arte, rasterize cada SVG separadamente, mantendo a proporção quadrada e as dimensões declaradas no catálogo iOS e em cada densidade Android.
+
 ## Tema do aplicativo
 
 `DvxAppTheme.resolve` produz um `ThemeData` Material 3 para:
