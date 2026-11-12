@@ -16,6 +16,14 @@ linked_*.ds
 *.log
 *.swp
 .DS_Store
+/.env
+
+# Bundler local configuration and installed gems
+/.bundle/
+/vendor/bundle/
+
+# Fastlane execution report
+/fastlane/report.xml
 
 # Android local/generated files
 android/.gradle/
