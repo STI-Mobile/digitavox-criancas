@@ -18,7 +18,7 @@ final class LessonCompletionScreen extends StatefulWidget {
     required this.onNarrate,
     this.actionLabel = 'Próxima missão',
     this.message = 'Muito bem! Você concluiu a missão.',
-    this.character,
+    this.postSceneIllustration,
     this.diary,
     this.onBack,
     this.onDiaryNarration,
@@ -33,7 +33,7 @@ final class LessonCompletionScreen extends StatefulWidget {
   final Future<void> Function(String text) onNarrate;
   final String actionLabel;
   final String message;
-  final CourseCharacter? character;
+  final CourseIllustration? postSceneIllustration;
   final String? diary;
   final VoidCallback? onBack;
   final Future<void> Function()? onDiaryNarration;
@@ -105,6 +105,7 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
     final theme = Theme.of(context);
     final spacing = context.courseTheme.spacing;
     final accessibility = context.accessibilityTokens;
+    final illustration = widget.postSceneIllustration;
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -121,6 +122,25 @@ final class _LessonCompletionScreenState extends State<LessonCompletionScreen> {
               ),
             ),
             SizedBox(height: spacing.md),
+            if (illustration != null) ...[
+              Center(
+                child: Semantics(
+                  image: true,
+                  label:
+                      '${illustration.title}. ${illustration.imageDescription}',
+                  child: ExcludeSemantics(
+                    child: Image.asset(
+                      illustration.imageAsset,
+                      height: 160,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: spacing.md),
+            ],
             DvxGameCard(
               child: Text(
                 widget.message,

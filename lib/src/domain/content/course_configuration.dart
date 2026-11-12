@@ -83,23 +83,62 @@ final class CourseIllustration {
     required this.title,
     required this.imageAsset,
     required this.imageDescription,
+    this.lines = const [],
   });
 
   factory CourseIllustration.fromJson(Map<String, Object?> json) {
-    final image = CourseCharacter.fromJson({
-      ...json,
-      'name': _requiredString(json, 'title'),
-    });
+    final lines = _optionalObjects(
+      json,
+      'lines',
+    ).map(CourseIllustrationLine.fromJson).toList(growable: false);
+    final imageAsset =
+        _optionalString(json, 'imageAsset') ?? lines.firstOrNull?.imageAsset;
+    final imageDescription =
+        _optionalString(json, 'imageDescription') ??
+        lines.firstOrNull?.imageDescription;
+    if (imageAsset == null || imageDescription == null) {
+      throw const CourseContentFormatException(
+        'Uma ilustração exige imagem e descrição ou ao menos uma linha.',
+      );
+    }
+
     return CourseIllustration(
-      id: image.id,
-      title: image.name,
-      imageAsset: image.imageAsset,
-      imageDescription: image.imageDescription,
+      id: _requiredString(json, 'id'),
+      title: _requiredString(json, 'title'),
+      imageAsset: imageAsset,
+      imageDescription: imageDescription,
+      lines: lines,
     );
   }
 
   final String id;
   final String title;
+  final String imageAsset;
+  final String imageDescription;
+  final List<CourseIllustrationLine> lines;
+}
+
+final class CourseIllustrationLine {
+  const CourseIllustrationLine({
+    required this.id,
+    required this.characterId,
+    required this.imageAsset,
+    required this.imageDescription,
+  });
+
+  factory CourseIllustrationLine.fromJson(Map<String, Object?> json) {
+    final imageAsset = _requiredString(json, 'imageAsset');
+    _validateImageAsset(imageAsset);
+    return CourseIllustrationLine(
+      id: _requiredString(json, 'id'),
+      characterId: _requiredString(json, 'characterId'),
+      imageAsset: imageAsset,
+      imageDescription: _requiredString(json, 'imageDescription'),
+    );
+  }
+
+  final String id;
+  final String characterId;
   final String imageAsset;
   final String imageDescription;
 }
@@ -288,7 +327,44 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
       'title',
       'imageAsset',
       'imageDescription',
+      'lines',
     }, 'ilustração');
+    _requireFields(illustration, {'id', 'title'}, 'ilustração');
+    final hasImageAsset = illustration.containsKey('imageAsset');
+    final hasImageDescription = illustration.containsKey('imageDescription');
+    if (hasImageAsset != hasImageDescription) {
+      throw const CourseContentFormatException(
+        'Uma ilustração deve declarar imageAsset e imageDescription juntas.',
+      );
+    }
+    if (illustration.containsKey('lines')) {
+      final lines = _requiredObjectList(illustration, 'lines');
+      _requireNonEmpty(lines, 'Uma ilustração deve ter ao menos uma linha.');
+      _requireUniqueIds(
+        lines.map((line) => _requiredString(line, 'id')),
+        'linha de ilustração',
+      );
+      for (final line in lines) {
+        _requireKeys(line, {
+          'id',
+          'characterId',
+          'imageAsset',
+          'imageDescription',
+        }, 'linha de ilustração');
+        _requireFields(line, {
+          'id',
+          'characterId',
+          'imageAsset',
+          'imageDescription',
+        }, 'linha de ilustração');
+        CourseIllustrationLine.fromJson(line);
+      }
+    } else {
+      _requireFields(illustration, {
+        'imageAsset',
+        'imageDescription',
+      }, 'ilustração');
+    }
     CourseIllustration.fromJson(illustration);
   }
   for (final reward in rewards) {
@@ -306,6 +382,16 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
   final characterIds = characters
       .map((item) => _requiredString(item, 'id'))
       .toSet();
+  for (final illustration in illustrations) {
+    for (final line in _optionalObjects(illustration, 'lines')) {
+      final characterId = _requiredString(line, 'characterId');
+      if (!characterIds.contains(characterId)) {
+        throw CourseContentFormatException(
+          'Personagem desconhecido em linha de ilustração: $characterId.',
+        );
+      }
+    }
+  }
   final illustrationIds = illustrations
       .map((item) => _requiredString(item, 'id'))
       .toSet();
@@ -425,6 +511,22 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
         'start': [...narration, ...instructions],
       },
     };
+  }
+
+  Map<String, Object?>? postScene(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map<String, Object?>) {
+      throw const CourseContentFormatException('postScene deve ser um objeto.');
+    }
+    _requireKeys(raw, {'illustrationId'}, 'cena pós-missão');
+    _requireFields(raw, {'illustrationId'}, 'cena pós-missão');
+    final illustration = _requiredString(raw, 'illustrationId');
+    if (!illustrationIds.contains(illustration)) {
+      throw CourseContentFormatException(
+        'Ilustração pós-missão desconhecida: $illustration.',
+      );
+    }
+    return {'illustrationId': illustration};
   }
 
   final rawPractice = _optionalObject(json, 'practice')!;
@@ -617,7 +719,8 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
         'prerequisiteEventId',
         'legacyLessonIds',
         'optional',
-        'scene',
+        'leadingScene',
+        'postScene',
         'audioGuidance',
         'exercises',
       }, 'lição');
@@ -861,6 +964,9 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     if (node['audioGuidance'] != null)
       'audioGuidance': audio(node['audioGuidance']),
     if (node['scene'] != null) 'scene': scene(node['scene']),
+    if (node['leadingScene'] != null)
+      'leadingScene': scene(node['leadingScene']),
+    if (node['postScene'] != null) 'postScene': postScene(node['postScene']),
   };
   return {
     ...expandNode(json),

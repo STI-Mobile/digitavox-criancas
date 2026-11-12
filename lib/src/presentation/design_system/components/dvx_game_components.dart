@@ -208,6 +208,50 @@ final class DvxGameCard extends StatelessWidget {
   );
 }
 
+final class DvxNarrationControls extends StatelessWidget {
+  const DvxNarrationControls({
+    required this.canReplay,
+    required this.onReplay,
+    required this.onStop,
+    super.key,
+  });
+
+  final bool canReplay;
+  final VoidCallback onReplay;
+  final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!canReplay) return const SizedBox.shrink();
+
+    final spacing = context.courseTheme.spacing;
+    return Padding(
+      padding: EdgeInsets.only(bottom: spacing.md),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: spacing.sm,
+        children: [
+          KeyboardNavigationLabel(
+            label: 'Ouvir apresentação',
+            child: OutlinedButton.icon(
+              onPressed: onReplay,
+              icon: const Icon(Icons.volume_up_outlined),
+              label: const Text('Ouvir apresentação'),
+            ),
+          ),
+          KeyboardNavigationLabel(
+            label: 'Parar áudio',
+            child: TextButton(
+              onPressed: onStop,
+              child: const Text('Parar áudio'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final class DvxStars extends StatelessWidget {
   const DvxStars({required this.count, required this.color, super.key});
 

@@ -25,6 +25,24 @@
           "name": "Aurora",
           "imageAsset": "assets/images/space/module1/aurora.png",
           "imageDescription": "Nave-escola Aurora com seu console de navegação espacial."
+        },
+        {
+          "id": "blib-blub",
+          "name": "Blib-Blub",
+          "imageAsset": "assets/images/space/module1/blib_blub.png",
+          "imageDescription": "Blib-Blub, alien azul-claro de olhos grandes e expressão sorridente."
+        },
+        {
+          "id": "zorp",
+          "name": "Zorp",
+          "imageAsset": "assets/images/space/module1/zorp.png",
+          "imageDescription": "Zorp, alien laranja peludo com pequenos chifres verdes."
+        },
+        {
+          "id": "nebulon",
+          "name": "Nebulon",
+          "imageAsset": "assets/images/space/module1/nebulon.png",
+          "imageDescription": "Nebulon, alien luminoso amarelo com tentáculos."
         }
       ],
       "scene": {
@@ -54,7 +72,7 @@
               "title": "Missão 1.0 · O despertar da Aurora",
               "accuracy": 70,
               "secChar": 15,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c1-stella"
                 ],
@@ -63,6 +81,9 @@
                   "m1c1-zero1"
                 ],
                 "illustrationId": "scene-c1"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c1"
               },
               "exercises": [
                 {
@@ -101,7 +122,7 @@
               "title": "Missão 1.1 · Códigos da asa esquerda",
               "accuracy": 85,
               "secChar": 12,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c2-stella"
                 ],
@@ -110,6 +131,9 @@
                   "m1c2-zero1"
                 ],
                 "illustrationId": "scene-c2"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c2"
               },
               "exercises": [
                 {
@@ -150,7 +174,7 @@
               "title": "Missão 1.2 · Códigos da asa direita",
               "accuracy": 85,
               "secChar": 12,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c3-stella"
                 ],
@@ -159,6 +183,9 @@
                   "m1c3-zero1"
                 ],
                 "illustrationId": "scene-c3"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c3"
               },
               "exercises": [
                 {
@@ -199,7 +226,7 @@
               "title": "Missão 1.3 · Sincronização das asas",
               "accuracy": 85,
               "secChar": 12,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c4-stella"
                 ],
@@ -208,6 +235,9 @@
                   "m1c4-zero1"
                 ],
                 "illustrationId": "scene-c4"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c4"
               },
               "exercises": [
                 {
@@ -259,7 +289,7 @@
               "title": "Missão 1.4 · Palavras de energia I",
               "accuracy": 90,
               "secChar": 10,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c5-stella"
                 ],
@@ -268,6 +298,9 @@
                   "m1c5-zero1"
                 ],
                 "illustrationId": "scene-c5"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c5"
               },
               "exercises": [
                 {
@@ -308,7 +341,7 @@
               "title": "Missão 1.5 · Palavras de energia II",
               "accuracy": 90,
               "secChar": 10,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c6-stella"
                 ],
@@ -317,6 +350,9 @@
                   "m1c6-zero1"
                 ],
                 "illustrationId": "scene-c6"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c6"
               },
               "exercises": [
                 {
@@ -379,7 +415,7 @@
               "title": "Missão 1.6 · Mensagem para a base",
               "accuracy": 90,
               "secChar": 10,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c7-stella"
                 ],
@@ -388,6 +424,9 @@
                   "m1c7-zero1"
                 ],
                 "illustrationId": "scene-c7"
+              },
+              "postScene": {
+                "illustrationId": "post-scene-c7"
               },
               "exercises": [
                 {
@@ -461,7 +500,7 @@
               "title": "Missão 1.7 · A Prova do Cadete",
               "accuracy": 90,
               "secChar": 8,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c8-stella"
                 ],
@@ -520,7 +559,7 @@
               "title": "Minijogo · Corrida de Energia",
               "accuracy": 85,
               "secChar": 5,
-              "scene": {
+              "leadingScene": {
                 "narrationCueIds": [
                   "m1c10-stella",
                   "musica-corrida"
@@ -615,80 +654,354 @@
         {
           "id": "scene-c0",
           "title": "Aurora em emergência",
-          "imageAsset": "assets/images/space/module1/c0_abertura.png",
-          "imageDescription": "Aurora apagada em modo de emergência."
-        },
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c0_f1_stella.jpg",
+              "imageDescription": "Apresentação Stella."
+            },
+            {
+              "id":"line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c0_f2_zero1.jpg",
+              "imageDescription": "Apresentação Zero-1."
+            }
+          ]
+          },
         {
           "id": "scene-c1",
           "title": "Sensores F e J",
-          "imageAsset": "assets/images/space/module1/c1_despertar_sensores.png",
-          "imageDescription": "Console destacando as marcas táteis das teclas F e J."
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c1_f1_stella.jpg",
+              "imageDescription": "Stella apresentando a aurora."
+            },
+            {
+              "id":"line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c1_f2_zero1.jpg",
+              "imageDescription": "Console destacando as marcas táteis das teclas F e J."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c1",
+          "title": "Aurora despertando",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/aurora.png",
+              "imageDescription": "Aurora ligada"
+            }
+          ]
         },
         {
           "id": "scene-c2",
           "title": "Asa esquerda",
           "imageAsset": "assets/images/space/module1/c2_asa_esquerda.png",
-          "imageDescription": "Asa esquerda da Aurora energizada."
+          "imageDescription": "Asa esquerda da Aurora energizada.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c2_f1_stella.jpg",
+              "imageDescription": "Stella apresenta a asa esquerda da Aurora."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c2_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 mostra o código de energia da asa esquerda no teclado."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c2",
+          "title": "Asa esquerda ligada",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c2_asa_esquerda.png",
+              "imageDescription": "Asa esquerda da Aurora energizada."
+            }
+          ]
         },
         {
           "id": "scene-c3",
           "title": "Asa direita",
           "imageAsset": "assets/images/space/module1/c3_asa_direita.png",
-          "imageDescription": "As duas asas da Aurora energizadas."
+          "imageDescription": "As duas asas da Aurora energizadas.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c3_f1_stella.jpg",
+              "imageDescription": "Stella apresenta a asa direita da Aurora."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c3_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 mostra no teclado o código de energia da asa direita."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c3",
+          "title": "Asa direita ligada ",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c3_asa_direita.png",
+              "imageDescription": "Aurora ligada"
+            }
+          ]
         },
         {
           "id": "scene-c4",
           "title": "Sincronização",
           "imageAsset": "assets/images/space/module1/c4_sincronizacao.png",
-          "imageDescription": "Asas da Aurora sincronizadas e linha base do teclado."
+          "imageDescription": "Asas da Aurora sincronizadas e linha base do teclado.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c4_f1_stella.jpg",
+              "imageDescription": "Stella explica a sincronização das asas da Aurora."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c4_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 apresenta a sequência de sincronização no teclado."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c4",
+          "title": "Sincronização completa",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c4_sincronizacao.png",
+              "imageDescription": "Asas da Aurora sincronizadas"
+            }
+          ]
         },
         {
           "id": "scene-c5",
           "title": "Banco de palavras I",
           "imageAsset": "assets/images/space/module1/c5_palavras_energia_1.png",
-          "imageDescription": "Banco inicial de palavras de energia."
+          "imageDescription": "Banco inicial de palavras de energia.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c5_f1_stella.jpg",
+              "imageDescription": "Stella apresenta o banco inicial de palavras de energia."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c5_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 mostra as palavras curtas do banco de energia."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c5",
+          "title": "Banco de palavras I",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c5_palavras_energia_1.png",
+              "imageDescription": "Banco inicial de palavras de energia."
+            }
+          ]
         },
         {
           "id": "scene-c6",
           "title": "Banco de palavras II",
           "imageAsset": "assets/images/space/module1/c6_palavras_energia_2.png",
-          "imageDescription": "Banco completo de palavras de energia."
+          "imageDescription": "Banco completo de palavras de energia.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c6_f1_stella.jpg",
+              "imageDescription": "Stella apresenta novas palavras para o banco de energia."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c6_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 apresenta palavras maiores no banco de energia."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c6",
+          "title": "Banco de palavras II",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c6_palavras_energia_2.png",
+              "imageDescription": "Palavras de energia"
+            }
+          ]
         },
         {
           "id": "scene-c7",
           "title": "Transmissão",
           "imageAsset": "assets/images/space/module1/c7_mensagem_base.png",
-          "imageDescription": "Aurora transmitindo mensagem para a base."
+          "imageDescription": "Aurora transmitindo mensagem para a base.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c7_f1_stella.jpg",
+              "imageDescription": "Stella apresenta a transmissão da Aurora para a base."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c7_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 prepara o console para transmitir uma mensagem."
+            }
+          ]
+        },
+        {
+          "id": "post-scene-c7",
+          "title": "Aurora despertando",
+          "lines":[
+            {
+              "id":"line-f1",
+              "characterId": "aurora",
+              "imageAsset": "assets/images/space/module1/c7_mensagem_base.png",
+              "imageDescription": "Aurora transmitindo mensagem para a base."
+            }
+          ]
         },
         {
           "id": "scene-c8",
           "title": "Prova do Cadete",
           "imageAsset": "assets/images/space/module1/c8_prova_cadete.png",
-          "imageDescription": "Console da Aurora pronto para o protocolo de decolagem."
+          "imageDescription": "Console da Aurora pronto para o protocolo de decolagem.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c8_f1_stella.jpg",
+              "imageDescription": "Stella apresenta a Prova do Cadete na ponte da Aurora."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zero1",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c8_f2_zero1.jpg",
+              "imageDescription": "ZERO-1 apresenta o console para a Prova do Cadete."
+            }
+          ]
         },
         {
           "id": "scene-c9-launch",
           "title": "Decolagem",
           "imageAsset": "assets/images/space/module1/c9_decolagem.png",
-          "imageDescription": "Aurora decolando após a aprovação do protocolo."
+          "imageDescription": "Aurora decolando após a aprovação do protocolo.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f1_decolagem.jpg",
+              "imageDescription": "Aurora decola do hangar com os propulsores acesos."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "blib-blub",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f2_blib_blub.jpg",
+              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora."
+            },
+            {
+              "id": "line-f3",
+              "characterId": "zorp",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f3_zorp.jpg",
+              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora."
+            },
+            {
+              "id": "line-f4",
+              "characterId": "nebulon",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f4_nebulon.jpg",
+              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora."
+            },
+            {
+              "id": "line-f5",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f5_stella_distintivo.jpg",
+              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora."
+            }
+          ]
         },
         {
           "id": "scene-c9-aliens",
           "title": "Aliens resgatados",
           "imageAsset": "assets/images/space/module1/c9_aliens.png",
-          "imageDescription": "Blib-Blub, Zorp e Nebulon no hangar da Aurora."
+          "imageDescription": "Blib-Blub, Zorp e Nebulon no hangar da Aurora.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "blib-blub",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f2_blib_blub.jpg",
+              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora."
+            },
+            {
+              "id": "line-f2",
+              "characterId": "zorp",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f3_zorp.jpg",
+              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora."
+            },
+            {
+              "id": "line-f3",
+              "characterId": "nebulon",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f4_nebulon.jpg",
+              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora."
+            }
+          ]
         },
         {
           "id": "scene-c9-badge",
           "title": "Cadete de Bronze",
-          "imageAsset": "assets/images/space/module1/c9_distintivo_bronze.png",
-          "imageDescription": "Distintivo de Cadete de Bronze concedido pela Academia."
+          "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f5_stella_distintivo.jpg",
+          "imageDescription": "Distintivo de Cadete de Bronze concedido pela Academia.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f5_stella_distintivo.jpg",
+              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora."
+            }
+          ]
         },
         {
           "id": "scene-c10",
           "title": "Corrida de Energia",
           "imageAsset": "assets/images/space/module1/c10_corrida_energia.png",
-          "imageDescription": "Pista espacial da Corrida de Energia."
+          "imageDescription": "Pista espacial da Corrida de Energia.",
+          "lines": [
+            {
+              "id": "line-f1",
+              "characterId": "stella",
+              "imageAsset": "assets/images/space/module1/cenas-16x9/c10_f1_corrida.jpg",
+              "imageDescription": "Stella apresenta a pista espacial da Corrida de Energia."
+            }
+          ]
         }
       ],
       "rewardDefinitions": [
@@ -808,12 +1121,13 @@
           "type": "speech",
           "text": "Bip-bop! Zero Um na escuta! Meus sensores estão... quase acordados. Indicador esquerdo... no F. Indicador direito... no J. Os outros dedos descansam nas teclas vizinhas, da mesma linha. Ninguém fica de fora! Para testar os sensores do console... digite F e J quando eu pedir. Bip!",
           "speaker": "zero1",
-          "asset": "assets/audio/demo/zero1/m1c1-zero1.wav"        
+          "asset": "assets/audio/demo/zero1/m1c1-zero1.wav",
+          "fallback": "text"
         },
         {
           "id": "sfx-sensor-on",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-sensor-on.wav",
           "fallback": "silent"
         },
         {
@@ -835,7 +1149,7 @@
         {
           "id": "sfx-asa-esq-on",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-asa-esq-on.wav",
           "fallback": "silent"
         },
         {
@@ -857,7 +1171,7 @@
         {
           "id": "sfx-asa-dir-on",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-asa-dir-on.wav",
           "fallback": "silent"
         },
         {
@@ -879,7 +1193,7 @@
         {
           "id": "sfx-sincronia",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-sincronia.wav",
           "fallback": "silent"
         },
         {
@@ -901,7 +1215,7 @@
         {
           "id": "sfx-banco-on",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-banco-on.wav",
           "fallback": "silent"
         },
         {
@@ -923,7 +1237,7 @@
         {
           "id": "sfx-banco-completo",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-banco-completo.wav",
           "fallback": "silent"
         },
         {
@@ -945,7 +1259,7 @@
         {
           "id": "sfx-transmissao",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-transmissao.wav",
           "fallback": "silent"
         },
         {
@@ -991,31 +1305,31 @@
         {
           "id": "sfx-decolagem",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-decolagem.wav",
           "fallback": "silent"
         },
         {
           "id": "alien-blib-blub",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/aliens/alien-blib-blub.wav",
           "fallback": "silent"
         },
         {
           "id": "alien-zorp",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/aliens/alien-zorp.wav",
           "fallback": "silent"
         },
         {
           "id": "alien-nebulon",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/aliens/alien-nebulon.wav",
           "fallback": "silent"
         },
         {
           "id": "sfx-fanfarra",
           "type": "sfx",
-          "pending": true,
+          "asset": "assets/audio/demo/sfx/sfx-fanfarra.wav",
           "fallback": "silent"
         },
         {
@@ -1069,19 +1383,19 @@
         {
           "id": "sfx-tecla-incorreta",
           "type": "sfx",
-          "pending": true,
-          "fallback": "systemClick"
+          "asset": "assets/audio/demo/sfx/sfx-tecla-incorreta.wav",
+          "fallback": "silent"
         },
         {
           "id": "musica-tema",
           "type": "music",
-          "pending": true,
+          "asset": "assets/audio/demo/musicas/tema_A1_calma.mp3",
           "fallback": "silent"
         },
         {
           "id": "musica-corrida",
           "type": "music",
-          "pending": true,
+          "asset": "assets/audio/demo/musicas/corrida_A1_calma.mp3",
           "fallback": "silent"
         }
       ]

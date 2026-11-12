@@ -96,7 +96,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
   ContentScene? get scene => switch (_stage) {
     JourneyStage.course => course.scene,
     JourneyStage.module => _module!.scene,
-    JourneyStage.lesson => _lesson!.scene,
+    JourneyStage.lesson => _lesson!.leadingScene,
     JourneyStage.exercise => _exercise!.scene,
     JourneyStage.moduleCompletion => completionEvent?.scene,
   };
@@ -146,11 +146,16 @@ final class CourseJourneyEngine extends ChangeNotifier {
     return course.illustrations.where((image) => image.id == id).firstOrNull;
   }
 
+  CourseIllustration? get postSceneIllustration {
+    final id = _lesson?.postScene?.illustrationId;
+    return course.illustrations.where((image) => image.id == id).firstOrNull;
+  }
+
   CourseCharacter? get character {
     if (_stage == JourneyStage.exercise) return null;
     final id =
         scene?.characterId ??
-        _lesson?.scene?.characterId ??
+        _lesson?.leadingScene?.characterId ??
         _module?.scene?.characterId ??
         course.scene?.characterId;
     return course.characters.where((item) => item.id == id).firstOrNull;
@@ -244,6 +249,18 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   int get currentLessonTries =>
       catalog.progress.courses[course.id]?.lessons[_lesson?.id]?.tries ?? 0;
+  String get currentLessonCompletionMessage {
+    final lesson = _lesson;
+    if (lesson == null) return 'Muito bem! Você concluiu a missão.';
+    final announcement = course.rewards.announcementCues[currentLessonStars]
+        ?.map((cue) => cue.text)
+        .whereType<String>()
+        .where((text) => text.isNotEmpty)
+        .join(' ');
+    if (announcement != null && announcement.isNotEmpty) return announcement;
+    return 'Muito bem! Você concluiu ${lesson.title}.';
+  }
+
   List<LessonExerciseStatistic> get currentLessonExerciseStatistics {
     final lesson = _lesson;
     if (lesson == null) return const [];
@@ -538,7 +555,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
       case JourneyStage.course:
         return;
       case JourneyStage.module:
-        openCourse();
+        _enter(JourneyStage.course, narrate: false);
       case JourneyStage.lesson:
         openModule(_module!);
       case JourneyStage.exercise:
@@ -572,6 +589,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
     CourseModule? module,
     Lesson? lesson,
     Exercise? exercise,
+    bool narrate = true,
   }) {
     if (_disposed) return;
     _session?.removeListener(_changed);
@@ -618,7 +636,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
       _session = currentSession..addListener(_changed);
     }
     final generation = ++_audioRequestGeneration;
-    unawaited(_replaceNarration(generation));
+    unawaited(_replaceNarration(generation, narrate: narrate));
     notifyListeners();
   }
 
@@ -713,7 +731,9 @@ final class CourseJourneyEngine extends ChangeNotifier {
       );
     } else if (finished && currentLessonStars > 0) {
       final lessonAudio =
-          lesson.scene?.audioGuidance?.inheritFrom(lesson.audioGuidance) ??
+          lesson.leadingScene?.audioGuidance?.inheritFrom(
+            lesson.audioGuidance,
+          ) ??
           lesson.audioGuidance;
       if (lessonAudio?.completed.isNotEmpty == true) {
         await courseAudio.play(lessonAudio, CourseAudioEvent.completed);
@@ -726,12 +746,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
           CourseAudioEvent.completed,
         );
       } else {
-        await courseAudio.speakText(
-          'Missão concluída. Você conquistou $currentLessonStars de 3 estrelas.',
-        );
-      }
-      if (!_disposed && generation == _audioRequestGeneration) {
-        await narrateDiary();
+        await courseAudio.speakText(currentLessonCompletionMessage);
       }
     } else {
       await courseAudio.speakText(
@@ -742,9 +757,10 @@ final class CourseJourneyEngine extends ChangeNotifier {
     }
   }
 
-  Future<void> _replaceNarration(int generation) async {
+  Future<void> _replaceNarration(int generation, {bool narrate = true}) async {
     await courseAudio.cancel();
     if (_disposed || generation != _audioRequestGeneration) return;
+    if (!narrate) return;
     await _playCurrentNarration(generation);
   }
 

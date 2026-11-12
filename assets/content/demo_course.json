@@ -27,7 +27,9 @@
                       {
                         "id": "demo-key-f-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_f_demo.wav"
+                        "text": "Pressione a tecla F no teclado físico.",
+                        "asset": "assets/audio/demo/instruction_f_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -44,7 +46,9 @@
                       {
                         "id": "demo-key-j-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_j_demo.wav"
+                        "text": "Pressione a tecla J no teclado físico.",
+                        "asset": "assets/audio/demo/instruction_j_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -67,7 +71,9 @@
                       {
                         "id": "demo-left-code-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_asdfg_demo.wav"
+                        "text": "Digite A, S, D, F, G.",
+                        "asset": "assets/audio/demo/instruction_asdfg_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -84,7 +90,9 @@
                       {
                         "id": "demo-left-code-return-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_gfdsa_demo.wav"
+                        "text": "Agora digite G, F, D, S, A.",
+                        "asset": "assets/audio/demo/instruction_gfdsa_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -113,7 +121,9 @@
                       {
                         "id": "demo-right-code-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_hjklc_demo.wav"
+                        "text": "Digite H, J, K, L, cê-cedilha.",
+                        "asset": "assets/audio/demo/instruction_hjklc_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -130,7 +140,9 @@
                       {
                         "id": "demo-right-code-return-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_clkjh_demo.wav"
+                        "text": "Agora digite cê-cedilha, L, K, J, H.",
+                        "asset": "assets/audio/demo/instruction_clkjh_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -153,7 +165,9 @@
                       {
                         "id": "demo-word-fala-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_fala_demo.wav"
+                        "text": "Digite a palavra fala.",
+                        "asset": "assets/audio/demo/instruction_fala_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },
@@ -170,7 +184,9 @@
                       {
                         "id": "demo-word-sala-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_sala_demo.wav"
+                        "text": "Digite a palavra sala.",
+                        "asset": "assets/audio/demo/instruction_sala_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   },

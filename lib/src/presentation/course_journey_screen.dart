@@ -12,6 +12,7 @@ import 'design_system/components/dvx_game_components.dart';
 import 'design_system/course_theme/course_theme.dart';
 import 'exercise_screen.dart';
 import 'keyboard_navigation.dart';
+import 'scene_screen.dart';
 
 final class CourseJourneyScreen extends StatefulWidget {
   const CourseJourneyScreen({
@@ -32,15 +33,72 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
 
   CourseJourneyEngine get engine => widget.engine;
 
-  CourseCharacter? _characterFor(List<ContentAudioCue> cues) {
-    final speaker = cues
+  CharacterLine? _characterLineFor(
+    String text,
+    List<ContentAudioCue> cues, {
+    String? fallbackCharacterId,
+  }) {
+    final speechCues = cues
         .where((cue) => cue.type == ContentAudioCueType.speech)
+        .toList(growable: false);
+    final speaker = speechCues
         .map((cue) => cue.speaker)
         .whereType<String>()
         .firstOrNull;
-    return widget.engine.course.characters
-        .where((character) => character.id == speaker)
+    final character = widget.engine.course.characters
+        .where((character) => character.id == (speaker ?? fallbackCharacterId))
         .firstOrNull;
+    if (character == null) return null;
+
+    return CharacterLine(character: character, text: text, cues: speechCues);
+  }
+
+  List<CharacterLine> _characterLinesFor(ContentScene? scene) {
+    if (scene == null) return const [];
+    final narrationCues = scene.narrationCues.isNotEmpty
+        ? scene.narrationCues
+        : scene.audioGuidance?.start ?? const <ContentAudioCue>[];
+    final firstLine = _characterLineFor(
+      scene.text,
+      narrationCues,
+      fallbackCharacterId: scene.characterId ?? engine.character?.id,
+    );
+    if (firstLine == null) return const [];
+
+    final lines = <CharacterLine>[firstLine];
+    if (scene.instruction.isNotEmpty) {
+      final instructionLine = _characterLineFor(
+        scene.instruction,
+        scene.instructionCues,
+        fallbackCharacterId: firstLine.character.id,
+      );
+      if (instructionLine != null) lines.add(instructionLine);
+    }
+    return lines;
+  }
+
+  Widget _lessonScene() {
+    final scene = engine.scene;
+    if (scene == null) return const SizedBox.shrink();
+    final lines = _characterLinesFor(scene);
+    if (lines.isEmpty) {
+      return CourseScene(
+        scene: scene,
+        character: engine.character,
+        illustration: engine.illustration,
+      );
+    }
+
+    return SceneScreen(
+      key: ValueKey('${engine.locationKey}/scene'),
+      engine: engine,
+      lines: lines,
+      illustration: engine.illustration,
+      onComplete: () {},
+      continuationLabel: 'Continuar para os exercícios',
+      autofocusContinue: false,
+      narrationControls: ({cues}) => _narrationControls(cues: cues),
+    );
   }
 
   Future<void> _selectTheme(AppThemePreference preference) async {
@@ -163,15 +221,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
                                     height: context.courseTheme.spacing.md,
                                   ),
                                 ],
-                                if (widget.engine.stage ==
-                                    JourneyStage.lesson) ...[
-                                  CourseScene(
-                                    scene: widget.engine.scene,
-                                    character: widget.engine.character,
-                                    illustration: widget.engine.illustration,
-                                  ),
-                                  ..._narrationControls(context),
-                                ],
+                                if (widget.engine.stage == JourneyStage.lesson)
+                                  _lessonScene(),
                                 ...switch (widget.engine.stage) {
                                   JourneyStage.course => _course(context),
                                   JourneyStage.module => _module(context),
@@ -207,28 +258,23 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     final engine = widget.engine;
     if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
       final scene = engine.scene!;
-      final firstCues = scene.narrationCues
-          .where((cue) => cue.type == ContentAudioCueType.speech)
-          .toList(growable: false);
-      final secondCues = scene.instructionCues
-          .where((cue) => cue.type == ContentAudioCueType.speech)
-          .toList(growable: false);
-      final firstCharacter = _characterFor(firstCues)!;
-      final secondCharacter = _characterFor(secondCues)!;
-      return [
-        _CourseIntroduction(
-          engine: engine,
-          firstCharacter: firstCharacter,
-          firstText: scene.text,
-          firstCues: firstCues,
-          secondCharacter: secondCharacter,
-          secondText: scene.instruction,
-          secondCues: secondCues,
-          onComplete: () => setState(() => _courseIntroductionComplete = true),
-          narrationControls: ({cues}) =>
-              _narrationControls(context, cues: cues),
-        ),
-      ];
+      final firstLine = _characterLineFor(scene.text, scene.narrationCues);
+      final secondLine = _characterLineFor(
+        scene.instruction,
+        scene.instructionCues,
+      );
+      if (firstLine != null && secondLine != null) {
+        return [
+          SceneScreen(
+            engine: engine,
+            lines: [firstLine, secondLine],
+            illustration: engine.illustration,
+            onComplete: () =>
+                setState(() => _courseIntroductionComplete = true),
+            narrationControls: ({cues}) => _narrationControls(cues: cues),
+          ),
+        ];
+      }
     }
 
     final target = engine.resumeTarget;
@@ -239,11 +285,6 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           child: const Text('DEMO'),
         ),
         SizedBox(height: spacing.md),
-      ],
-      if (engine.scene != null) ...[
-        Text(engine.scene!.text),
-        SizedBox(height: spacing.sm),
-        ..._narrationControls(context),
       ],
       Text(
         '${engine.completedMissionCount} de ${engine.missionCount} missões concluídas',
@@ -304,11 +345,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     ];
   }
 
-  List<Widget> _narrationControls(
-    BuildContext context, {
-    List<ContentAudioCue>? cues,
-  }) {
-    final spacing = context.courseTheme.spacing;
+  Widget _narrationControls({List<ContentAudioCue>? cues}) {
     final configuration = cues == null
         ? null
         : CourseAudioConfiguration(start: cues);
@@ -316,36 +353,15 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
         ? engine.canReplayNarration
         : engine.courseAudio.hasCues(configuration, CourseAudioEvent.start);
 
-    if (!canReplay) return const [];
-
     Future<void> replay() => configuration == null
         ? engine.replayNarration()
         : engine.courseAudio.play(configuration, CourseAudioEvent.start);
 
-    return [
-      Wrap(
-        alignment: WrapAlignment.center,
-        spacing: spacing.sm,
-        children: [
-          KeyboardNavigationLabel(
-            label: 'Ouvir apresentação',
-            child: OutlinedButton.icon(
-              onPressed: () => unawaited(replay()),
-              icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('Ouvir apresentação'),
-            ),
-          ),
-          KeyboardNavigationLabel(
-            label: 'Parar áudio',
-            child: TextButton(
-              onPressed: engine.stopNarration,
-              child: const Text('Parar áudio'),
-            ),
-          ),
-        ],
-      ),
-      SizedBox(height: spacing.md),
-    ];
+    return DvxNarrationControls(
+      canReplay: canReplay,
+      onReplay: () => unawaited(replay()),
+      onStop: () => unawaited(engine.stopNarration()),
+    );
   }
 
   List<Widget> _module(BuildContext context) {
@@ -494,149 +510,6 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           ),
         ),
     ];
-  }
-}
-
-final class _CourseIntroduction extends StatefulWidget {
-  const _CourseIntroduction({
-    required this.engine,
-    required this.firstCharacter,
-    required this.firstText,
-    required this.firstCues,
-    required this.secondCharacter,
-    required this.secondText,
-    required this.secondCues,
-    required this.onComplete,
-    required this.narrationControls,
-  });
-
-  final CourseJourneyEngine engine;
-  final CourseCharacter firstCharacter;
-  final String firstText;
-  final List<ContentAudioCue> firstCues;
-  final CourseCharacter secondCharacter;
-  final String secondText;
-  final List<ContentAudioCue> secondCues;
-  final VoidCallback onComplete;
-  final List<Widget> Function({List<ContentAudioCue>? cues}) narrationControls;
-
-  @override
-  State<_CourseIntroduction> createState() => _CourseIntroductionState();
-}
-
-final class _CourseIntroductionState extends State<_CourseIntroduction> {
-  bool _showingSecondSpeaker = false;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_play(widget.firstCues));
-  }
-
-  Future<void> _play(List<ContentAudioCue> cues) async {
-    await widget.engine.stopNarration();
-    if (!mounted) return;
-    await widget.engine.courseAudio.play(
-      CourseAudioConfiguration(start: cues),
-      CourseAudioEvent.start,
-    );
-  }
-
-  void _continue() {
-    if (!_showingSecondSpeaker) {
-      setState(() => _showingSecondSpeaker = true);
-      unawaited(_play(widget.secondCues));
-      return;
-    }
-    unawaited(widget.engine.stopNarration());
-    widget.onComplete();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final spacing = context.courseTheme.spacing;
-    final character = _showingSecondSpeaker
-        ? widget.secondCharacter
-        : widget.firstCharacter;
-    final text = _showingSecondSpeaker ? widget.secondText : widget.firstText;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      spacing: spacing.md,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  image: true,
-                  label: character.imageDescription,
-                  child: ExcludeSemantics(
-                    child: ClipOval(
-                      child: Image.asset(
-                        character.imageAsset,
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const SizedBox(width: 72, height: 72),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: spacing.md),
-                Expanded(
-                  child: Semantics(
-                    container: true,
-                    liveRegion: true,
-                    label: '${character.name} diz: $text',
-                    child: ExcludeSemantics(
-                      child: DvxGameCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Semantics(
-                              header: true,
-                              child: Text(
-                                character.name,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                            SizedBox(height: spacing.sm),
-                            Text(text),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: spacing.lg),
-            KeyboardNavigationLabel(
-              label: _showingSecondSpeaker
-                  ? 'Continuar para o curso'
-                  : 'Continuar para a fala de ${widget.secondCharacter.name}',
-              child: FilledButton(
-                key: ValueKey(
-                  _showingSecondSpeaker
-                      ? 'continue-to-course'
-                      : 'continue-to-${widget.secondCharacter.name}',
-                ),
-                autofocus: true,
-                onPressed: _continue,
-                child: const Text('Continuar'),
-              ),
-            ),
-          ],
-        ),
-        ...widget.narrationControls(
-          cues: _showingSecondSpeaker ? widget.secondCues : widget.firstCues,
-        ),
-      ],
-    );
   }
 }
 

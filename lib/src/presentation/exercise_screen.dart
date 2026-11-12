@@ -243,9 +243,8 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                       : hasNextLesson
                       ? 'Próxima missão'
                       : 'Voltar à missão',
-                  message:
-                      'Muito bem! Você concluiu '
-                      '${widget.engine.lesson!.title}.',
+                  message: widget.engine.currentLessonCompletionMessage,
+                  postSceneIllustration: widget.engine.postSceneIllustration,
                   onContinue: () async {
                     widget.engine.continueAfterExercise();
                   },
