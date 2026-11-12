@@ -48,6 +48,10 @@ flutter:
   assets:
     - assets/content/
     - assets/images/space/module1/
+    - assets/images/space/module1/cenas-16x9/
     - assets/audio/demo/
     - assets/audio/demo/stella/
     - assets/audio/demo/zero1/
+    - assets/audio/demo/aliens/
+    - assets/audio/demo/musicas/
+    - assets/audio/demo/sfx/
