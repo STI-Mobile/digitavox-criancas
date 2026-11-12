@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:digitavox_criancas/src/application/audio/audio_cue.dart';
 import 'package:digitavox_criancas/src/application/course_audio_orchestrator.dart';
 import 'package:digitavox_criancas/src/application/course_catalog_view_model.dart';
 import 'package:digitavox_criancas/src/application/course_journey_engine.dart';
@@ -13,6 +14,7 @@ import 'package:digitavox_criancas/src/presentation/design_system/app_theme/dvx_
 import 'package:digitavox_criancas/src/presentation/design_system/components/dvx_game_components.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/course_theme/course_theme.dart';
 import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
+import 'package:digitavox_criancas/src/presentation/scene_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -74,8 +76,9 @@ void main() {
     await tester.tap(find.text('Começar curso'));
     await tester.pumpAndSettle();
     expect(engine.stage, JourneyStage.lesson);
-    expect(find.byType(CourseScene), findsOneWidget);
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(SceneScreen), findsOneWidget);
+    expect(find.byType(CourseScene), findsNothing);
+    expect(find.byType(Image), findsNothing);
     expect(find.text('Ouvir apresentação'), findsOneWidget);
     await tester.ensureVisible(find.text('Começar missão'));
     await tester.tap(find.text('Começar missão'));
@@ -248,7 +251,21 @@ void main() {
   testWidgets('mission result keeps the diary behind one named action', (
     tester,
   ) async {
-    await pumpJourney(tester);
+    final json = journeyJson();
+    final course = (json['courses'] as List).single as Map<String, Object?>;
+    course['rewards'] = {
+      'announcementCues': {
+        '3': [
+          {
+            'id': 'mission-complete-three-stars',
+            'type': 'speech',
+            'text': 'Missão cumprida, cadete! Três estrelas.',
+            'speaker': 'aurora',
+          },
+        ],
+      },
+    };
+    await pumpJourney(tester, source: JourneyFixtureCatalog(json));
     await startMission(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
     await tester.pumpAndSettle();
@@ -263,22 +280,108 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
     await tester.pumpAndSettle();
     expect(find.text('Missão concluída!'), findsOneWidget);
+    const completionMessage = 'Missão cumprida, cadete! Três estrelas.';
+    expect(find.text(completionMessage), findsOneWidget);
+    expect(
+      audio.playedCues
+          .whereType<SpeechCue>()
+          .map((cue) => cue.text)
+          .where((text) => text == completionMessage),
+      isNotEmpty,
+    );
     expect(
       find.bySemanticsLabel('Você ganhou 3 de 3 estrelas.'),
       findsOneWidget,
     );
     expect(find.byType(Image), findsNothing);
     expect(find.textContaining('Precisão média:'), findsNothing);
+    expect(
+      audio.playedCues.whereType<SpeechCue>().where(
+        (cue) => cue.text.contains('teclas digitadas'),
+      ),
+      isEmpty,
+    );
     expect(_focusedLabel(), 'Próxima missão');
     await tester.ensureVisible(find.text('Ouvir diário de bordo'));
     await tester.tap(find.text('Ouvir diário de bordo'));
     await tester.pumpAndSettle();
+    expect(
+      audio.playedCues.whereType<SpeechCue>().where(
+        (cue) => cue.text.contains('teclas digitadas'),
+      ),
+      isNotEmpty,
+    );
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('Diário de bordo'), findsOneWidget);
     expect(find.textContaining('Precisão'), findsWidgets);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mission result shows its configured post-scene illustration', (
+    tester,
+  ) async {
+    final json = journeyJson();
+    final course = (json['courses'] as List).single as Map<String, Object?>;
+    final module = (course['modules'] as List).first as Map<String, Object?>;
+    final lesson = (module['lessons'] as List).first as Map<String, Object?>;
+    lesson['postScene'] = {'illustrationId': 'mission-finale'};
+    course['illustrations'] = [
+      {
+        'id': 'mission-finale',
+        'title': 'Missão finalizada',
+        'lines': [
+          {
+            'id': 'final-frame',
+            'characterId': 'aurora',
+            'imageAsset': 'assets/images/space/module1/aurora.png',
+            'imageDescription': 'Aurora desperta após a missão.',
+          },
+        ],
+      },
+    ];
+    await pumpJourney(tester, source: JourneyFixtureCatalog(json));
+    await startMission(tester);
+    expect(engine.module, same(engine.course.modules.first));
+    expect(engine.lesson, same(engine.module!.lessons.first));
+    expect(engine.postSceneIllustration?.id, 'mission-finale');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF, character: 'f');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyJ, character: 'j');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Missão concluída!'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    expect(
+      tester.widget<Image>(find.byType(Image)).image,
+      isA<AssetImage>().having(
+        (image) => image.assetName,
+        'assetName',
+        'assets/images/space/module1/aurora.png',
+      ),
+    );
+    final illustrationSemantics = find.byWidgetPredicate(
+      (widget) =>
+          widget is Semantics &&
+          widget.properties.image == true &&
+          widget.properties.label ==
+              'Missão finalizada. Aurora desperta após a missão.',
+    );
+    expect(illustrationSemantics, findsOneWidget);
+    final semanticsData = tester.getSemantics(illustrationSemantics);
+    expect(semanticsData.label, contains('Aurora desperta após a missão.'));
+    expect(semanticsData.flagsCollection.isImage, isTrue);
     expect(tester.takeException(), isNull);
   });
 

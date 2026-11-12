@@ -5,6 +5,76 @@ import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('schema 4 maps all available story scenes to their image frames', () {
+    final course = _parse();
+    final lineCounts = {
+      for (final illustration in course.illustrations)
+        illustration.id: illustration.lines.length,
+    };
+
+    expect(lineCounts, {
+      'scene-c0': 2,
+      'scene-c1': 2,
+      'post-scene-c1': 1,
+      'scene-c2': 2,
+      'post-scene-c2': 1,
+      'scene-c3': 2,
+      'post-scene-c3': 1,
+      'scene-c4': 2,
+      'post-scene-c4': 1,
+      'scene-c5': 2,
+      'post-scene-c5': 1,
+      'scene-c6': 2,
+      'post-scene-c6': 1,
+      'scene-c7': 2,
+      'post-scene-c7': 1,
+      'scene-c8': 2,
+      'scene-c9-launch': 5,
+      'scene-c9-aliens': 3,
+      'scene-c9-badge': 1,
+      'scene-c10': 1,
+    });
+
+    for (final illustration in course.illustrations) {
+      for (final line in illustration.lines) {
+        expect(
+          File(line.imageAsset).existsSync(),
+          isTrue,
+          reason: '${illustration.id}/${line.id}: ${line.imageAsset}',
+        );
+      }
+    }
+  });
+
+  test('schema 4 accepts and validates illustration lines', () {
+    final course = _parse();
+    final openingIllustration = course.illustrations.firstWhere(
+      (illustration) => illustration.id == 'scene-c0',
+    );
+
+    expect(openingIllustration.lines.map((line) => line.id), [
+      'line-f1',
+      'line-f2',
+    ]);
+    expect(openingIllustration.lines.first.characterId, 'stella');
+    expect(
+      openingIllustration.imageAsset,
+      openingIllustration.lines.first.imageAsset,
+    );
+    expect(
+      openingIllustration.imageDescription,
+      openingIllustration.lines.first.imageDescription,
+    );
+
+    final json = _document();
+    final courseJson = _course(json);
+    final illustration = (courseJson['illustrations']! as List)
+        .cast<Map<String, Object?>>()
+        .firstWhere((item) => item['id'] == 'scene-c0');
+    final line = (illustration['lines']! as List).first as Map<String, Object?>;
+    line['characterId'] = 'unknown';
+    expect(() => _parse(json), throwsA(isA<CourseContentFormatException>()));
+  });
   group('schema 4 do Módulo 1', () {
     test(
       'interpreta oito missões obrigatórias, bônus e cerimônia separada',
@@ -109,16 +179,32 @@ void main() {
         'stella',
         'zero1',
         'aurora',
+        'blib-blub',
+        'zorp',
+        'nebulon',
       ]);
       expect(
         course.illustrations.map((illustration) => illustration.id),
         contains('scene-c1'),
       );
       expect(
-        course.modules.single.lessons.first.scene!.illustrationId,
+        course.modules.single.lessons.first.leadingScene!.illustrationId,
         'scene-c1',
       );
-      expect(course.modules.single.lessons.first.scene!.characterId, 'stella');
+      expect(
+        course.modules.single.lessons.first.leadingScene!.characterId,
+        'stella',
+      );
+      expect(
+        course.modules.single.lessons.first.postScene!.illustrationId,
+        'post-scene-c1',
+      );
+      expect(
+        course.modules.single.lessons.every(
+          (lesson) => lesson.leadingScene != null,
+        ),
+        isTrue,
+      );
       expect(course.modules.single.lessons.first.exercises.first.scene, isNull);
     });
 
@@ -140,7 +226,7 @@ void main() {
             .single
             .lessons
             .first
-            .scene!;
+            .leadingScene!;
         expect(scene.text, 'Texto revisto da apresentação.');
         expect(scene.narrationCues.single.text, scene.text);
         expect(scene.audioGuidance!.start.first.text, scene.text);
@@ -158,20 +244,54 @@ void main() {
           'm1c0-stella': 'assets/audio/demo/stella/m1c0-stella.wav',
           'm1c0-zero1': 'assets/audio/demo/zero1/m1c0-zero1.wav',
           'm1c1-zero1': 'assets/audio/demo/zero1/m1c1-zero1.wav',
+          'sfx-sensor-on': 'assets/audio/demo/sfx/sfx-sensor-on.wav',
+          'sfx-asa-esq-on': 'assets/audio/demo/sfx/sfx-asa-esq-on.wav',
+          'sfx-asa-dir-on': 'assets/audio/demo/sfx/sfx-asa-dir-on.wav',
+          'sfx-sincronia': 'assets/audio/demo/sfx/sfx-sincronia.wav',
+          'sfx-banco-on': 'assets/audio/demo/sfx/sfx-banco-on.wav',
+          'sfx-banco-completo': 'assets/audio/demo/sfx/sfx-banco-completo.wav',
+          'sfx-transmissao': 'assets/audio/demo/sfx/sfx-transmissao.wav',
+          'sfx-decolagem': 'assets/audio/demo/sfx/sfx-decolagem.wav',
+          'alien-blib-blub': 'assets/audio/demo/aliens/alien-blib-blub.wav',
+          'alien-zorp': 'assets/audio/demo/aliens/alien-zorp.wav',
+          'alien-nebulon': 'assets/audio/demo/aliens/alien-nebulon.wav',
+          'sfx-fanfarra': 'assets/audio/demo/sfx/sfx-fanfarra.wav',
           'stella-1estrela': 'assets/audio/demo/stella/stella-1estrela.wav',
           'zero1-ajuda-erros': 'assets/audio/demo/zero1/zero1-ajuda-erros.wav',
+          'sfx-tecla-incorreta':
+              'assets/audio/demo/sfx/sfx-tecla-incorreta.wav',
+          'musica-tema': 'assets/audio/demo/musicas/tema_A1_calma.mp3',
+          'musica-corrida': 'assets/audio/demo/musicas/corrida_A1_calma.mp3',
         };
         const readyFallbacks = {
           'm1c0-stella': ContentAudioFallback.text,
           'm1c0-zero1': ContentAudioFallback.text,
+          'm1c1-zero1': ContentAudioFallback.text,
+          'sfx-sensor-on': ContentAudioFallback.silent,
+          'sfx-asa-esq-on': ContentAudioFallback.silent,
+          'sfx-asa-dir-on': ContentAudioFallback.silent,
+          'sfx-sincronia': ContentAudioFallback.silent,
+          'sfx-banco-on': ContentAudioFallback.silent,
+          'sfx-banco-completo': ContentAudioFallback.silent,
+          'sfx-transmissao': ContentAudioFallback.silent,
+          'sfx-decolagem': ContentAudioFallback.silent,
+          'alien-blib-blub': ContentAudioFallback.silent,
+          'alien-zorp': ContentAudioFallback.silent,
+          'alien-nebulon': ContentAudioFallback.silent,
+          'sfx-fanfarra': ContentAudioFallback.silent,
           'stella-1estrela': ContentAudioFallback.text,
           'zero1-ajuda-erros': ContentAudioFallback.text,
+          'sfx-tecla-incorreta': ContentAudioFallback.silent,
+          'musica-tema': ContentAudioFallback.silent,
+          'musica-corrida': ContentAudioFallback.silent,
         };
         final readyCues = resources.where((cue) => !cue.pending);
         expect({for (final cue in readyCues) cue.id: cue.asset}, readyAssets);
         for (final cue in readyCues) {
           expect(cue.fallback, readyFallbacks[cue.id]);
-          expect(cue.text, isNotEmpty);
+          if (cue.type == ContentAudioCueType.speech) {
+            expect(cue.text, isNotEmpty);
+          }
           expect(File(cue.asset!).existsSync(), isTrue);
         }
 
@@ -315,16 +435,21 @@ void main() {
       'campo de prática desconhecido': (json) =>
           (_course(json)['practice']! as Map)['unknown'] = true,
       'campo de cena desconhecido': (json) =>
-          (_lesson(json)['scene']! as Map)['text'] = 'cópia desatualizada',
+          (_lesson(json)['leadingScene']! as Map)['text'] =
+              'cópia desatualizada',
+      'ilustração pós-missão desconhecida': (json) =>
+          (_lesson(json)['postScene']! as Map)['illustrationId'] = 'missing',
       'campo de exercício desconhecido': (json) =>
           _exercise(json)['soletraexer'] = true,
       'recurso de áudio desconhecido': (json) =>
-          (_lesson(json)['scene']! as Map)['narrationCueIds'] = ['missing'],
+          (_lesson(json)['leadingScene']! as Map)['narrationCueIds'] = [
+            'missing',
+          ],
       'voz desconhecida': (json) =>
           (_course(json)['audioResources']! as List).first['speaker'] =
               'missing',
       'ilustração desconhecida': (json) =>
-          (_lesson(json)['scene']! as Map)['illustrationId'] = 'missing',
+          (_lesson(json)['leadingScene']! as Map)['illustrationId'] = 'missing',
       'recompensa desconhecida': (json) =>
           (_module(json)['completionEvent']! as Map)['rewardIds'] = ['missing'],
       'pré-requisito desconhecido': (json) =>

@@ -204,7 +204,8 @@ void main() {
         audio.playedCues.whereType<SpeechCue>().any(
           (cue) => cue.text.contains('Relatório de voo'),
         ),
-        isTrue,
+        isFalse,
+        reason: 'Statistics are narrated only after the diary is requested.',
       );
       expect(engine.isLessonUnlocked(race), isFalse);
       engine.continueAfterExercise();
