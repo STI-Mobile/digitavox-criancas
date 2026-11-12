@@ -38,6 +38,8 @@ O domínio guarda apenas o identificador. `DvxCourseThemes`, na apresentação, 
 
 - `DvxGameScaffold`: cabeçalho, fundo do curso e decoração excluída da semântica;
 - `DvxGameCard`: superfície e espaçamento consistentes;
+- `DvxNarrationControls`: controles acessíveis para repetir ou parar a narração de uma cena;
+- `CharacterLine`: personagem, texto e cues de uma fala apresentados juntos em uma cena;
 - `DvxKeyPrompt`: tecla ou sequência responsiva;
 - `DvxFeedback`: espera, acerto, erro e conclusão com cor, ícone, texto e live region;
 - `DvxProgressIndicator`: progresso textual e visual;

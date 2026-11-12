@@ -12,6 +12,8 @@ Schemas 2 e 3 continuam aceitos. Eles usam cues embutidos, cenas com `text` e pa
 
 Schema 4 exige escolhas explícitas de prática, estrelas, teclas, vocabulário, pré-requisitos, optionalidade, repetições, soletração e separadores. Configurações desconhecidas são rejeitadas antes de disponibilizar o curso. Não há scripts, expressões executáveis, código Dart, chamadas de API, definição de widgets ou uma linguagem de regras dentro do JSON.
 
+Todo cue de áudio que declara `asset` também declara `fallback`. Falas usam `fallback: "text"` e incluem o texto correspondente para preservá-lo caso o áudio não possa ser reproduzido; SFX e música usam `fallback: "silent"`.
+
 O catálogo de Exploradores usa schema 4 e mantém `isDemo: false`, conforme a fonte aprovada pelo usuário. Recursos sonoros ainda não produzidos são identificados separadamente por `pending`; esse estado técnico não altera a indicação editorial do curso. As fixtures `demo_course.json`, `integration_demo_course.json` e `docs/examples/journey_course.json` continuam sendo demos técnicas. A composição atual ainda usa `DevelopmentCourseCatalog` com `kDebugMode`, portanto o build release não disponibiliza o catálogo: habilitar a distribuição de cursos é uma decisão de composição separada.
 
 ## Escolhas declaradas pelo curso
@@ -22,7 +24,7 @@ O catálogo de Exploradores usa schema 4 e mantém `isDemo: false`, conforme a f
 | Curso | `rewards.twoStarAccuracy`, `threeStarAccuracy`, `announcementCueIds`, `diaryCueIds` | Limites inclusivos, cerimônia de estrelas e abertura do relatório |
 | Curso | `audioResources`, `characters`, `illustrations`, `rewardDefinitions`, `theme` | Recursos canônicos, identidade de quem fala, imagens de cenas, conquistas e identidade visual conhecida |
 | Módulo | `allowedKeys`, `vocabulary`, `lessons`, `completionEvent` | Validação do corpus, sequência, conclusão e desbloqueios |
-| Missão | `accuracy`, `secChar`, `prerequisiteLessonIds`, `prerequisiteEventId`, `optional`, `legacyLessonIds`, `scene` | Aprovação, tempo padrão, liberação, bônus, compatibilidade de progresso e apresentação |
+| Missão | `accuracy`, `secChar`, `prerequisiteLessonIds`, `prerequisiteEventId`, `optional`, `legacyLessonIds`, `leadingScene`, `postScene` | Aprovação, tempo padrão, liberação, bônus, compatibilidade de progresso, apresentação e ilustração após a conclusão |
 | Atividade | `expectedInput`, `minimumRepetitions`, `spellOut`, `repetitionSeparator`, `trailingSeparator`, `timePerCharacterSeconds`, `timeLimitSeconds`, `prompt` | Fluxo de entrada, leitura, repetições e limite de prática |
 
 Preferências pessoais de tema, progresso, estado de pausa, tecnologia de TTS, controle de foco, semântica e APIs de plataforma pertencem ao aplicativo. O curso seleciona uma identidade conhecida por `theme`; não define cores Flutter nem pode reduzir requisitos de acessibilidade.
@@ -46,16 +48,23 @@ Fragmentos de declaração:
 
 ```json
 {
-  "narrationCueIds": ["m1c1-stella"],
-  "instructionCueIds": ["m1c1-zero1"],
-  "characterId": "stella",
-  "illustrationId": "scene-c1"
+  "leadingScene": {
+    "narrationCueIds": ["m1c1-stella"],
+    "instructionCueIds": ["m1c1-zero1"],
+    "characterId": "stella",
+    "illustrationId": "scene-c1"
+  },
+  "postScene": {
+    "illustrationId": "post-scene-c1"
+  }
 }
 ```
 
-Os fragmentos ilustram a estrutura; a fala completa e aprovada está no catálogo. No módulo, Stella apresenta a história e celebra; ZERO-1 dá instruções, ajuda e relatório. `speaker` deve identificar um personagem definido no curso. `characters` identifica personagens; `illustrations` identifica imagens de cenas. Uma imagem da asa energizada ou do console não se torna um personagem que fala.
+Os fragmentos ilustram a estrutura; a fala completa e aprovada está no catálogo. No módulo, Stella apresenta a história e celebra; ZERO-1 dá instruções, ajuda e relatório. `speaker` deve identificar um personagem definido no curso. `characters` identifica personagens; `illustrations` identifica imagens de cenas. Uma ilustração pode declarar `lines` com ID, personagem e imagem para cada quadro de fala; cada personagem precisa existir em `characters`, e os IDs das linhas são únicos dentro da ilustração. Quando `lines` está presente sem imagem principal, a primeira linha fornece a imagem e a descrição padrão para telas que exibem uma única ilustração. Uma imagem da asa energizada ou do console não se torna um personagem que fala.
 
 A cena da introdução não é herdada pela prática. A atividade recebe somente sua própria instrução; a leitura inicial usa a entrada inteira ou a soletração conforme `spellOut`. Ilustrações de cena são resolvidas pela referência local e não reaparecem como retrato do ancestral durante a digitação.
+
+No schema 4, `leadingScene` contém a apresentação da missão, e `postScene` opcionalmente referencia uma ilustração do catálogo pelo seu ID. A tela de conclusão mostra a imagem dessa referência para qualquer missão que a declare; não há personagem ou missão codificados especialmente. Missões sem `postScene` não exibem ilustração adicional.
 
 ## Dinâmica de prática e tempo
 
