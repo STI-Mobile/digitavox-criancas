@@ -65,6 +65,36 @@ void main() {
       openingIllustration.imageDescription,
       openingIllustration.lines.first.imageDescription,
     );
+    final moduleCompletion = course.modules.single;
+    final postScene = course.illustrations.singleWhere(
+      (illustration) =>
+          illustration.id == moduleCompletion.postScene!.illustrationId,
+    );
+    expect(postScene.lines.map((line) => line.characterId), [
+      'stella',
+      'blib-blub',
+      'zorp',
+      'nebulon',
+      'stella',
+    ]);
+    expect(
+      postScene.lines.map(
+        (line) => line.audioCues.map((cue) => cue.id).toList(),
+      ),
+      [
+        ['sfx-decolagem', 'm1c9-stella-a'],
+        ['alien-blib-blub'],
+        ['alien-zorp'],
+        ['alien-nebulon'],
+        ['sfx-fanfarra', 'm1c9-stella-b'],
+      ],
+    );
+    expect(postScene.lines.first.text, contains('protocolo aprovado'));
+    expect(postScene.lines[1].hasSpeech, isFalse);
+    expect(
+      postScene.lines.last.text,
+      contains('distintivo de Cadete de Bronze'),
+    );
 
     final json = _document();
     final courseJson = _course(json);
@@ -95,6 +125,7 @@ void main() {
           module.completionEvent!.prerequisiteLessonId,
           'm1-7-prova-cadete',
         );
+        expect(module.postScene!.illustrationId, 'scene-c9-launch');
         expect(module.completionEvent!.rewardIds.toSet(), {
           'cadete-bronze',
           'blib-blub',
@@ -452,6 +483,19 @@ void main() {
           (_lesson(json)['leadingScene']! as Map)['illustrationId'] = 'missing',
       'recompensa desconhecida': (json) =>
           (_module(json)['completionEvent']! as Map)['rewardIds'] = ['missing'],
+      'pós-cena de conclusão desconhecida': (json) =>
+          (_module(json)['postScene']! as Map)['illustrationId'] = 'missing',
+      'cue de linha de ilustração desconhecido': (json) =>
+          (((_course(json)['illustrations']! as List)
+                          .cast<Map<String, Object?>>()
+                          .firstWhere(
+                            (item) => item['id'] == 'scene-c9-launch',
+                          )['lines']!
+                      as List)
+                  .first
+              as Map<String, Object?>)['audioCueIds'] = [
+            'missing',
+          ],
       'pré-requisito desconhecido': (json) =>
           _lesson(json)['prerequisiteLessonIds'] = ['missing'],
       'evento desconhecido': (json) =>

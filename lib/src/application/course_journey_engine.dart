@@ -98,7 +98,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
     JourneyStage.module => _module!.scene,
     JourneyStage.lesson => _lesson!.leadingScene,
     JourneyStage.exercise => _exercise!.scene,
-    JourneyStage.moduleCompletion => completionEvent?.scene,
+    JourneyStage.moduleCompletion => null,
   };
 
   CourseAudioConfiguration? get _localAudio =>
@@ -107,14 +107,14 @@ final class CourseJourneyEngine extends ChangeNotifier {
         JourneyStage.module => _module!.audioGuidance,
         JourneyStage.lesson => _lesson!.audioGuidance,
         JourneyStage.exercise => _exercise!.audioGuidance,
-        JourneyStage.moduleCompletion => completionEvent?.audioGuidance,
+        JourneyStage.moduleCompletion => null,
       }) ??
       switch (_stage) {
         JourneyStage.course => course.audioGuidance,
         JourneyStage.module => _module!.audioGuidance,
         JourneyStage.lesson => _lesson!.audioGuidance,
         JourneyStage.exercise => _exercise!.audioGuidance,
-        JourneyStage.moduleCompletion => completionEvent?.audioGuidance,
+        JourneyStage.moduleCompletion => null,
       };
 
   CourseAudioConfiguration? get currentAudioConfiguration {
@@ -142,12 +142,16 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   /// Illustrations belong to the visible scene, never to an ancestor's practice.
   CourseIllustration? get illustration {
-    final id = scene?.illustrationId;
+    final id = _stage == JourneyStage.moduleCompletion
+        ? _module?.postScene?.illustrationId
+        : scene?.illustrationId;
     return course.illustrations.where((image) => image.id == id).firstOrNull;
   }
 
   CourseIllustration? get postSceneIllustration {
-    final id = _lesson?.postScene?.illustrationId;
+    final id = _stage == JourneyStage.moduleCompletion
+        ? _module?.postScene?.illustrationId
+        : _lesson?.postScene?.illustrationId;
     return course.illustrations.where((image) => image.id == id).firstOrNull;
   }
 
@@ -156,7 +160,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
     final id =
         scene?.characterId ??
         _lesson?.leadingScene?.characterId ??
-        _module?.scene?.characterId ??
+        _module?.leadingScene?.characterId ??
         course.scene?.characterId;
     return course.characters.where((item) => item.id == id).firstOrNull;
   }
@@ -503,6 +507,38 @@ final class CourseJourneyEngine extends ChangeNotifier {
     }
   }
 
+  Future<void> completeCurrentLessonForTesting() async {
+    final module = _module;
+    final lesson = _lesson;
+    if ((_stage != JourneyStage.lesson && _stage != JourneyStage.exercise) ||
+        module == null ||
+        lesson == null ||
+        !isLessonUnlocked(lesson)) {
+      throw StateError('Não há uma missão disponível para concluir.');
+    }
+
+    final exerciseIds = lesson.exercises.map((exercise) => exercise.id);
+    for (final exercise in lesson.exercises) {
+      await catalog.recordExerciseResult(
+        courseId: course.id,
+        lessonId: lesson.id,
+        exerciseId: exercise.id,
+        accuracyPercent: lesson.accuracy,
+        lessonAccuracyPercent: lesson.accuracy,
+        lessonExerciseIds: exerciseIds,
+        twoStarsMinimum: course.rewards.twoStarAccuracy,
+        threeStarsMinimum: course.rewards.threeStarAccuracy,
+      );
+    }
+
+    if (_disposed || !identical(_lesson, lesson)) return;
+    if (isModuleReadyForCompletion) {
+      openModuleCompletion(module);
+    } else {
+      openModule(module);
+    }
+  }
+
   void pausePractice() {
     _session?.pause();
     unawaited(stopNarration());
@@ -548,7 +584,18 @@ final class CourseJourneyEngine extends ChangeNotifier {
           CourseAudioEvent.start,
         );
 
-  Future<void> replayModuleEvent() => replayNarration();
+  Future<void> replayModuleEvent() {
+    final lineCues =
+        postSceneIllustration?.lines
+            .expand((line) => line.audioCues)
+            .toList() ??
+        const <ContentAudioCue>[];
+    if (lineCues.isEmpty) return replayNarration();
+    return courseAudio.play(
+      CourseAudioConfiguration(start: lineCues),
+      CourseAudioEvent.start,
+    );
+  }
 
   void back() {
     switch (_stage) {
@@ -788,6 +835,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
         return;
       }
       if (_disposed || generation != _audioRequestGeneration) return;
+      if (_module?.postScene != null) return;
     }
     if (_stage == JourneyStage.exercise) {
       final exercise = _exercise!;

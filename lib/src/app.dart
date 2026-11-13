@@ -67,6 +67,7 @@ final class _DigitavoxAppState extends State<DigitavoxApp> {
               courseCatalog: widget.courseCatalog,
               progressRepository: widget.profileRepository.progressFor(profile),
               courseAudio: _courseAudio,
+              profileName: profile.name,
               onThemePreferenceChanged: (preference) {
                 setState(() => _themePreference = preference);
               },

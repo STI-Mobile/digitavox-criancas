@@ -222,11 +222,23 @@ void main() {
     expect(savedCourse.unlockedRewardIds, event.rewardIds.toSet());
     expect(savedCourse.unlockedRewardIds, hasLength(4));
     expect(engine.isLessonUnlocked(race), isTrue);
-    for (final cue in event.scene!.audioGuidance!.start) {
-      expect(cueCount(cue.id), 1);
-    }
+    final ceremonyCueIds = engine.postSceneIllustration!.lines
+        .expand((line) => line.audioCues)
+        .map((cue) => cue.id)
+        .toList();
+    expect(ceremonyCueIds, [
+      'sfx-decolagem',
+      'm1c9-stella-a',
+      'alien-blib-blub',
+      'alien-zorp',
+      'alien-nebulon',
+      'sfx-fanfarra',
+      'm1c9-stella-b',
+    ]);
+    expect(ceremonyCueIds.every((id) => cueCount(id) == 0), isTrue);
     await engine.replayModuleEvent();
     await engine.replayModuleEvent();
+    expect(ceremonyCueIds.every((id) => cueCount(id) == 2), isTrue);
     expect(await repository.load(), same(beforeReplay));
     expect(
       catalog.progress.courses[engine.course.id]!.unlockedRewardIds,

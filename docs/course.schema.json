@@ -809,6 +809,14 @@
         },
         "imageDescription": {
           "$ref": "#/$defs/text"
+        },
+        "audioCueIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         }
       },
       "required": [
@@ -1089,9 +1097,6 @@
         "leadingScene": {
           "$ref": "#/$defs/scene4"
         },
-        "postScene": {
-          "$ref": "#/$defs/illustrationScene4"
-        },
         "audioGuidance": {
           "$ref": "#/$defs/audioGuidance4"
         },
@@ -1139,20 +1144,13 @@
             "$ref": "#/$defs/text"
           },
           "uniqueItems": true
-        },
-        "scene": {
-          "$ref": "#/$defs/scene4"
-        },
-        "audioGuidance": {
-          "$ref": "#/$defs/audioGuidance4"
         }
       },
       "required": [
         "id",
         "title",
         "prerequisiteLessonId",
-        "rewardIds",
-        "scene"
+        "rewardIds"
       ],
       "additionalProperties": false
     },
@@ -1182,8 +1180,11 @@
           "minItems": 1,
           "uniqueItems": true
         },
-        "scene": {
+        "leadingScene": {
           "$ref": "#/$defs/scene4"
+        },
+        "postScene": {
+          "$ref": "#/$defs/illustrationScene4"
         },
         "audioGuidance": {
           "$ref": "#/$defs/audioGuidance4"
@@ -1257,8 +1258,11 @@
             "$ref": "#/$defs/rewardDefinition4"
           }
         },
-        "scene": {
+        "leadingScene": {
           "$ref": "#/$defs/scene4"
+        },
+        "postScene": {
+          "$ref": "#/$defs/illustrationScene4"
         },
         "audioGuidance": {
           "$ref": "#/$defs/audioGuidance4"

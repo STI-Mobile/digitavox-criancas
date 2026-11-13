@@ -16,6 +16,7 @@ final class CourseHomeScreen extends StatefulWidget {
     required this.courseCatalog,
     required this.progressRepository,
     required this.courseAudio,
+    this.profileName = '',
     required this.onThemePreferenceChanged,
     super.key,
   });
@@ -23,6 +24,7 @@ final class CourseHomeScreen extends StatefulWidget {
   final CourseCatalog courseCatalog;
   final ProgressRepository progressRepository;
   final CourseAudioOrchestrator courseAudio;
+  final String profileName;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
@@ -90,6 +92,7 @@ final class _CourseHomeScreenState extends State<CourseHomeScreen>
     if (engine != null) {
       return CourseJourneyScreen(
         engine: engine,
+        profileName: widget.profileName,
         onThemePreferenceChanged: widget.onThemePreferenceChanged,
       );
     }

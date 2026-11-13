@@ -9,7 +9,10 @@ import 'package:digitavox_criancas/src/data/persistence/local_progress_repositor
 import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
+import 'package:digitavox_criancas/src/presentation/course_journey_screen.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/app_theme/dvx_app_theme.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/components/dvx_game_components.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/course_theme/course_theme.dart';
 import 'package:digitavox_criancas/src/presentation/design_system/tokens/accessibility_tokens.dart';
 import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
 import 'package:digitavox_criancas/src/presentation/scene_screen.dart';
@@ -158,6 +161,88 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'test profile can complete a mission without entering its exercises',
+    (tester) async {
+      final repository = _createRepository();
+      await _pumpDemo(tester, repository: repository, profileName: 'Felipaoao');
+      await _startCourse(tester);
+
+      expect(find.text('Concluir missão (teste)'), findsOneWidget);
+      await tester.ensureVisible(find.text('Concluir missão (teste)'));
+      await tester.tap(find.text('Concluir missão (teste)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Concluir missão (teste)'), findsNothing);
+      expect(find.text('Concluída · Praticar novamente'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('normal profiles do not see the mission test button', (
+    tester,
+  ) async {
+    await _pumpDemo(
+      tester,
+      repository: _createRepository(),
+      profileName: 'Perfil normal',
+    );
+    await _startCourse(tester);
+
+    expect(find.text('Concluir missão (teste)'), findsNothing);
+  });
+
+  testWidgets('ceremony rewards show the three aliens in order', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: DvxAppTheme.resolve(AppThemePreference.standard),
+        home: DvxGameScaffold(
+          courseTheme: DvxCourseThemes.resolve('space')
+              .resolve(AppThemePreference.standard),
+          title: 'Conclusão do módulo',
+          body: const CeremonyRewards(
+            rewardLabels: ['Cadete de Bronze', 'Blib-Blub', 'Zorp', 'Nebulon'],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final images = tester
+        .widgetList<Image>(find.byType(Image))
+        .whereType<Image>()
+        .map((image) => (image.image as AssetImage).assetName)
+        .toList();
+    expect(images, [
+      'assets/images/space/module1/alien_zorp_acenando.png',
+      'assets/images/space/module1/alien_nebulon_frente.png',
+      'assets/images/space/module1/alien_blib_blub_acenando_esquerda.png',
+    ]);
+    expect(find.text('Cadete de Bronze'), findsOneWidget);
+    expect(find.text('Zorp'), findsNothing);
+    expect(find.text('Nebulon'), findsNothing);
+    expect(find.text('Blib-Blub'), findsNothing);
+
+    final semantics = tester.ensureSemantics();
+    expect(
+      find.bySemanticsLabel('Zorp, acenando, posicionado à esquerda'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel('Nebulon, de frente, posicionado ao centro'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Blib-Blub, acenando à esquerda, posicionado à direita',
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
 
   testWidgets(
     'keyboard menus cycle, announce selection and activate with Enter',
@@ -937,11 +1022,12 @@ Future<void> _pumpDemo(
   required LocalProfileRepository repository,
   CourseCatalog? catalog,
   RecordingAudioGuidance? audio,
+  String profileName = 'Perfil de teste',
 }) async {
   final profiles = await repository.loadProfiles();
 
   final profile = profiles.isEmpty
-      ? await repository.createProfile('Perfil de teste')
+      ? await repository.createProfile(profileName)
       : profiles.first;
 
   rootBundle.evict('assets/content/demo_course.json');
