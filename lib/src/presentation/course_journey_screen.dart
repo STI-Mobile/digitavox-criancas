@@ -677,6 +677,8 @@ final class CeremonyRewards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spacing = context.courseTheme.spacing;
+    final badgeLabel = rewardLabels.isNotEmpty ? rewardLabels.first : null;
+
     return Center(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -688,23 +690,11 @@ final class CeremonyRewards extends StatelessWidget {
               child: Text('Suas Recompensas!'),
             ),
           ),
-          SizedBox(height: spacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Semantics(
-                image: true,
-                label: 'Distintivo de Bronze',
-                child: ExcludeSemantics(
-                  child: Image.asset(
-                    'assets/images/space/module1/bronze_badge.png',
-                    height: 160,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          if (badgeLabel != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: spacing.sm),
+              child: Center(child: Text(badgeLabel)),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: const [
