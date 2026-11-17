@@ -47,6 +47,9 @@ void main() {
       courseAudio: CourseAudioOrchestrator(audioGuidance: audio),
     );
 
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       MaterialApp(
         theme: DvxAppTheme.resolve(AppThemePreference.standard),
@@ -455,6 +458,9 @@ void main() {
   testWidgets('long targets keep enlarged text and wrap on a narrow display', (
     tester,
   ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await pumpJourney(tester);
     tester.view.physicalSize = const Size(320, 800);
     tester.view.devicePixelRatio = 1;
@@ -471,12 +477,19 @@ void main() {
           ),
           title: 'Teste',
           body: const SingleChildScrollView(
-            child: DvxKeyPrompt(value: 'as asas da sala', nextCharacter: 'a'),
+            child: DvxKeyPrompt(
+              value: 'as asas da sala',
+              nextCharacter: 'a',
+              inputIndex: 0,
+            ),
           ),
         ),
       ),
     );
-    expect(find.text('AS ASAS DA SALA'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Exercício: as asas da sala. Próxima tecla: a.'),
+      findsOneWidget,
+    );
     expect(find.byType(FittedBox), findsNothing);
     expect(tester.takeException(), isNull);
   });
