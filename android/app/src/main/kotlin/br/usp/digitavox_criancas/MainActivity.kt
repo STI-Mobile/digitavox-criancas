@@ -1,4 +1,4 @@
-package br.org.digitavox.digitavox_criancas
+package br.usp.digitavox_criancas
 
 import android.os.Bundle
 import android.speech.tts.TextToSpeech

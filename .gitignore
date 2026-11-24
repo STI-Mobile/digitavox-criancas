@@ -16,14 +16,7 @@ linked_*.ds
 *.log
 *.swp
 .DS_Store
-/.env
-
-# Bundler local configuration and installed gems
-/.bundle/
-/vendor/bundle/
-
-# Fastlane execution report
-/fastlane/report.xml
+.env
 
 # Android local/generated files
 android/.gradle/
@@ -33,6 +26,7 @@ android/app/debug/
 android/app/profile/
 android/app/release/
 android/key.properties
+android/key-*.properties
 *.jks
 *.keystore
 
@@ -50,4 +44,12 @@ macos/flutter
 # Linux
 linux/flutter
 
-analysis_options.yaml
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+
+# Local Ruby dependencies and Fastlane artifacts
+.bundle/
+vendor/bundle/
+fastlane/report.xml
+fastlane/README.md
