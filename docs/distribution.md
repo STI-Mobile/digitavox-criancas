@@ -45,9 +45,10 @@ catálogo configurado é o técnico, e um build `prod` em release não teria cur
 
 O nome exibido contém "Dev" em texto, porque testers cegos distinguem os apps
 pelo nome anunciado por TalkBack e VoiceOver. O ícone dev tem uma faixa com o
-texto "DEV" para a distinção visual. Ele é derivado do ícone de produção por
-[tool/generate_dev_icons.sh](../tool/generate_dev_icons.sh), que exige
-ImageMagick; execute o script novamente sempre que o ícone de produção mudar.
+texto "DEV" para a distinção visual. A arte fica em
+`assets/icons/DigitaVox-Criancas_DEV.svg`, ao lado da arte de produção; ao mudar
+o ícone de produção, atualize também a versão dev e gere os PNGs conforme o
+[Design System](design-system.md).
 
 ## Desenvolvimento local
 
