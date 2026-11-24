@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../domain/progress/student_progress.dart';
+import '../../keyboard_navigation.dart';
 import '../course_theme/course_theme.dart';
 import '../tokens/dvx_tokens.dart';
 
@@ -11,6 +14,7 @@ final class DvxGameScaffold extends StatelessWidget {
     required this.body,
     this.leading,
     this.actions,
+    this.bottomNavigationBar,
     super.key,
   });
 
@@ -19,10 +23,12 @@ final class DvxGameScaffold extends StatelessWidget {
   final Widget body;
   final Widget? leading;
   final List<Widget>? actions;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: courseTheme.background,
+    bottomNavigationBar: bottomNavigationBar,
     appBar: AppBar(
       backgroundColor: courseTheme.background,
       leading: leading,
@@ -30,6 +36,7 @@ final class DvxGameScaffold extends StatelessWidget {
       actions: actions,
     ),
     body: Stack(
+      fit: StackFit.expand,
       children: [
         Positioned.fill(child: _CourseBackdrop(theme: courseTheme)),
         SafeArea(child: body),
@@ -151,7 +158,7 @@ final class DvxKeyPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final singleKey = value.runes.length == 1;
+    final shortTarget = value.runes.length <= 5;
     return Semantics(
       label: 'Exercício: $value. Próxima tecla: $nextCharacter.',
       child: ExcludeSemantics(
@@ -179,17 +186,14 @@ final class DvxKeyPrompt extends StatelessWidget {
                   ],
           ),
           alignment: Alignment.center,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value.toUpperCase(),
-              style:
-                  (singleKey
-                          ? Theme.of(context).textTheme.displayLarge
-                          : Theme.of(context).textTheme.headlineMedium)
-                      ?.copyWith(color: scheme.primary),
-              textAlign: TextAlign.center,
-            ),
+          child: Text(
+            value.toUpperCase(),
+            style:
+                (shortTarget
+                        ? Theme.of(context).textTheme.displayLarge
+                        : Theme.of(context).textTheme.headlineMedium)
+                    ?.copyWith(color: scheme.primary),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
@@ -244,34 +248,71 @@ final class DvxThemeSelector extends StatelessWidget {
   const DvxThemeSelector({
     required this.preference,
     required this.onSelected,
+    required this.onAnnounce,
     super.key,
   });
 
   final AppThemePreference preference;
   final ValueChanged<AppThemePreference> onSelected;
+  final Future<void> Function(String) onAnnounce;
 
   @override
-  Widget build(BuildContext context) => PopupMenuButton<AppThemePreference>(
-    tooltip: 'Alterar tema visual',
-    initialValue: preference,
-    onSelected: onSelected,
-    icon: const Icon(Icons.contrast),
-    itemBuilder: (context) => [
-      for (final value in AppThemePreference.values)
-        PopupMenuItem(
-          value: value,
-          child: Row(
-            children: [
-              Icon(
-                value == preference
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
+  Widget build(BuildContext context) => KeyboardNavigationLabel(
+    label: 'Alterar tema visual. ${preference.label}',
+    child: PopupMenuButton<AppThemePreference>(
+      tooltip: 'Alterar tema visual',
+      initialValue: preference,
+      onSelected: onSelected,
+      icon: const Icon(Icons.contrast),
+      itemBuilder: (context) => [
+        for (final value in AppThemePreference.values)
+          _ThemeMenuItem(
+            value: value,
+            onAnnounce: onAnnounce,
+            child: Semantics(
+              selected: value == preference,
+              child: Row(
+                children: [
+                  Icon(
+                    value == preference
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                  ),
+                  const SizedBox(width: DvxSpacing.sm),
+                  Expanded(child: Text(value.label)),
+                ],
               ),
-              const SizedBox(width: DvxSpacing.sm),
-              Expanded(child: Text(value.label)),
-            ],
+            ),
           ),
-        ),
-    ],
+      ],
+    ),
+  );
+}
+
+/// Keeps native popup activation and semantics while observing its item focus.
+final class _ThemeMenuItem extends PopupMenuItem<AppThemePreference> {
+  const _ThemeMenuItem({
+    required super.value,
+    required super.child,
+    required this.onAnnounce,
+  });
+
+  final Future<void> Function(String) onAnnounce;
+
+  @override
+  PopupMenuItemState<AppThemePreference, _ThemeMenuItem> createState() =>
+      _ThemeMenuItemState();
+}
+
+final class _ThemeMenuItemState
+    extends PopupMenuItemState<AppThemePreference, _ThemeMenuItem> {
+  @override
+  Widget build(BuildContext context) => Focus(
+    canRequestFocus: false,
+    includeSemantics: false,
+    onFocusChange: (focused) {
+      if (focused) unawaited(widget.onAnnounce(widget.value!.label));
+    },
+    child: super.build(context),
   );
 }

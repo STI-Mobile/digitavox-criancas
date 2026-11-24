@@ -39,6 +39,11 @@ ios/.symlinks/
 ios/**/DerivedData/
 ios/**/xcuserdata/
 ios/Runner/GeneratedPluginRegistrant.*
+macos/flutter
+
+# Linux
+linux/flutter
+
 *.p12
 *.mobileprovision
 AuthKey_*.p8

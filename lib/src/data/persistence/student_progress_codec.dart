@@ -20,7 +20,7 @@ final class UnsupportedProgressSchemaException
 final class StudentProgressCodec {
   const StudentProgressCodec();
 
-  static const int schemaVersion = 2;
+  static const int schemaVersion = 4;
   static const String _coursesPath = r'$.progress.courses';
 
   String encode(StudentProgress progress) {
@@ -42,6 +42,11 @@ final class StudentProgressCodec {
             'Estrelas não podem ser negativas na lição "$lessonId".',
           );
         }
+        if (lesson.tries < 0) {
+          throw ProgressDataFormatException(
+            'Tentativas não podem ser negativas na lição "$lessonId".',
+          );
+        }
 
         final completedExerciseIds = lesson.completedExerciseIds.toList()
           ..sort();
@@ -51,14 +56,63 @@ final class StudentProgressCodec {
             '$coursePath.lessons.$lessonId.completedExerciseIds',
           );
         }
+        final exerciseAccuracies = <String, Object?>{};
+        final exerciseIds = lesson.exerciseAccuracies.keys.toList()..sort();
+        for (final exerciseId in exerciseIds) {
+          _validateId(
+            exerciseId,
+            '$coursePath.lessons.$lessonId.exerciseAccuracies',
+          );
+          final accuracy = lesson.exerciseAccuracies[exerciseId]!;
+          if (accuracy < 0 || accuracy > 100) {
+            throw ProgressDataFormatException(
+              'Precisão fora do intervalo em '
+              '$coursePath.lessons.$lessonId.exerciseAccuracies.$exerciseId.',
+            );
+          }
+          exerciseAccuracies[exerciseId] = accuracy;
+        }
 
+        final statistics = <String, Object?>{};
+        final statisticsIds = lesson.exerciseStatistics.keys.toList()..sort();
+        for (final id in statisticsIds) {
+          _validateId(id, '$coursePath.lessons.$lessonId.exerciseStatistics');
+          final stats = lesson.exerciseStatistics[id]!;
+          _validateStatistics(
+            stats,
+            '$coursePath.lessons.$lessonId.exerciseStatistics.$id',
+          );
+          final errors = <String, int>{};
+          for (final pair in stats.errorPairs.keys.toList()..sort()) {
+            errors[pair] = stats.errorPairs[pair]!;
+          }
+          statistics[id] = {
+            'elapsedMilliseconds': stats.elapsedMilliseconds,
+            'totalInputs': stats.totalInputs,
+            'correctInputs': stats.correctInputs,
+            'errorPairs': errors,
+          };
+        }
         lessons[lessonId] = <String, Object?>{
           'completedExerciseIds': completedExerciseIds,
           'stars': lesson.stars,
+          'tries': lesson.tries,
+          'exerciseAccuracies': exerciseAccuracies,
+          'exerciseStatistics': statistics,
         };
       }
 
-      courses[courseId] = <String, Object?>{'lessons': lessons};
+      courses[courseId] = <String, Object?>{
+        'lessons': lessons,
+        'completedEventIds': _encodeIds(
+          course.completedEventIds,
+          '$coursePath.completedEventIds',
+        ),
+        'unlockedRewardIds': _encodeIds(
+          course.unlockedRewardIds,
+          '$coursePath.unlockedRewardIds',
+        ),
+      };
     }
 
     return jsonEncode(<String, Object?>{
@@ -83,7 +137,10 @@ final class StudentProgressCodec {
 
     final root = _expectObject(decoded, r'$');
     final version = _expectInt(root['schemaVersion'], r'$.schemaVersion');
-    if (version != 1 && version != schemaVersion) {
+    if (version != 1 &&
+        version != 2 &&
+        version != 3 &&
+        version != schemaVersion) {
       throw UnsupportedProgressSchemaException(version);
     }
 
@@ -137,14 +194,99 @@ final class StudentProgressCodec {
             'Valor negativo em $lessonPath.stars.',
           );
         }
+        final tries = version >= 3
+            ? _expectInt(lessonJson['tries'], '$lessonPath.tries')
+            : 0;
+        if (tries < 0) {
+          throw ProgressDataFormatException(
+            'Valor negativo em $lessonPath.tries.',
+          );
+        }
+        final accuraciesJson = version >= 3
+            ? _expectObject(
+                lessonJson['exerciseAccuracies'],
+                '$lessonPath.exerciseAccuracies',
+              )
+            : const <String, Object?>{};
+        final exerciseAccuracies = <String, int>{};
+        for (final MapEntry(key: exerciseId, value: accuracyValue)
+            in accuraciesJson.entries) {
+          _validateId(exerciseId, '$lessonPath.exerciseAccuracies');
+          final accuracy = _expectInt(
+            accuracyValue,
+            '$lessonPath.exerciseAccuracies.$exerciseId',
+          );
+          if (accuracy < 0 || accuracy > 100) {
+            throw ProgressDataFormatException(
+              'Valor fora do intervalo em '
+              '$lessonPath.exerciseAccuracies.$exerciseId.',
+            );
+          }
+          exerciseAccuracies[exerciseId] = accuracy;
+        }
 
+        final statisticsJson = version >= 4
+            ? _expectObject(
+                lessonJson['exerciseStatistics'],
+                '$lessonPath.exerciseStatistics',
+              )
+            : const <String, Object?>{};
+        final statistics = <String, ExerciseStatistics>{};
+        for (final entry in statisticsJson.entries) {
+          _validateId(entry.key, '$lessonPath.exerciseStatistics');
+          final path = '$lessonPath.exerciseStatistics.${entry.key}';
+          final json = _expectObject(entry.value, path);
+          final errorsJson = _expectObject(
+            json['errorPairs'],
+            '$path.errorPairs',
+          );
+          final errors = <String, int>{};
+          for (final error in errorsJson.entries) {
+            _validateId(error.key, '$path.errorPairs');
+            errors[error.key] = _expectInt(
+              error.value,
+              '$path.errorPairs.${error.key}',
+            );
+          }
+          final stats = ExerciseStatistics(
+            elapsedMilliseconds: _expectInt(
+              json['elapsedMilliseconds'],
+              '$path.elapsedMilliseconds',
+            ),
+            totalInputs: _expectInt(json['totalInputs'], '$path.totalInputs'),
+            correctInputs: _expectInt(
+              json['correctInputs'],
+              '$path.correctInputs',
+            ),
+            errorPairs: Map.unmodifiable(errors),
+          );
+          _validateStatistics(stats, path);
+          statistics[entry.key] = stats;
+        }
         lessons[lessonId] = LessonProgress(
           completedExerciseIds: Set.unmodifiable(completedExerciseIds),
           stars: stars,
+          tries: tries,
+          exerciseAccuracies: Map.unmodifiable(exerciseAccuracies),
+          exerciseStatistics: Map.unmodifiable(statistics),
         );
       }
 
-      courses[courseId] = CourseProgress(lessons: Map.unmodifiable(lessons));
+      courses[courseId] = CourseProgress(
+        lessons: Map.unmodifiable(lessons),
+        completedEventIds: version >= 4
+            ? _decodeIds(
+                courseJson['completedEventIds'],
+                '$coursePath.completedEventIds',
+              )
+            : const {},
+        unlockedRewardIds: version >= 4
+            ? _decodeIds(
+                courseJson['unlockedRewardIds'],
+                '$coursePath.unlockedRewardIds',
+              )
+            : const {},
+      );
     }
 
     return StudentProgress(
@@ -164,6 +306,38 @@ final class StudentProgressCodec {
             : _themePreference(settingsJson['themePreference']),
       ),
     );
+  }
+
+  static void _validateStatistics(ExerciseStatistics stats, String path) {
+    try {
+      stats.validate();
+    } on ArgumentError {
+      throw ProgressDataFormatException(
+        'Estatísticas inconsistentes em $path.',
+      );
+    }
+  }
+
+  static List<String> _encodeIds(Set<String> ids, String path) {
+    final sorted = ids.toList()..sort();
+    for (final id in sorted) {
+      _validateId(id, path);
+    }
+    return sorted;
+  }
+
+  static Set<String> _decodeIds(Object? value, String path) {
+    final result = <String>{};
+    for (final value in _expectList(value, path)) {
+      final id = _expectString(value, path);
+      _validateId(id, path);
+      if (!result.add(id)) {
+        throw ProgressDataFormatException(
+          'Identificador duplicado em $path: $id.',
+        );
+      }
+    }
+    return Set.unmodifiable(result);
   }
 
   static Map<String, Object?> _expectObject(Object? value, String path) {

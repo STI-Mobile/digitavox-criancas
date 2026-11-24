@@ -1,3 +1,5 @@
+part 'course_configuration.dart';
+
 enum ExerciseType {
   key,
   keySequence,
@@ -34,6 +36,8 @@ enum ContentAudioCueType {
   }
 }
 
+enum ContentAudioFallback { text, silent, systemClick }
+
 /// Declarative audio intent. It contains no player or platform configuration.
 final class ContentAudioCue {
   const ContentAudioCue({
@@ -42,10 +46,20 @@ final class ContentAudioCue {
     this.text,
     this.asset,
     this.speaker,
+    this.pending = false,
+    this.fallback,
   });
 
   factory ContentAudioCue.fromJson(Map<String, Object?> json) {
-    const supportedKeys = <String>{'id', 'type', 'text', 'asset', 'speaker'};
+    const supportedKeys = <String>{
+      'id',
+      'type',
+      'text',
+      'asset',
+      'speaker',
+      'pending',
+      'fallback',
+    };
     final unknownKeys = json.keys.where((key) => !supportedKeys.contains(key));
     if (unknownKeys.isNotEmpty) {
       throw CourseContentFormatException(
@@ -57,6 +71,39 @@ final class ContentAudioCue {
     final text = _optionalString(json, 'text');
     final asset = _optionalString(json, 'asset');
     final speaker = _optionalString(json, 'speaker');
+    final pending = _optionalBool(json, 'pending', false);
+    final fallback = json['fallback'] == null
+        ? null
+        : _enumValue(ContentAudioFallback.values, json['fallback'], 'fallback');
+    if (pending && (asset != null || fallback == null)) {
+      throw const CourseContentFormatException(
+        'Áudio pendente exige fallback explícito e não declara asset pronto.',
+      );
+    }
+    final validPendingFallback = switch (type) {
+      ContentAudioCueType.speech => fallback == ContentAudioFallback.text,
+      ContentAudioCueType.sfx =>
+        fallback == ContentAudioFallback.silent ||
+            fallback == ContentAudioFallback.systemClick,
+      ContentAudioCueType.music => fallback == ContentAudioFallback.silent,
+    };
+    if (pending && !validPendingFallback) {
+      throw const CourseContentFormatException(
+        'Fallback pendente incompatível com o tipo de áudio.',
+      );
+    }
+    if (fallback == ContentAudioFallback.systemClick &&
+        (!pending || type != ContentAudioCueType.sfx)) {
+      throw const CourseContentFormatException(
+        'systemClick é permitido apenas para sfx pendente.',
+      );
+    }
+    if (fallback == ContentAudioFallback.text &&
+        (type != ContentAudioCueType.speech || text == null)) {
+      throw const CourseContentFormatException(
+        'Fallback text exige speech com texto.',
+      );
+    }
 
     if (asset != null) _validateAudioAsset(asset);
     switch (type) {
@@ -67,7 +114,7 @@ final class ContentAudioCue {
           );
         }
       case ContentAudioCueType.sfx || ContentAudioCueType.music:
-        if (asset == null) {
+        if (asset == null && !pending) {
           throw CourseContentFormatException(
             'Um cue ${type.name} precisa de asset.',
           );
@@ -85,6 +132,8 @@ final class ContentAudioCue {
       text: text,
       asset: asset,
       speaker: speaker,
+      pending: pending,
+      fallback: fallback,
     );
   }
 
@@ -93,6 +142,8 @@ final class ContentAudioCue {
   final String? text;
   final String? asset;
   final String? speaker;
+  final bool pending;
+  final ContentAudioFallback? fallback;
 }
 
 /// Ordered cues keyed by generic course lifecycle events.
@@ -134,6 +185,21 @@ final class CourseAudioConfiguration {
     CourseAudioEvent.incorrectInput => incorrectInput,
     CourseAudioEvent.completed => completed,
   };
+
+  /// A child overrides only its declared events, not the entire parent policy.
+  CourseAudioConfiguration inheritFrom(CourseAudioConfiguration? parent) =>
+      CourseAudioConfiguration(
+        start: start.isNotEmpty ? start : parent?.start ?? const [],
+        correctInput: correctInput.isNotEmpty
+            ? correctInput
+            : parent?.correctInput ?? const [],
+        incorrectInput: incorrectInput.isNotEmpty
+            ? incorrectInput
+            : parent?.incorrectInput ?? const [],
+        completed: completed.isNotEmpty
+            ? completed
+            : parent?.completed ?? const [],
+      );
 }
 
 /// Optional narrative attached to a node of the course hierarchy.
@@ -142,6 +208,10 @@ final class ContentScene {
     required this.text,
     this.audioGuidance,
     this.characterId,
+    this.illustrationId,
+    this.instruction = '',
+    this.narrationCues = const [],
+    this.instructionCues = const [],
   });
 
   factory ContentScene.fromJson(Map<String, Object?> json) {
@@ -151,12 +221,20 @@ final class ContentScene {
       characterId: json.containsKey('characterId')
           ? _requiredString(json, 'characterId')
           : null,
+      illustrationId: _optionalString(json, 'illustrationId'),
+      instruction: json['instruction'] as String? ?? '',
+      narrationCues: _optionalCueObjects(json, 'narrationCues'),
+      instructionCues: _optionalCueObjects(json, 'instructionCues'),
     );
   }
 
   final String text;
   final CourseAudioConfiguration? audioGuidance;
   final String? characterId;
+  final String? illustrationId;
+  final String instruction;
+  final List<ContentAudioCue> narrationCues;
+  final List<ContentAudioCue> instructionCues;
 }
 
 final class CourseCharacter {
@@ -202,6 +280,10 @@ final class Exercise {
     this.timeLimitSeconds,
     this.audioGuidance,
     this.scene,
+    this.spellOut = false,
+    this.repetitionSeparator = '',
+    this.trailingSeparator = '',
+    this.timePerCharacterSeconds,
   }) : assert(type != ExerciseType.key || expectedInput != null);
 
   factory Exercise.fromJson(Map<String, Object?> json) {
@@ -244,6 +326,10 @@ final class Exercise {
       timeLimitSeconds: timeLimitSeconds as int?,
       audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
+      spellOut: _optionalBool(json, 'spellOut', false),
+      repetitionSeparator: json['repetitionSeparator'] as String? ?? '',
+      trailingSeparator: json['trailingSeparator'] as String? ?? '',
+      timePerCharacterSeconds: json['timePerCharacterSeconds'] as int?,
     );
   }
 
@@ -256,6 +342,33 @@ final class Exercise {
   final int? timeLimitSeconds;
   final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
+  final bool spellOut;
+  final String repetitionSeparator;
+  final String trailingSeparator;
+  final int? timePerCharacterSeconds;
+
+  String inputForRepetition(int repetition) {
+    final count = minimumRepetitions ?? 1;
+    if (repetition < 1 || repetition > count) {
+      throw RangeError.range(repetition, 1, count, 'repetition');
+    }
+    return '${expectedInput ?? ''}${repetition < count ? repetitionSeparator : trailingSeparator}';
+  }
+
+  String get completeExpectedInput => [
+    for (var i = 1; i <= (minimumRepetitions ?? 1); i++) inputForRepetition(i),
+  ].join();
+
+  int? effectiveTimeLimitSeconds({int? defaultSecondsPerCharacter}) {
+    if (timeLimitSeconds != null) return timeLimitSeconds;
+    final seconds = timePerCharacterSeconds ?? defaultSecondsPerCharacter;
+    return seconds == null || seconds < 1
+        ? null
+        : (seconds *
+                  (minimumRepetitions ?? 1) *
+                  ((expectedInput?.runes.length ?? 0) + 1)) -
+              1;
+  }
 }
 
 final class Lesson {
@@ -263,8 +376,14 @@ final class Lesson {
     required this.id,
     required this.title,
     required this.exercises,
+    this.accuracy = 90,
+    this.secChar = 0,
     this.audioGuidance,
     this.scene,
+    this.prerequisiteLessonIds = const [],
+    this.optional = false,
+    this.prerequisiteEventId,
+    this.legacyLessonIds = const [],
   });
 
   factory Lesson.fromJson(Map<String, Object?> json) {
@@ -274,6 +393,8 @@ final class Lesson {
     ).map(Exercise.fromJson).toList(growable: false);
     _requireNonEmpty(exercises, 'Uma lição precisa ter exercícios.');
     _requireUniqueIds(exercises.map((exercise) => exercise.id), 'exercício');
+    final accuracy = _optionalPercentage(json, 'accuracy', defaultValue: 90);
+    final secChar = _optionalPositiveInteger(json, 'secChar', defaultValue: 0);
 
     return Lesson(
       id: _requiredString(json, 'id'),
@@ -281,6 +402,12 @@ final class Lesson {
       exercises: exercises,
       audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
+      accuracy: accuracy,
+      secChar: secChar,
+      prerequisiteLessonIds: _optionalTextList(json, 'prerequisiteLessonIds'),
+      optional: _optionalBool(json, 'optional', false),
+      prerequisiteEventId: _optionalString(json, 'prerequisiteEventId'),
+      legacyLessonIds: _optionalTextList(json, 'legacyLessonIds'),
     );
   }
 
@@ -289,6 +416,13 @@ final class Lesson {
   final List<Exercise> exercises;
   final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
+  final int accuracy;
+  final int secChar;
+  final List<String> prerequisiteLessonIds;
+  final bool optional;
+  final String? prerequisiteEventId;
+  final List<String> legacyLessonIds;
+  String get instruction => scene?.instruction ?? '';
 }
 
 final class CourseModule {
@@ -298,6 +432,9 @@ final class CourseModule {
     required this.lessons,
     this.audioGuidance,
     this.scene,
+    this.allowedKeys = const [],
+    this.vocabulary = const [],
+    this.completionEvent,
   });
 
   factory CourseModule.fromJson(Map<String, Object?> json) {
@@ -314,6 +451,11 @@ final class CourseModule {
       lessons: lessons,
       audioGuidance: _courseAudioConfiguration(json),
       scene: _scene(json),
+      allowedKeys: _optionalTextList(json, 'allowedKeys', allowSpace: true),
+      vocabulary: _optionalTextList(json, 'vocabulary'),
+      completionEvent: json['completionEvent'] == null
+          ? null
+          : ContentEvent.fromJson(_optionalObject(json, 'completionEvent')!),
     );
   }
 
@@ -322,6 +464,9 @@ final class CourseModule {
   final List<Lesson> lessons;
   final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
+  final List<String> allowedKeys;
+  final List<String> vocabulary;
+  final ContentEvent? completionEvent;
 }
 
 final class Course {
@@ -335,6 +480,11 @@ final class Course {
     this.audioGuidance,
     this.scene,
     this.characters = const [],
+    this.illustrations = const [],
+    this.practice = const CoursePracticeConfiguration(),
+    this.rewards = const CourseRewardConfiguration(),
+    this.audioResources = const {},
+    this.rewardDefinitions = const [],
   });
 
   factory Course.fromJson(Map<String, Object?> json) {
@@ -393,6 +543,24 @@ final class Course {
       audioGuidance: _courseAudioConfiguration(json),
       scene: scene,
       characters: characters,
+      illustrations: _optionalObjects(
+        json,
+        'illustrations',
+      ).map(CourseIllustration.fromJson).toList(growable: false),
+      practice: CoursePracticeConfiguration.fromJson(
+        _optionalObject(json, 'practice') ?? const {},
+      ),
+      rewards: CourseRewardConfiguration.fromJson(
+        _optionalObject(json, 'rewards') ?? const {},
+      ),
+      audioResources: {
+        for (final resource in _optionalObjects(json, 'audioResources'))
+          _requiredString(resource, 'id'): ContentAudioCue.fromJson(resource),
+      },
+      rewardDefinitions: _optionalObjects(
+        json,
+        'rewardDefinitions',
+      ).map(RewardDefinition.fromJson).toList(growable: false),
     );
   }
 
@@ -405,6 +573,11 @@ final class Course {
   final CourseAudioConfiguration? audioGuidance;
   final ContentScene? scene;
   final List<CourseCharacter> characters;
+  final List<CourseIllustration> illustrations;
+  final CoursePracticeConfiguration practice;
+  final CourseRewardConfiguration rewards;
+  final Map<String, ContentAudioCue> audioResources;
+  final List<RewardDefinition> rewardDefinitions;
 }
 
 final class CourseCatalogDocument {
@@ -415,16 +588,22 @@ final class CourseCatalogDocument {
 
   factory CourseCatalogDocument.fromJson(Map<String, Object?> json) {
     final schemaVersion = json['schemaVersion'];
-    if (schemaVersion != 2) {
+    if (schemaVersion != 2 && schemaVersion != 3 && schemaVersion != 4) {
       throw CourseContentFormatException(
         'Versão de schema não suportada: $schemaVersion.',
       );
     }
 
-    final courses = _requiredObjectList(
-      json,
-      'courses',
-    ).map(Course.fromJson).toList(growable: false);
+    if (schemaVersion == 4) {
+      _requireKeys(json, {'schemaVersion', 'courses'}, 'catálogo');
+    }
+    final courses = _requiredObjectList(json, 'courses')
+        .map(
+          (course) => Course.fromJson(
+            schemaVersion == 4 ? _prepareSchema4Course(course) : course,
+          ),
+        )
+        .toList(growable: false);
     _requireNonEmpty(courses, 'O catálogo precisa ter ao menos um curso.');
     _requireUniqueIds(courses.map((course) => course.id), 'curso');
 
@@ -459,6 +638,46 @@ String _requiredString(Map<String, Object?> json, String key) {
     );
   }
   return value;
+}
+
+int _optionalPercentage(
+  Map<String, Object?> json,
+  String key, {
+  required int defaultValue,
+}) {
+  final value = json[key];
+  if (value == null) return defaultValue;
+  final percentage = value is int
+      ? value
+      : value is String
+      ? int.tryParse(value)
+      : null;
+  if (percentage == null || percentage < 0 || percentage > 100) {
+    throw CourseContentFormatException(
+      'O campo "$key" deve ser um percentual inteiro entre 0 e 100.',
+    );
+  }
+  return percentage;
+}
+
+int _optionalPositiveInteger(
+  Map<String, Object?> json,
+  String key, {
+  required int defaultValue,
+}) {
+  final value = json[key];
+  if (value == null) return defaultValue;
+  final integer = value is int
+      ? value
+      : value is String
+      ? int.tryParse(value)
+      : null;
+  if (integer == null || integer < 1) {
+    throw CourseContentFormatException(
+      'O campo "$key" deve ser um inteiro positivo.',
+    );
+  }
+  return integer;
 }
 
 String? _optionalString(Map<String, Object?> json, String key) {

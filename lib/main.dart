@@ -1,3 +1,4 @@
+import 'package:digitavox_criancas/src/data/persistence/local_profile_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'src/app.dart';
 import 'src/app_environment.dart';
 import 'src/application/audio/audio_guidance_coordinator.dart';
-import 'src/data/persistence/local_progress_repository.dart';
 import 'src/data/persistence/shared_preferences_progress_store.dart';
 import 'src/infrastructure/audio/audioplayers_guidance_player.dart';
 import 'src/infrastructure/audio/debug_audio_guidance_logger.dart';
@@ -20,11 +20,18 @@ void main() {
     flavor: appFlavor,
   );
 
+  final profileStore = SharedPreferencesProgressStore(
+    storageKey: 'digitavox.profiles',
+  );
+
   runApp(
     DigitavoxApp(
       courseCatalog: createCourseCatalogForEnvironment(environment),
-      progressRepository: LocalProgressRepository(
-        store: SharedPreferencesProgressStore(),
+      profileRepository: LocalProfileRepository(
+        profilesStore: profileStore,
+        progressStoreFor: (profileId) => SharedPreferencesProgressStore(
+          storageKey: 'digitavox.progress.$profileId',
+        ),
       ),
       audioGuidance: AudioGuidanceCoordinator(
         textToSpeechService: PlatformTextToSpeechService(),
@@ -42,6 +49,6 @@ DevelopmentCourseCatalog createCourseCatalogForEnvironment(
 ) => DevelopmentCourseCatalog(
   enabled: environment.exposesTechnicalDemo,
   demoCatalog: AssetCourseCatalog(
-    assetPath: 'assets/content/integration_demo_course.json',
+    assetPath: 'assets/content/exploradores_espaciais.json',
   ),
 );

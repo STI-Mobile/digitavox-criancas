@@ -7,6 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('defaults to Escuro and names the light theme Claro without changing its identifier', () {
+    expect(const AppSettings().themePreference, AppThemePreference.dark);
+    expect(AppThemePreference.standard.label, 'Claro');
+    expect(AppThemePreference.parse('standard'), AppThemePreference.standard);
+  });
   test('resolves the Standard semantic palette', () {
     final theme = DvxAppTheme.resolve(AppThemePreference.standard);
     final tokens = theme.extension<DvxThemeTokens>()!;

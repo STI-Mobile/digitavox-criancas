@@ -25,6 +25,13 @@ final class SfxCue extends AudioCue {
   final String asset;
 }
 
+/// A short system click, optionally repeated to distinguish two outcomes.
+final class ClickCue extends AudioCue {
+  const ClickCue({required super.id, this.doubleClick = false});
+
+  final bool doubleClick;
+}
+
 final class MusicCue extends AudioCue {
   const MusicCue({required super.id, required this.asset});
 

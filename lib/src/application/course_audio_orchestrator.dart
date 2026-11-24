@@ -22,29 +22,51 @@ final class CourseAudioOrchestrator {
   ) {
     final declaredCues = configuration?.cuesFor(event);
     if (declaredCues == null || declaredCues.isEmpty) {
-      return const <AudioCue>[];
+      return switch (event) {
+        CourseAudioEvent.correctInput => const [ClickCue(id: 'input-correct')],
+        CourseAudioEvent.incorrectInput => const [
+          ClickCue(id: 'input-incorrect', doubleClick: true),
+        ],
+        CourseAudioEvent.start ||
+        CourseAudioEvent.completed => const <AudioCue>[],
+      };
     }
 
-    return List<AudioCue>.unmodifiable(
-      declaredCues.map(
-        (cue) => switch (cue.type) {
-          ContentAudioCueType.speech => SpeechCue(
+    return List<AudioCue>.unmodifiable([
+      for (final cue in declaredCues)
+        if (cue.type == ContentAudioCueType.speech)
+          SpeechCue(
             id: cue.id,
             text: cue.text ?? '',
             audioAsset: cue.asset,
             speaker: cue.speaker,
-          ),
-          ContentAudioCueType.sfx => SfxCue(id: cue.id, asset: cue.asset!),
-          ContentAudioCueType.music => MusicCue(id: cue.id, asset: cue.asset!),
-        },
-      ),
-    );
+          )
+        else if (cue.fallback == ContentAudioFallback.systemClick &&
+            cue.asset == null)
+          ClickCue(
+            id: cue.id,
+            doubleClick: event == CourseAudioEvent.incorrectInput,
+          )
+        else if (cue.asset != null)
+          switch (cue.type) {
+            ContentAudioCueType.sfx => SfxCue(id: cue.id, asset: cue.asset!),
+            ContentAudioCueType.music => MusicCue(
+              id: cue.id,
+              asset: cue.asset!,
+            ),
+            ContentAudioCueType.speech => SpeechCue(
+              id: cue.id,
+              text: cue.text ?? '',
+              audioAsset: cue.asset,
+            ),
+          },
+    ]);
   }
 
   bool hasCues(
     CourseAudioConfiguration? configuration,
     CourseAudioEvent event,
-  ) => configuration?.cuesFor(event).isNotEmpty == true;
+  ) => resolve(configuration, event).isNotEmpty;
 
   Future<void> play(
     CourseAudioConfiguration? configuration,
@@ -68,5 +90,18 @@ final class CourseAudioOrchestrator {
   Future<void> cancel() async {
     _logger.log('course_audio_cancelled');
     await _audioGuidance.cancelSequence();
+  }
+
+  Future<void> speakText(String text) async {
+    final message = text.trim();
+    if (message.isEmpty) return;
+
+    try {
+      await _audioGuidance.playSequence(<AudioCue>[
+        SpeechCue(id: 'dynamic-narration', text: message),
+      ]);
+    } on AudioGuidanceException {
+      _logger.log('audio_service_unavailable');
+    }
   }
 }
