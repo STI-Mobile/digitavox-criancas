@@ -1,6 +1,6 @@
 import '../../domain/content/course_catalog.dart';
 
-/// Makes technical fixtures explicit and excludes them from release catalogs.
+/// Makes technical fixtures explicit and excludes them from production releases.
 final class DevelopmentCourseCatalog implements CourseCatalog {
   const DevelopmentCourseCatalog({
     required this.demoCatalog,

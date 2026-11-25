@@ -8,6 +8,25 @@ Os testes são organizados por intenção:
 
 Use `make test` no ciclo normal e `make check` antes de concluir. `make check` executa formatação, análise com avisos fatais e testes de unidade/widgets. `make test-integration` exige simulador/emulador ou dispositivo e não integra o job Linux inicial. `make coverage` gera `coverage/lcov.info`; não há meta artificial de cobertura.
 
+## CI e quality gate
+
+O workflow `ci.yml` também funciona como quality gate reutilizável da distribuição
+dev. O job Linux valida formatação, análise, testes unitários/widgets e APK de
+debug; o job macOS executa `make test-ios-tooling` e os testes de integração no
+simulador com flavor dev. O gate não recebe credenciais de distribuição. Os builds
+release e os uploads só começam após os dois jobs passarem; a compilação usada
+pelos testes de integração faz parte do próprio gate.
+
+No Flutter 3.47.2, o SDK isolado do CI recebe um backport oficial que corrige uma
+condição de corrida na descoberta do VM service no simulador. A origem, a licença
+e a condição para remover o ajuste estão em [tool/patches/README.md](../tool/patches/README.md).
+Os testes têm timeout explícito e logs detalhados para diagnosticar falhas reais.
+
+`make test-ios-tooling` usa Ruby/Minitest no macOS para verificar o isolamento de
+bundle ID/profile por flavor e o contrato dos workflows: dependência do gate,
+ausência de secrets nos testes e publicação após o build. Testes manuais de
+VoiceOver, áudio e teclado do core de cursos são independentes da esteira de CI/CD.
+
 ## Conteúdo e configuração
 
 `course_catalog_test.dart` e `course_scene_test.dart` preservam o contrato legado. `course_configuration_test.dart` carrega o JSON real de Exploradores e verifica os oito conjuntos de exercícios, parâmetros do storyboard, Prova unificada, separadores, fórmula de tempo, ajuda, dedos, estrelas e bônus. Mudar uma fala canônica deve atualizar texto e narração resolvidos juntos.
