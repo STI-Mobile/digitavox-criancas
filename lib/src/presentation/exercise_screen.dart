@@ -282,6 +282,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
                 DvxKeyPrompt(
                   value: expected,
                   nextCharacter: _viewModel.expectedCharacter,
+                  inputIndex: _viewModel.inputIndex,
                 ),
                 SizedBox(height: spacing.md),
                 if (_viewModel.totalRepetitions > 1)

@@ -15,6 +15,11 @@ void main() {
       final semantics = tester.ensureSemantics();
       final audio = RecordingAudioGuidance();
       final profiles = FakeProfileRepository();
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
       await tester.pumpWidget(
         DigitavoxApp(
           courseCatalog: const AssetCourseCatalog(

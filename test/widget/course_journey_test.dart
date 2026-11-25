@@ -677,7 +677,7 @@ void main() {
     await tester.tap(activity);
     await tester.pumpAndSettle();
 
-    expect(find.text('ASDFG'), findsOneWidget);
+    expect(find.text('A'), findsOneWidget);
     expect(find.text('Repetição 1 de 3'), findsOneWidget);
   });
 
@@ -1032,6 +1032,9 @@ Future<void> _pumpDemo(
 
   rootBundle.evict('assets/content/demo_course.json');
 
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
   await tester.pumpWidget(
     DigitavoxApp(
       courseCatalog:

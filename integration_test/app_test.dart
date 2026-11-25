@@ -20,6 +20,11 @@ void main() {
   testWidgets(
     'restores a profile and completed exercise after recreating the app',
     (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
       final preferences = SharedPreferencesAsync();
       final previous = <String, String?>{};
       for (final key in [_profilesKey, _progressKey]) {

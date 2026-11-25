@@ -13,6 +13,9 @@ void main() {
     tester,
   ) async {
     final audio = RecordingAudioGuidance();
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       DigitavoxApp(
         courseCatalog: const AssetCourseCatalog(

@@ -76,6 +76,9 @@ void main() {
   });
 
   testWidgets('keeps the key prompt usable with enlarged text', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await tester.pumpWidget(
@@ -86,13 +89,129 @@ void main() {
             AppThemePreference.dark,
           ),
           title: 'Teste',
-          body: const DvxKeyPrompt(value: 'ASDFG', nextCharacter: 'a'),
+          body: const DvxKeyPrompt(
+            value: 'ASDFG',
+            nextCharacter: 'a',
+            inputIndex: 0,
+          ),
         ),
       ),
     );
 
-    expect(find.text('ASDFG'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Exercício: ASDFG. Próxima tecla: a.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('grays typed keys and waits for space after the target', (
+    tester,
+  ) async {
+    const courseTheme = NeutralCourseTheme();
+    Widget prompt({required int inputIndex, required String nextCharacter}) =>
+        MaterialApp(
+          theme: DvxAppTheme.resolve(AppThemePreference.standard),
+          home: DvxGameScaffold(
+            courseTheme: courseTheme.resolve(AppThemePreference.standard),
+            title: 'Teste',
+            body: DvxKeyPrompt(
+              value: 'ASDFG',
+              nextCharacter: nextCharacter,
+              inputIndex: inputIndex,
+            ),
+          ),
+        );
+
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(prompt(inputIndex: 1, nextCharacter: 's'));
+    await tester.pumpAndSettle();
+
+    final activeLetters = tester
+        .widgetList<Text>(find.byType(Text))
+        .where((text) => text.data?.length == 1 && 'ASDFG'.contains(text.data!))
+        .toList();
+    expect(activeLetters.first.style!.color, const Color(0xFF757575));
+    expect(activeLetters[1].data, 'S');
+    final activeLines = tester
+        .widgetList<Container>(find.byType(Container))
+        .where((container) => container.constraints?.maxHeight == 5)
+        .toList();
+    expect(
+      (activeLines[1].decoration as BoxDecoration).color,
+      courseTheme.resolve(AppThemePreference.standard).resolvedSuccess,
+    );
+    expect(
+      find.bySemanticsLabel('Exercício: ASDFG. Próxima tecla: s.'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(prompt(inputIndex: 5, nextCharacter: ' '));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widgetList<Text>(find.byType(Text))
+          .where(
+            (text) => text.data?.length == 1 && 'ASDFG'.contains(text.data!),
+          )
+          .every((text) => text.style!.color == const Color(0xFF757575)),
+      isTrue,
+    );
+    expect(
+      tester
+          .widgetList<Container>(find.byType(Container))
+          .where((container) => container.constraints?.maxHeight == 5)
+          .every(
+            (container) =>
+                (container.decoration as BoxDecoration).color ==
+                Colors.transparent,
+          ),
+      isTrue,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Exercício: ASDFG. Próxima tecla: barra de espaço.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('blinks only the active key underline', (tester) async {
+    const courseTheme = NeutralCourseTheme();
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures();
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: DvxAppTheme.resolve(AppThemePreference.standard),
+        home: DvxGameScaffold(
+          courseTheme: courseTheme.resolve(AppThemePreference.standard),
+          title: 'Teste',
+          body: const DvxKeyPrompt(
+            value: 'ASDFG',
+            nextCharacter: 'a',
+            inputIndex: 0,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final underline = find.byKey(
+      const ValueKey<String>('active-key-underline'),
+    );
+    final initialOpacity = tester
+        .widget<FadeTransition>(underline)
+        .opacity
+        .value;
+    await tester.pump(const Duration(milliseconds: 300));
+    final nextOpacity = tester.widget<FadeTransition>(underline).opacity.value;
+
+    expect(nextOpacity, isNot(initialOpacity));
   });
 
   testWidgets('removes decorative stars in High Contrast', (tester) async {

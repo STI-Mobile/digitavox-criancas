@@ -301,24 +301,111 @@ final class DvxProgressIndicator extends StatelessWidget {
   }
 }
 
-final class DvxKeyPrompt extends StatelessWidget {
+final class DvxKeyPrompt extends StatefulWidget {
   const DvxKeyPrompt({
     required this.value,
     required this.nextCharacter,
+    required this.inputIndex,
     super.key,
   });
 
   final String value;
   final String nextCharacter;
+  final int inputIndex;
+
+  @override
+  State<DvxKeyPrompt> createState() => _DvxKeyPromptState();
+}
+
+final class _DvxKeyPromptState extends State<DvxKeyPrompt>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _blinkController;
+  late final Animation<double> _blinkOpacity;
+
+  bool get _showUnderline =>
+      widget.inputIndex < widget.value.runes.length &&
+      widget.nextCharacter != ' ';
+
+  @override
+  void initState() {
+    super.initState();
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _blinkOpacity = Tween<double>(begin: 0.15, end: 1).animate(
+      CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateBlinking();
+  }
+
+  @override
+  void didUpdateWidget(covariant DvxKeyPrompt oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateBlinking();
+  }
+
+  void _updateBlinking() {
+    final shouldBlink =
+        _showUnderline && !MediaQuery.disableAnimationsOf(context);
+    if (shouldBlink) {
+      if (!_blinkController.isAnimating) {
+        _blinkController.repeat(reverse: true);
+      }
+    } else {
+      _blinkController
+        ..stop()
+        ..value = 1;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final spacing = context.courseTheme.spacing;
     final radius = context.courseTheme.radius;
-    final shortTarget = value.runes.length <= 5;
+    final courseTheme = context.courseTheme;
+    final value = widget.value;
+    final nextCharacter = widget.nextCharacter;
+    final inputIndex = widget.inputIndex;
+    final characters = value.runes.toList(growable: false);
+    final showUnderline = _showUnderline;
+    final typedColor =
+        ThemeData.estimateBrightnessForColor(courseTheme.background) ==
+            Brightness.dark
+        ? const Color(0xFFBDBDBD)
+        : const Color(0xFF757575);
+    final textStyle =
+        (characters.length <= 5
+            ? Theme.of(context).textTheme.displayLarge
+            : Theme.of(context).textTheme.headlineMedium) ??
+        DefaultTextStyle.of(context).style;
+    final targetTextStyle = textStyle.copyWith(color: scheme.primary);
+    Widget underlineFor(int index) {
+      final isActive = showUnderline && index == inputIndex;
+      final line = Container(
+        height: 5,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: isActive ? courseTheme.resolvedSuccess : Colors.transparent,
+        ),
+      );
+      if (!isActive) return line;
+      return FadeTransition(
+        key: const ValueKey<String>('active-key-underline'),
+        opacity: _blinkOpacity,
+        child: line,
+      );
+    }
+
     return Semantics(
-      label: 'Exercício: $value. Próxima tecla: $nextCharacter.',
+      label:
+          'Exercício: $value. Próxima tecla: ${nextCharacter == ' ' ? 'barra de espaço' : nextCharacter}.',
       child: ExcludeSemantics(
         child: Container(
           constraints: const BoxConstraints(minHeight: 132),
@@ -344,18 +431,62 @@ final class DvxKeyPrompt extends StatelessWidget {
                   ],
           ),
           alignment: Alignment.center,
-          child: Text(
-            value.toUpperCase(),
-            style:
-                (shortTarget
-                        ? Theme.of(context).textTheme.displayLarge
-                        : Theme.of(context).textTheme.headlineMedium)
-                    ?.copyWith(color: scheme.primary),
-            textAlign: TextAlign.center,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.08),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            ),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  for (var index = 0; index < characters.length; index++)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.bottom,
+                      child: IntrinsicWidth(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              String.fromCharCode(characters[index])
+                                  .toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: textStyle.copyWith(
+                                color: index < inputIndex
+                                    ? typedColor
+                                    : scheme.primary,
+                              ),
+                            ),
+                            underlineFor(index),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              key: ValueKey<int>(inputIndex),
+              textAlign: TextAlign.center,
+              style: targetTextStyle,
+            ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _blinkController.dispose();
+    super.dispose();
   }
 }
 
