@@ -8,7 +8,9 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 
 ## Brand
 
-`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets usam preferencialmente `ColorScheme` ou `DvxThemeTokens`, nunca essas constantes diretamente. Open Sans é empacotada como asset local, acompanhada da licença OFL.
+`BrandColors` é a única fonte das cores institucionais: USP Blue `#1094AB`, USP Light Blue `#64C4D2` e USP Yellow `#FCB421`. Widgets não usam essas constantes diretamente. Open Sans é a fonte do texto corrido; Fredoka é usada nos títulos e nomes de missão via estilos semânticos de título e headline do `TextTheme`. Ambas são empacotadas como assets locais com suas licenças OFL.
+
+Os SVGs mestres dos ícones do app ficam em [`assets/icons`](../assets/icons). A arte padrão gera os PNGs do catálogo iOS `AppIcon` e dos `mipmap` Android em `src/main/res`. A arte com a faixa DEV gera os PNGs de `AppIcon-dev` e de `src/dev/res`, os caminhos que a configuração de flavors usa para `dev`. Ao atualizar a arte, rasterize cada SVG separadamente, mantendo a proporção quadrada e as dimensões declaradas no catálogo iOS e em cada densidade Android.
 
 ## Tema do aplicativo
 
@@ -18,7 +20,9 @@ Brand Digitavox/USP + tema do aplicativo + tema do curso
 - `dark`: tema **Escuro**, padrão inicial, com superfícies escuras e interação cyan;
 - `highContrast`: preto, branco, cyan e foco amarelo, com bordas reforçadas.
 
-`ColorScheme` representa conceitos Material. `DvxThemeTokens`, uma `ThemeExtension`, contém accent, success, focus, texto secundário, surface variant e espessuras semânticas. `DvxSpacing` e `DvxRadius` evitam medidas repetidas. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
+`DvxAppTheme.resolve` define a aparência das superfícies globais, como seleção de perfil e seleção de curso. Dentro de uma jornada, `DvxGameScaffold` aplica a paleta e as formas do tema do curso ao `ColorScheme`, aos textos, cartões, botões e indicadores Material. `DvxCourseThemeData` também contém escalas próprias de espaçamento e raio; componentes da jornada leem esses valores do tema resolvido, permitindo personalização por curso. O curso monocromático, por exemplo, usa medidas distintas.
+
+`DvxAccessibilityTokens` contém somente métricas e estado globais de acessibilidade: espessura de foco, borda reforçada e modo de alto contraste. Eles permanecem ativos ao aplicar a paleta do curso. A escala tipográfica semântica usa o `TextTheme`; o prompt de tecla escolhe `displayLarge` ou `headlineMedium` e permite text scaling.
 
 A preferência `AppThemePreference` integra `AppSettings`. Novos perfis e a seleção de perfis começam no tema Escuro; escolhas já salvas são respeitadas. O tema Claro mantém o identificador persistido `standard`, sem alteração do formato do documento. `CourseCatalogViewModel.updateThemePreference` atualiza o mesmo `ProgressRepository` utilizado pelo progresso. O documento de progresso está no schema 4; documentos 1, 2 e 3 são migrados ao carregar (`highContrastEnabled` do schema 1 vira a preferência correspondente). A versão do progresso é independente da versão do catálogo de conteúdo.
 
@@ -36,6 +40,8 @@ O domínio guarda apenas o identificador. `DvxCourseThemes`, na apresentação, 
 
 - `DvxGameScaffold`: cabeçalho, fundo do curso e decoração excluída da semântica;
 - `DvxGameCard`: superfície e espaçamento consistentes;
+- `DvxNarrationControls`: controles acessíveis para repetir ou parar a narração de uma cena;
+- `CharacterLine`: personagem, texto e cues de uma fala apresentados juntos em uma cena;
 - `DvxKeyPrompt`: tecla ou sequência responsiva;
 - `DvxFeedback`: espera, acerto, erro e conclusão com cor, ícone, texto e live region;
 - `DvxProgressIndicator`: progresso textual e visual;
@@ -48,6 +54,7 @@ Botões e itens do seletor continuam nativos. Os anúncios observam o foco sem c
 
 O fluxo usa `DvxGameScaffold`, tokens, tema do curso e componentes compartilhados. As diferenças entre fases são de informação e composição, sem duplicar regras do curso:
 
+- Seleção de cursos: quando o catálogo contém mais de um curso, oferece uma lista explícita para escolha; um curso único abre diretamente.
 - Curso: ação principal de começar/continuar, progresso por missões obrigatórias e apresentação expansível.
 - Módulo: mapa/lista de missões com estados textuais de disponível, em andamento, concluída e bloqueada; bônus separado do progresso obrigatório.
 - Apresentação da missão: ilustração local, narrativa de Stella e instrução de ZERO-1; uma ação principal de começar/continuar. A lista de atividades é secundária.

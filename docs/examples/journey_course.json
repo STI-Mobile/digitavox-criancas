@@ -29,7 +29,9 @@
             {
               "id": "journey-start",
               "type": "speech",
-              "asset": "assets/audio/demo/welcome.wav"
+              "text": "Bem-vindo à jornada de demonstração.",
+              "asset": "assets/audio/demo/welcome.wav",
+              "fallback": "text"
             }
           ]
         }
@@ -45,7 +47,9 @@
                 {
                   "id": "preparation-start",
                   "type": "speech",
-                  "asset": "assets/audio/demo/preparation.wav"
+                  "text": "Vamos conhecer o teclado.",
+                  "asset": "assets/audio/demo/preparation.wav",
+                  "fallback": "text"
                 }
               ]
             }
@@ -61,7 +65,9 @@
                     {
                       "id": "sensors-start",
                       "type": "speech",
-                      "asset": "assets/audio/demo/sensors.wav"
+                      "text": "Encontre as marcas das teclas F e J.",
+                      "asset": "assets/audio/demo/sensors.wav",
+                      "fallback": "text"
                     }
                   ]
                 }
@@ -80,7 +86,9 @@
                         {
                           "id": "key-f-start",
                           "type": "speech",
-                          "asset": "assets/audio/demo/key_f.wav"
+                          "text": "Pressione F.",
+                          "asset": "assets/audio/demo/key_f.wav",
+                          "fallback": "text"
                         }
                       ]
                     }
@@ -107,7 +115,9 @@
                         {
                           "id": "key-j-start",
                           "type": "speech",
-                          "asset": "assets/audio/demo/key_j.wav"
+                          "text": "Pressione J.",
+                          "asset": "assets/audio/demo/key_j.wav",
+                          "fallback": "text"
                         }
                       ]
                     }
@@ -125,7 +135,9 @@
                     {
                       "id": "left-hand-start",
                       "type": "speech",
-                      "asset": "assets/audio/demo/left_hand.wav"
+                      "text": "Vamos encontrar a tecla A.",
+                      "asset": "assets/audio/demo/left_hand.wav",
+                      "fallback": "text"
                     }
                   ]
                 }
@@ -142,7 +154,9 @@
                       {
                         "id": "key-a-start",
                         "type": "speech",
-                        "asset": "assets/audio/demo/instruction_a_demo.wav"
+                        "text": "Pressione A.",
+                        "asset": "assets/audio/demo/instruction_a_demo.wav",
+                        "fallback": "text"
                       }
                     ]
                   }

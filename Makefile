@@ -1,4 +1,4 @@
-.PHONY: bootstrap setup format format-check analyze lint test test-unit test-widget test-integration coverage check build-android build-android-dev build-ios-dev setup-ios ios-sign ios-prepare-signing ios-build ios-testflight test-ios-tooling
+.PHONY: bootstrap setup format format-check analyze lint test test-unit test-widget test-integration coverage check build-android build-android-dev build-ios-dev setup-ios ios-sign ios-prepare-signing ios-build ios-testflight test-ios-tooling run
 
 BUILD_NUMBER ?=
 BUILD_NUMBER_ARGUMENT = $(if $(BUILD_NUMBER),--build-number=$(BUILD_NUMBER))
@@ -64,3 +64,6 @@ ios-testflight:
 
 test-ios-tooling:
 	ruby -e 'Dir["test/tool/*_test.rb"].sort.each { |path| require_relative path }'
+
+run:
+	flutter run --flavor dev

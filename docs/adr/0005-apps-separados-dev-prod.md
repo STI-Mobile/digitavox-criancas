@@ -26,7 +26,7 @@ Gerar dois apps a partir do mesmo código, com flavors `dev` e `prod` no Android
 
 O flavor é a única fonte do ambiente. `AppEnvironment` passa a ser derivado da constante `appFlavor` do Flutter, e `APP_ENV` deixa de existir. Builds em modo debug continuam expondo o catálogo técnico em qualquer flavor. Os builds nativos recusam flavors inexistentes, e um build release com flavor ausente ou desconhecido falha na inicialização em vez de assumir um ambiente. O `pubspec.yaml` declara `dev` como `default-flavor`; produção exige `--flavor prod` explícito.
 
-O nome exibido do app `dev` contém o termo "Dev" em texto, porque testers cegos distinguem os apps pelo nome anunciado por VoiceOver e TalkBack. O ícone do app `dev` recebe uma faixa com o texto "DEV" para facilitar a distinção visual, sem substituir o nome. O ícone `dev` é derivado do ícone de produção e deve ser regenerado quando este mudar. O aviso DEMO e a sua semântica continuam presentes no catálogo técnico.
+O nome exibido do app `dev` contém o termo "Dev" em texto, porque testers cegos distinguem os apps pelo nome anunciado por VoiceOver e TalkBack. O ícone do app `dev` recebe uma faixa com o texto "DEV" para facilitar a distinção visual, sem substituir o nome. A arte do ícone `dev` é mantida em SVG ao lado da arte de produção e deve acompanhar suas mudanças. O aviso DEMO e a sua semântica continuam presentes no catálogo técnico.
 
 ### Distribuição
 

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/progress/student_progress.dart';
 import '../../keyboard_navigation.dart';
 import '../course_theme/course_theme.dart';
-import '../tokens/dvx_tokens.dart';
+import '../tokens/accessibility_tokens.dart';
 
 final class DvxGameScaffold extends StatelessWidget {
   const DvxGameScaffold({
@@ -26,23 +26,156 @@ final class DvxGameScaffold extends StatelessWidget {
   final Widget? bottomNavigationBar;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: courseTheme.background,
-    bottomNavigationBar: bottomNavigationBar,
-    appBar: AppBar(
-      backgroundColor: courseTheme.background,
-      leading: leading,
-      title: Text(title),
-      actions: actions,
-    ),
-    body: Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(child: _CourseBackdrop(theme: courseTheme)),
-        SafeArea(child: body),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final appTheme = Theme.of(context);
+    final accessibility = appTheme.extension<DvxAccessibilityTokens>()!;
+    final radius = courseTheme.radius;
+    final textTheme = appTheme.textTheme.apply(
+      bodyColor: courseTheme.foreground,
+      displayColor: courseTheme.foreground,
+    );
+    final scheme = appTheme.colorScheme.copyWith(
+      brightness: ThemeData.estimateBrightnessForColor(courseTheme.background),
+      primary: courseTheme.resolvedPrimary,
+      onPrimary: courseTheme.onPrimary,
+      secondary: courseTheme.decorativeSecondary,
+      onSecondary: courseTheme.onSecondary,
+      error: courseTheme.resolvedError,
+      onError: courseTheme.onError,
+      surface: courseTheme.resolvedSurface,
+      onSurface: courseTheme.foreground,
+      tertiary: courseTheme.reward,
+      onTertiary: courseTheme.onReward,
+      outline: courseTheme.resolvedOutline,
+      outlineVariant: courseTheme.decorativePrimary,
+    );
+    final focusSide = WidgetStateProperty.resolveWith<BorderSide?>((states) {
+      if (states.contains(WidgetState.focused)) {
+        return BorderSide(
+          color: courseTheme.resolvedFocus,
+          width: accessibility.focusWidth,
+        );
+      }
+      return null;
+    });
+    final outlinedSide = WidgetStateProperty.resolveWith<BorderSide>((states) {
+      if (states.contains(WidgetState.focused)) {
+        return BorderSide(
+          color: courseTheme.resolvedFocus,
+          width: accessibility.focusWidth,
+        );
+      }
+      return BorderSide(
+        color: courseTheme.resolvedOutline,
+        width: accessibility.highContrast ? accessibility.borderWidth : 1.5,
+      );
+    });
+    final scopedTheme = appTheme.copyWith(
+      brightness: scheme.brightness,
+      colorScheme: scheme,
+      textTheme: textTheme,
+      scaffoldBackgroundColor: courseTheme.background,
+      canvasColor: courseTheme.background,
+      focusColor: courseTheme.resolvedFocus,
+      hoverColor: courseTheme.resolvedFocus.withAlpha(20),
+      highlightColor: courseTheme.resolvedFocus.withAlpha(24),
+      splashColor: courseTheme.resolvedFocus.withAlpha(28),
+      iconTheme: appTheme.iconTheme.copyWith(color: courseTheme.foreground),
+      primaryIconTheme: appTheme.primaryIconTheme.copyWith(
+        color: courseTheme.foreground,
+      ),
+      appBarTheme: appTheme.appBarTheme.copyWith(
+        backgroundColor: courseTheme.background,
+        foregroundColor: courseTheme.foreground,
+      ),
+      cardTheme: appTheme.cardTheme.copyWith(
+        color: courseTheme.resolvedSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius.md),
+          side:
+              accessibility.highContrast ||
+                  courseTheme.resolvedSurface == courseTheme.background
+              ? BorderSide(
+                  color: courseTheme.resolvedOutline,
+                  width: accessibility.highContrast
+                      ? accessibility.borderWidth
+                      : 1,
+                )
+              : BorderSide.none,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: courseTheme.onPrimary,
+          backgroundColor: courseTheme.resolvedPrimary,
+          minimumSize: const Size.fromHeight(56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius.md),
+          ),
+        ).copyWith(side: focusSide),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: courseTheme.resolvedPrimary,
+          minimumSize: const Size(48, 56),
+          side: BorderSide(
+            color: courseTheme.resolvedOutline,
+            width: accessibility.highContrast ? accessibility.borderWidth : 1.5,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius.md),
+          ),
+        ).copyWith(side: outlinedSide),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: courseTheme.resolvedPrimary,
+          minimumSize: const Size(48, 48),
+        ).copyWith(side: focusSide),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: courseTheme.resolvedPrimary,
+        linearTrackColor: courseTheme.resolvedSurface,
+      ),
+      popupMenuTheme: appTheme.popupMenuTheme.copyWith(
+        color: courseTheme.resolvedSurface,
+        textStyle: textTheme.bodyMedium,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius.md),
+        ),
+      ),
+      dialogTheme: appTheme.dialogTheme.copyWith(
+        backgroundColor: courseTheme.resolvedSurface,
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyMedium,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius.md),
+        ),
+      ),
+      extensions: <ThemeExtension<dynamic>>[accessibility, courseTheme],
+    );
+
+    return Theme(
+      data: scopedTheme,
+      child: Scaffold(
+        backgroundColor: courseTheme.background,
+        bottomNavigationBar: bottomNavigationBar,
+        appBar: AppBar(
+          backgroundColor: courseTheme.background,
+          leading: leading,
+          title: Text(title),
+          actions: actions,
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(child: _CourseBackdrop(theme: courseTheme)),
+            SafeArea(child: body),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 final class _CourseBackdrop extends StatelessWidget {
@@ -54,30 +187,9 @@ final class _CourseBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     if (theme.reduceDecoration) return const SizedBox.shrink();
     return ExcludeSemantics(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [theme.background, theme.decorativePrimary],
-          ),
-        ),
-        child: Stack(
-          children: [
-            _star(const Alignment(-0.84, -0.88), 5),
-            _star(const Alignment(0.76, -0.72), 4),
-            _star(const Alignment(-0.66, 0.16), 3),
-            _star(const Alignment(0.88, 0.52), 5),
-          ],
-        ),
-      ),
+      child: DecoratedBox(decoration: BoxDecoration(color: theme.background)),
     );
   }
-
-  Widget _star(Alignment alignment, double size) => Align(
-    alignment: alignment,
-    child: Icon(Icons.star, size: size, color: theme.reward.withAlpha(150)),
-  );
 }
 
 final class DvxGameCard extends StatelessWidget {
@@ -90,10 +202,54 @@ final class DvxGameCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     margin: EdgeInsets.zero,
     child: Padding(
-      padding: padding ?? const EdgeInsets.all(DvxSpacing.md),
+      padding: padding ?? EdgeInsets.all(context.courseTheme.spacing.md),
       child: child,
     ),
   );
+}
+
+final class DvxNarrationControls extends StatelessWidget {
+  const DvxNarrationControls({
+    required this.canReplay,
+    required this.onReplay,
+    required this.onStop,
+    super.key,
+  });
+
+  final bool canReplay;
+  final VoidCallback onReplay;
+  final VoidCallback onStop;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!canReplay) return const SizedBox.shrink();
+
+    final spacing = context.courseTheme.spacing;
+    return Padding(
+      padding: EdgeInsets.only(bottom: spacing.md),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: spacing.sm,
+        children: [
+          KeyboardNavigationLabel(
+            label: 'Ouvir apresentação',
+            child: OutlinedButton.icon(
+              onPressed: onReplay,
+              icon: const Icon(Icons.volume_up_outlined),
+              label: const Text('Ouvir apresentação'),
+            ),
+          ),
+          KeyboardNavigationLabel(
+            label: 'Parar áudio',
+            child: TextButton(
+              onPressed: onStop,
+              child: const Text('Parar áudio'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 final class DvxStars extends StatelessWidget {
@@ -111,7 +267,7 @@ final class DvxStars extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.star_rounded, color: color),
-          const SizedBox(width: DvxSpacing.xs),
+          SizedBox(width: context.courseTheme.spacing.xs),
           Text('$count', style: Theme.of(context).textTheme.titleLarge),
         ],
       ),
@@ -137,7 +293,7 @@ final class DvxProgressIndicator extends StatelessWidget {
       value: '${(value * 100).round()} por cento',
       child: ExcludeSemantics(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(DvxRadius.sm),
+          borderRadius: BorderRadius.circular(context.courseTheme.radius.sm),
           child: LinearProgressIndicator(value: value, minHeight: 12),
         ),
       ),
@@ -158,24 +314,26 @@ final class DvxKeyPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final spacing = context.courseTheme.spacing;
+    final radius = context.courseTheme.radius;
     final shortTarget = value.runes.length <= 5;
     return Semantics(
       label: 'Exercício: $value. Próxima tecla: $nextCharacter.',
       child: ExcludeSemantics(
         child: Container(
           constraints: const BoxConstraints(minHeight: 132),
-          padding: const EdgeInsets.symmetric(
-            horizontal: DvxSpacing.lg,
-            vertical: DvxSpacing.md,
+          padding: EdgeInsets.symmetric(
+            horizontal: spacing.lg,
+            vertical: spacing.md,
           ),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(DvxRadius.lg),
+            borderRadius: BorderRadius.circular(radius.lg),
             border: Border.all(
               color: scheme.primary,
-              width: context.dvxTokens.highContrast ? 4 : 2,
+              width: context.accessibilityTokens.highContrast ? 4 : 2,
             ),
-            boxShadow: context.dvxTokens.highContrast
+            boxShadow: context.accessibilityTokens.highContrast
                 ? null
                 : [
                     BoxShadow(
@@ -212,12 +370,20 @@ final class DvxFeedback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final tokens = context.dvxTokens;
+    final courseTheme = context.courseTheme;
+    final spacing = courseTheme.spacing;
+    final radius = courseTheme.radius;
     final (icon, color) = switch (kind) {
       DvxFeedbackKind.waiting => (Icons.keyboard, scheme.primary),
-      DvxFeedbackKind.success => (Icons.check_circle_outline, tokens.success),
-      DvxFeedbackKind.error => (Icons.error_outline, scheme.error),
-      DvxFeedbackKind.completed => (Icons.celebration_outlined, tokens.accent),
+      DvxFeedbackKind.success => (
+        Icons.check_circle_outline,
+        courseTheme.resolvedSuccess,
+      ),
+      DvxFeedbackKind.error => (Icons.error_outline, courseTheme.resolvedError),
+      DvxFeedbackKind.completed => (
+        Icons.celebration_outlined,
+        courseTheme.reward,
+      ),
     };
     return Semantics(
       container: true,
@@ -225,16 +391,19 @@ final class DvxFeedback extends StatelessWidget {
       label: message,
       child: ExcludeSemantics(
         child: Container(
-          padding: const EdgeInsets.all(DvxSpacing.md),
+          padding: EdgeInsets.all(spacing.md),
           decoration: BoxDecoration(
-            color: tokens.surfaceVariant,
-            border: Border.all(color: color, width: tokens.borderWidth + 1),
-            borderRadius: BorderRadius.circular(DvxRadius.md),
+            color: courseTheme.resolvedSurface,
+            border: Border.all(
+              color: color,
+              width: context.accessibilityTokens.borderWidth + 1,
+            ),
+            borderRadius: BorderRadius.circular(radius.md),
           ),
           child: Row(
             children: [
               Icon(icon, size: 32, color: color),
-              const SizedBox(width: DvxSpacing.sm),
+              SizedBox(width: spacing.sm),
               Expanded(child: Text(message)),
             ],
           ),
@@ -278,7 +447,7 @@ final class DvxThemeSelector extends StatelessWidget {
                         ? Icons.radio_button_checked
                         : Icons.radio_button_off,
                   ),
-                  const SizedBox(width: DvxSpacing.sm),
+                  SizedBox(width: context.courseTheme.spacing.sm),
                   Expanded(child: Text(value.label)),
                 ],
               ),

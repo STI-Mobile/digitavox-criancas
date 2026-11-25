@@ -11,6 +11,7 @@ import 'src/infrastructure/audio/audioplayers_guidance_player.dart';
 import 'src/infrastructure/audio/debug_audio_guidance_logger.dart';
 import 'src/infrastructure/audio/platform_text_to_speech_service.dart';
 import 'src/infrastructure/content/asset_course_catalog.dart';
+import 'src/infrastructure/content/combined_course_catalog.dart';
 import 'src/infrastructure/content/development_course_catalog.dart';
 
 void main() {
@@ -48,7 +49,11 @@ DevelopmentCourseCatalog createCourseCatalogForEnvironment(
   AppEnvironment environment,
 ) => DevelopmentCourseCatalog(
   enabled: environment.exposesTechnicalDemo,
-  demoCatalog: AssetCourseCatalog(
-    assetPath: 'assets/content/exploradores_espaciais.json',
+  demoCatalog: CombinedCourseCatalog(
+    catalogs: [
+      AssetCourseCatalog(
+        assetPath: 'assets/content/exploradores_espaciais.json',
+      ),
+    ],
   ),
 );

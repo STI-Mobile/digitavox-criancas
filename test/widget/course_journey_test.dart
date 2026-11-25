@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' show Tristate;
 
 import 'package:digitavox_criancas/src/app.dart';
@@ -7,8 +9,10 @@ import 'package:digitavox_criancas/src/data/persistence/local_progress_repositor
 import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:digitavox_criancas/src/domain/progress/student_progress.dart';
 import 'package:digitavox_criancas/src/infrastructure/content/asset_course_catalog.dart';
-import 'package:digitavox_criancas/src/presentation/design_system/tokens/dvx_tokens.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/components/dvx_game_components.dart';
+import 'package:digitavox_criancas/src/presentation/design_system/tokens/accessibility_tokens.dart';
 import 'package:digitavox_criancas/src/presentation/keyboard_navigation.dart';
+import 'package:digitavox_criancas/src/presentation/scene_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +22,143 @@ import '../support/journey_fixture.dart';
 import '../support/recording_audio_guidance.dart';
 
 void main() {
+  testWidgets(
+    'character lines keep speaker, text and narration cues together',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      final json = journeyJson();
+      final course = (json['courses'] as List).single as Map<String, Object?>;
+      course['isDemo'] = false;
+      final scene = course['scene'] as Map<String, Object?>;
+      scene['instruction'] = 'Vamos explorar a jornada.';
+      scene['narrationCues'] = [
+        {
+          'id': 'journey-start',
+          'type': 'speech',
+          'text': 'Bem-vindo à jornada de demonstração.',
+          'asset': 'assets/audio/demo/welcome.wav',
+          'speaker': 'aurora',
+          'fallback': 'text',
+        },
+      ];
+      scene['instructionCues'] = [
+        {
+          'id': 'journey-instruction',
+          'type': 'speech',
+          'text': 'Vamos explorar a jornada.',
+          'asset': 'assets/audio/demo/preparation.wav',
+          'speaker': 'explorer',
+          'fallback': 'text',
+        },
+      ];
+
+      await _pumpDemo(
+        tester,
+        repository: _createRepository(),
+        audio: audio,
+        catalog: JourneyFixtureCatalog(json),
+      );
+
+      expect(find.byType(SceneScreen), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'Aurora diz: Bem-vindo à jornada de demonstração.',
+        ),
+        findsOneWidget,
+      );
+      expect(audio.playedCues.whereType<SpeechCue>().last.id, 'journey-start');
+
+      await tester.ensureVisible(find.text('Continuar'));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.bySemanticsLabel('Explorador diz: Vamos explorar a jornada.'),
+        findsOneWidget,
+      );
+      expect(
+        audio.playedCues.whereType<SpeechCue>().last.id,
+        'journey-instruction',
+      );
+
+      await tester.ensureVisible(find.text('Continuar'));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Começar curso'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'course introduction shows Stella then ZERO-1 before the module list',
+    (tester) async {
+      final audio = RecordingAudioGuidance();
+      await _pumpDemo(
+        tester,
+        repository: _createRepository(),
+        catalog: JourneyFixtureCatalog(
+          jsonDecode(
+            File('assets/content/exploradores_espaciais.json')
+                .readAsStringSync(),
+          ) as Map<String, Object?>,
+        ),
+        audio: audio,
+      );
+
+      expect(
+        find.textContaining('Uma tempestade solar varreu a galáxia'),
+        findsOneWidget,
+      );
+      final stellaIllustration = find.bySemanticsLabel(
+        'Aurora em emergência. Apresentação Stella.',
+      );
+      expect(stellaIllustration, findsOneWidget);
+      expect(
+        tester.getSemantics(stellaIllustration).flagsCollection.isImage,
+        isTrue,
+      );
+      expect(
+        tester.widget<Image>(find.byType(Image)).image,
+        isA<AssetImage>().having(
+          (image) => image.assetName,
+          'assetName',
+          'assets/images/space/module1/cenas-16x9/c0_f1_stella.jpg',
+        ),
+      );
+      expect(find.textContaining('Bip! Zero Um na escuta'), findsNothing);
+      expect(audio.playedCues.whereType<SpeechCue>().single.id, 'm1c0-stella');
+
+      await tester.ensureVisible(find.text('Continuar'));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Uma tempestade solar varreu a galáxia'),
+        findsNothing,
+      );
+      expect(find.textContaining('Bip! Zero Um na escuta'), findsOneWidget);
+      expect(audio.playedCues.whereType<SpeechCue>().last.id, 'm1c0-zero1');
+      expect(
+        find.bySemanticsLabel('Aurora em emergência. Apresentação Zero-1.'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Image>(find.byType(Image)).image,
+        isA<AssetImage>().having(
+          (image) => image.assetName,
+          'assetName',
+          'assets/images/space/module1/cenas-16x9/c0_f2_zero1.jpg',
+        ),
+      );
+
+      await tester.ensureVisible(find.text('Continuar'));
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Módulo 1 · A Nave Adormecida'), findsOneWidget);
+      expect(find.text('Continuar'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'keyboard menus cycle, announce selection and activate with Enter',
     (tester) async {
@@ -41,10 +182,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Alterar tema visual. Escuro');
 
-      // Wrap from the first toolbar control to the last module and back.
+      // Wrap from the first toolbar control to the course-introduction action.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
-      expect(_focusedLabel(), startsWith('Navegação'));
+      expect(_focusedLabel(), 'Rever introdução do curso');
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'Alterar tema visual. Escuro');
@@ -217,14 +358,7 @@ void main() {
     'restores click feedback during typing and keeps it off menu actions',
     (tester) async {
       final audio = RecordingAudioGuidance();
-      await _pumpDemo(
-        tester,
-        repository: _createRepository(),
-        audio: audio,
-        catalog: const AssetCourseCatalog(
-          assetPath: 'assets/content/exploradores_espaciais.json',
-        ),
-      );
+      await _pumpDemo(tester, repository: _createRepository(), audio: audio);
       await _startCourse(tester);
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
@@ -357,6 +491,7 @@ void main() {
         find.bySemanticsLabel('Você ganhou 3 de 3 estrelas.'),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.star), findsNWidgets(6));
       expect(find.textContaining('Precisão 100'), findsNothing);
       await tester.ensureVisible(find.text('Ouvir diário de bordo'));
       await tester.tap(find.text('Ouvir diário de bordo'));
@@ -501,7 +636,20 @@ void main() {
       final course = (json['courses'] as List).single as Map<String, Object?>;
       final module = (course['modules'] as List).first as Map<String, Object?>;
       final lesson = (module['lessons'] as List).first as Map<String, Object?>;
-      (lesson['scene'] as Map<String, Object?>)['characterId'] = 'explorer';
+      final scene = lesson['scene'] as Map<String, Object?>;
+      scene['characterId'] = 'explorer';
+      scene['audioGuidance'] = {
+        'start': [
+          {
+            'id': 'lesson-start',
+            'type': 'speech',
+            'text': 'Encontre as marcas das teclas F e J.',
+            'speaker': 'explorer',
+            'asset': 'assets/audio/demo/sensors.wav',
+            'fallback': 'text',
+          },
+        ],
+      };
       await _pumpDemo(
         tester,
         repository: _createRepository(),
@@ -512,7 +660,12 @@ void main() {
         (audio.playedCues.last as SpeechCue).audioAsset,
         'assets/audio/demo/welcome.wav',
       );
-      expect(find.text('Bem-vindo à jornada de demonstração.'), findsOneWidget);
+      expect(find.byType(DvxNarrationControls), findsNothing);
+      await tester.ensureVisible(find.text('Começar curso'));
+      await tester.tap(find.text('Começar curso'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DvxNarrationControls), findsOneWidget);
+      expect((audio.playedCues.last as SpeechCue).id, 'lesson-start');
       await tester.ensureVisible(find.text('Parar áudio'));
       await tester.tap(find.text('Parar áudio'));
       await tester.pumpAndSettle();
@@ -520,20 +673,15 @@ void main() {
       await tester.ensureVisible(find.text('Ouvir apresentação'));
       await tester.tap(find.text('Ouvir apresentação'));
       await tester.pumpAndSettle();
-      expect(
-        (audio.playedCues.last as SpeechCue).audioAsset,
-        'assets/audio/demo/welcome.wav',
-      );
-      await tester.ensureVisible(find.text('Começar curso'));
-      await tester.tap(find.text('Começar curso'));
-      await tester.pumpAndSettle();
+      expect((audio.playedCues.last as SpeechCue).id, 'lesson-start');
+      expect(find.byType(SceneScreen), findsOneWidget);
       expect(
         find.bySemanticsLabel(
-          'Explorador. Personagem explorador da jornada de demonstração.',
+          'Explorador diz: Encontre as marcas das teclas F e J.',
         ),
         findsOneWidget,
       );
-      expect(find.byType(Image), findsOneWidget);
+      expect(find.byType(Image), findsNothing);
       await tester.ensureVisible(find.text('Começar missão'));
       await tester.tap(find.text('Começar missão'));
       await tester.pumpAndSettle();
@@ -750,7 +898,10 @@ void main() {
 
     context = tester.element(find.text('Digitavox'));
 
-    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
+    expect(
+      Theme.of(context).extension<DvxAccessibilityTokens>()!.highContrast,
+      isTrue,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
@@ -759,11 +910,20 @@ void main() {
 
     context = tester.element(find.text('Digitavox'));
 
-    expect(Theme.of(context).extension<DvxThemeTokens>()!.highContrast, isTrue);
+    expect(
+      Theme.of(context).extension<DvxAccessibilityTokens>()!.highContrast,
+      isTrue,
+    );
   });
 }
 
 Future<void> _startCourse(WidgetTester tester) async {
+  if (find.text('Continuar').evaluate().isNotEmpty) {
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+  }
   await tester.ensureVisible(find.text('Começar curso'));
   await tester.tap(find.text('Começar curso'));
   await tester.pumpAndSettle();

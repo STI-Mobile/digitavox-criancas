@@ -237,6 +237,15 @@ final class ContentScene {
   final List<ContentAudioCue> instructionCues;
 }
 
+final class ContentPostScene {
+  const ContentPostScene({required this.illustrationId});
+
+  factory ContentPostScene.fromJson(Map<String, Object?> json) =>
+      ContentPostScene(illustrationId: _requiredString(json, 'illustrationId'));
+
+  final String illustrationId;
+}
+
 final class CourseCharacter {
   const CourseCharacter({
     required this.id,
@@ -247,14 +256,7 @@ final class CourseCharacter {
 
   factory CourseCharacter.fromJson(Map<String, Object?> json) {
     final asset = _requiredString(json, 'imageAsset');
-    if (!asset.startsWith('assets/images/') ||
-        asset.contains('..') ||
-        asset.contains('\\') ||
-        asset.endsWith('/')) {
-      throw const CourseContentFormatException(
-        'A imagem do personagem deve apontar para um arquivo em assets/images/.',
-      );
-    }
+    _validateImageAsset(asset);
     return CourseCharacter(
       id: _requiredString(json, 'id'),
       name: _requiredString(json, 'name'),
@@ -267,6 +269,17 @@ final class CourseCharacter {
   final String name;
   final String imageAsset;
   final String imageDescription;
+}
+
+void _validateImageAsset(String asset) {
+  if (!asset.startsWith('assets/images/') ||
+      asset.contains('..') ||
+      asset.contains('\\') ||
+      asset.endsWith('/')) {
+    throw const CourseContentFormatException(
+      'A imagem deve apontar para um arquivo em assets/images/.',
+    );
+  }
 }
 
 final class Exercise {
@@ -379,7 +392,8 @@ final class Lesson {
     this.accuracy = 90,
     this.secChar = 0,
     this.audioGuidance,
-    this.scene,
+    this.leadingScene,
+    this.postScene,
     this.prerequisiteLessonIds = const [],
     this.optional = false,
     this.prerequisiteEventId,
@@ -401,7 +415,12 @@ final class Lesson {
       title: _requiredString(json, 'title'),
       exercises: exercises,
       audioGuidance: _courseAudioConfiguration(json),
-      scene: _scene(json),
+      leadingScene: json.containsKey('leadingScene')
+          ? ContentScene.fromJson(_optionalObject(json, 'leadingScene')!)
+          : _scene(json),
+      postScene: json.containsKey('postScene')
+          ? ContentPostScene.fromJson(_optionalObject(json, 'postScene')!)
+          : null,
       accuracy: accuracy,
       secChar: secChar,
       prerequisiteLessonIds: _optionalTextList(json, 'prerequisiteLessonIds'),
@@ -415,14 +434,16 @@ final class Lesson {
   final String title;
   final List<Exercise> exercises;
   final CourseAudioConfiguration? audioGuidance;
-  final ContentScene? scene;
+  final ContentScene? leadingScene;
+  final ContentPostScene? postScene;
   final int accuracy;
   final int secChar;
   final List<String> prerequisiteLessonIds;
   final bool optional;
   final String? prerequisiteEventId;
   final List<String> legacyLessonIds;
-  String get instruction => scene?.instruction ?? '';
+  ContentScene? get scene => leadingScene;
+  String get instruction => leadingScene?.instruction ?? '';
 }
 
 final class CourseModule {
@@ -519,7 +540,7 @@ final class Course {
       for (final module in modules) ...[
         module.scene,
         for (final lesson in module.lessons) ...[
-          lesson.scene,
+          lesson.leadingScene,
           for (final exercise in lesson.exercises) exercise.scene,
         ],
       ],
@@ -528,6 +549,25 @@ final class Course {
       final id = scene?.characterId;
       if (id != null && !characterIds.contains(id)) {
         throw CourseContentFormatException('Personagem desconhecido: $id.');
+      }
+    }
+    final illustrations = _optionalObjects(
+      json,
+      'illustrations',
+    ).map(CourseIllustration.fromJson).toList(growable: false);
+    _requireUniqueIds(
+      illustrations.map((illustration) => illustration.id),
+      'ilustração',
+    );
+    final illustrationIds = illustrations
+        .map((illustration) => illustration.id)
+        .toSet();
+    for (final lesson in modules.expand((module) => module.lessons)) {
+      final illustrationId = lesson.postScene?.illustrationId;
+      if (illustrationId != null && !illustrationIds.contains(illustrationId)) {
+        throw CourseContentFormatException(
+          'Ilustração pós-missão desconhecida: $illustrationId.',
+        );
       }
     }
 
@@ -543,10 +583,7 @@ final class Course {
       audioGuidance: _courseAudioConfiguration(json),
       scene: scene,
       characters: characters,
-      illustrations: _optionalObjects(
-        json,
-        'illustrations',
-      ).map(CourseIllustration.fromJson).toList(growable: false),
+      illustrations: illustrations,
       practice: CoursePracticeConfiguration.fromJson(
         _optionalObject(json, 'practice') ?? const {},
       ),

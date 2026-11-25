@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../application/course_journey_engine.dart';
+import '../domain/content/course_catalog.dart';
 import '../domain/progress/student_progress.dart';
 import 'course_navigation_tile.dart';
 import 'course_scene.dart';
 import 'design_system/components/dvx_game_components.dart';
 import 'design_system/course_theme/course_theme.dart';
-import 'design_system/tokens/dvx_tokens.dart';
 import 'exercise_screen.dart';
 import 'keyboard_navigation.dart';
+import 'scene_screen.dart';
 
-final class CourseJourneyScreen extends StatelessWidget {
+final class CourseJourneyScreen extends StatefulWidget {
   const CourseJourneyScreen({
     required this.engine,
     required this.onThemePreferenceChanged,
@@ -23,16 +24,93 @@ final class CourseJourneyScreen extends StatelessWidget {
   final CourseJourneyEngine engine;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
+  @override
+  State<CourseJourneyScreen> createState() => _CourseJourneyScreenState();
+}
+
+final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
+  bool _courseIntroductionComplete = false;
+
+  CourseJourneyEngine get engine => widget.engine;
+
+  CharacterLine? _characterLineFor(
+    String text,
+    List<ContentAudioCue> cues, {
+    String? fallbackCharacterId,
+  }) {
+    final speechCues = cues
+        .where((cue) => cue.type == ContentAudioCueType.speech)
+        .toList(growable: false);
+    final speaker = speechCues
+        .map((cue) => cue.speaker)
+        .whereType<String>()
+        .firstOrNull;
+    final character = widget.engine.course.characters
+        .where((character) => character.id == (speaker ?? fallbackCharacterId))
+        .firstOrNull;
+    if (character == null) return null;
+
+    return CharacterLine(character: character, text: text, cues: speechCues);
+  }
+
+  List<CharacterLine> _characterLinesFor(ContentScene? scene) {
+    if (scene == null) return const [];
+    final narrationCues = scene.narrationCues.isNotEmpty
+        ? scene.narrationCues
+        : scene.audioGuidance?.start ?? const <ContentAudioCue>[];
+    final firstLine = _characterLineFor(
+      scene.text,
+      narrationCues,
+      fallbackCharacterId: scene.characterId ?? engine.character?.id,
+    );
+    if (firstLine == null) return const [];
+
+    final lines = <CharacterLine>[firstLine];
+    if (scene.instruction.isNotEmpty) {
+      final instructionLine = _characterLineFor(
+        scene.instruction,
+        scene.instructionCues,
+        fallbackCharacterId: firstLine.character.id,
+      );
+      if (instructionLine != null) lines.add(instructionLine);
+    }
+    return lines;
+  }
+
+  Widget _lessonScene() {
+    final scene = engine.scene;
+    if (scene == null) return const SizedBox.shrink();
+    final lines = _characterLinesFor(scene);
+    if (lines.isEmpty) {
+      return CourseScene(
+        scene: scene,
+        character: engine.character,
+        illustration: engine.illustration,
+      );
+    }
+
+    return SceneScreen(
+      key: ValueKey('${engine.locationKey}/scene'),
+      engine: engine,
+      lines: lines,
+      illustration: engine.illustration,
+      onComplete: () {},
+      continuationLabel: 'Continuar para os exercícios',
+      autofocusContinue: false,
+      narrationControls: ({cues}) => _narrationControls(cues: cues),
+    );
+  }
+
   Future<void> _selectTheme(AppThemePreference preference) async {
-    await engine.catalog.updateThemePreference(preference);
-    onThemePreferenceChanged(preference);
+    await widget.engine.catalog.updateThemePreference(preference);
+    widget.onThemePreferenceChanged(preference);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
-        engine.canGoBack) {
-      engine.back();
+        widget.engine.canGoBack) {
+      widget.engine.back();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -40,41 +118,45 @@ final class CourseJourneyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: engine,
+    animation: widget.engine,
     builder: (context, _) => KeyboardNavigation(
-      key: ValueKey('keyboard-${engine.locationKey}'),
-      onNavigate: () => unawaited(engine.stopNarration()),
-      onAnnounce: engine.courseAudio.speakText,
+      key: ValueKey('keyboard-${widget.engine.locationKey}'),
+      onNavigate: () => unawaited(widget.engine.stopNarration()),
+      onAnnounce: widget.engine.courseAudio.speakText,
       child: Focus(
         canRequestFocus: false,
         onKeyEvent: _handleKeyEvent,
         child: PopScope(
-          canPop: !engine.canGoBack,
+          canPop: !widget.engine.canGoBack,
           onPopInvokedWithResult: (didPop, result) {
-            if (!didPop) engine.back();
+            if (!didPop) widget.engine.back();
           },
           child: Builder(
             builder: (context) {
               final preference =
-                  engine.catalog.progress.settings.themePreference;
-              final courseTheme = DvxCourseThemes.resolve(engine.course.themeId)
-                  .resolve(preference);
+                  widget.engine.catalog.progress.settings.themePreference;
+              final courseTheme = DvxCourseThemes.resolve(
+                widget.engine.course.themeId,
+              ).resolve(preference);
               return DvxGameScaffold(
                 courseTheme: courseTheme,
-                bottomNavigationBar: engine.stage == JourneyStage.lesson
-                    ? _missionFooter()
+                bottomNavigationBar: widget.engine.stage == JourneyStage.lesson
+                    ? Builder(
+                        builder: (context) =>
+                            _missionFooter(context) ?? const SizedBox.shrink(),
+                      )
                     : null,
-                leading: engine.canGoBack
+                leading: widget.engine.canGoBack
                     ? KeyboardNavigationLabel(
-                        label: switch (engine.stage) {
+                        label: switch (widget.engine.stage) {
                           JourneyStage.exercise => 'Voltar à missão',
                           JourneyStage.lesson ||
                           JourneyStage.moduleCompletion => 'Voltar ao módulo',
                           _ => 'Voltar ao curso',
                         },
                         child: IconButton(
-                          onPressed: engine.back,
-                          tooltip: switch (engine.stage) {
+                          onPressed: widget.engine.back,
+                          tooltip: switch (widget.engine.stage) {
                             JourneyStage.exercise => 'Voltar à missão',
                             JourneyStage.lesson ||
                             JourneyStage.moduleCompletion => 'Voltar ao módulo',
@@ -84,83 +166,84 @@ final class CourseJourneyScreen extends StatelessWidget {
                         ),
                       )
                     : null,
-                title: switch (engine.stage) {
+                title: switch (widget.engine.stage) {
                   JourneyStage.course => 'Digitavox',
                   JourneyStage.module => 'Módulo',
                   JourneyStage.lesson => 'Missão',
                   JourneyStage.exercise =>
-                    engine.currentLessonCompleted
+                    widget.engine.currentLessonCompleted
                         ? 'Missão concluída'
-                        : engine.lesson!.title,
+                        : widget.engine.lesson!.title,
                   JourneyStage.moduleCompletion => 'Conclusão do módulo',
                 },
-                actions: engine.stage == JourneyStage.exercise
+                actions: widget.engine.stage == JourneyStage.exercise
                     ? const <Widget>[]
                     : [
                         DvxThemeSelector(
                           preference: preference,
                           onSelected: _selectTheme,
-                          onAnnounce: engine.courseAudio.speakText,
+                          onAnnounce: widget.engine.courseAudio.speakText,
                         ),
                       ],
-                body: Semantics(
-                  key: ValueKey(engine.locationKey),
-                  scopesRoute: true,
-                  namesRoute: true,
-                  label:
-                      engine.stage == JourneyStage.exercise &&
-                          engine.currentLessonCompleted
-                      ? 'Missão concluída. ${engine.lesson!.title}'
-                      : engine.title,
-                  explicitChildNodes: true,
-                  child: SingleChildScrollView(
-                    key: PageStorageKey(engine.locationKey),
-                    padding: const EdgeInsets.all(DvxSpacing.lg),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 760),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (engine.stage != JourneyStage.exercise) ...[
-                              Semantics(
-                                header: true,
-                                child: Text(
-                                  engine.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium,
-                                ),
-                              ),
-                              const SizedBox(height: DvxSpacing.md),
-                            ],
-                            if (engine.stage == JourneyStage.lesson) ...[
-                              CourseScene(
-                                scene: engine.scene,
-                                character: engine.character,
-                                illustration: engine.illustration,
-                              ),
-                              ..._narrationControls(),
-                            ],
-                            ...switch (engine.stage) {
-                              JourneyStage.course => _course(),
-                              JourneyStage.module => _module(),
-                              JourneyStage.lesson => _lesson(),
-                              JourneyStage.moduleCompletion => [
-                                _ModuleCompletion(engine: engine),
+                body: Builder(
+                  builder: (context) {
+                    return Semantics(
+                      key: ValueKey(widget.engine.locationKey),
+                      scopesRoute: true,
+                      namesRoute: true,
+                      label:
+                          widget.engine.stage == JourneyStage.exercise &&
+                              widget.engine.currentLessonCompleted
+                          ? 'Missão concluída. ${widget.engine.lesson!.title}'
+                          : widget.engine.title,
+                      explicitChildNodes: true,
+                      child: SingleChildScrollView(
+                        key: PageStorageKey(widget.engine.locationKey),
+                        padding: EdgeInsets.all(context.courseTheme.spacing.lg),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 760),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (widget.engine.stage !=
+                                    JourneyStage.exercise) ...[
+                                  Semantics(
+                                    header: true,
+                                    child: Text(
+                                      widget.engine.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: context.courseTheme.spacing.md,
+                                  ),
+                                ],
+                                if (widget.engine.stage == JourneyStage.lesson)
+                                  _lessonScene(),
+                                ...switch (widget.engine.stage) {
+                                  JourneyStage.course => _course(context),
+                                  JourneyStage.module => _module(context),
+                                  JourneyStage.lesson => _lesson(context),
+                                  JourneyStage.moduleCompletion => [
+                                    _ModuleCompletion(engine: widget.engine),
+                                  ],
+                                  JourneyStage.exercise => [
+                                    ExerciseScreen(
+                                      key: ValueKey(widget.engine.session),
+                                      engine: widget.engine,
+                                    ),
+                                  ],
+                                },
                               ],
-                              JourneyStage.exercise => [
-                                ExerciseScreen(
-                                  key: ValueKey(engine.session),
-                                  engine: engine,
-                                ),
-                              ],
-                            },
-                          ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               );
             },
@@ -170,7 +253,30 @@ final class CourseJourneyScreen extends StatelessWidget {
     ),
   );
 
-  List<Widget> _course() {
+  List<Widget> _course(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
+    final engine = widget.engine;
+    if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
+      final scene = engine.scene!;
+      final firstLine = _characterLineFor(scene.text, scene.narrationCues);
+      final secondLine = _characterLineFor(
+        scene.instruction,
+        scene.instructionCues,
+      );
+      if (firstLine != null && secondLine != null) {
+        return [
+          SceneScreen(
+            engine: engine,
+            lines: [firstLine, secondLine],
+            illustration: engine.illustration,
+            onComplete: () =>
+                setState(() => _courseIntroductionComplete = true),
+            narrationControls: ({cues}) => _narrationControls(cues: cues),
+          ),
+        ];
+      }
+    }
+
     final target = engine.resumeTarget;
     return [
       if (engine.course.isDemo) ...[
@@ -178,35 +284,12 @@ final class CourseJourneyScreen extends StatelessWidget {
           label: 'Aviso: conteúdo de demonstração, não é conteúdo pedagógico definitivo.',
           child: const Text('DEMO'),
         ),
-        const SizedBox(height: DvxSpacing.md),
+        SizedBox(height: spacing.md),
       ],
-      if (engine.scene != null)
-        ExpansionTile(
-          key: PageStorageKey('course-story-${engine.course.id}'),
-          title: const Text('Apresentação do curso'),
-          initiallyExpanded: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(DvxSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(engine.scene!.text),
-                  if (engine.scene!.instruction.isNotEmpty) ...[
-                    const SizedBox(height: DvxSpacing.md),
-                    Text(engine.scene!.instruction),
-                  ],
-                ],
-              ),
-            ),
-            ..._narrationControls(),
-          ],
-        ),
-      const SizedBox(height: DvxSpacing.md),
       Text(
         '${engine.completedMissionCount} de ${engine.missionCount} missões concluídas',
       ),
-      const SizedBox(height: DvxSpacing.lg),
+      SizedBox(height: spacing.lg),
       if (target != null || engine.hasPendingModuleCompletion) ...[
         KeyboardNavigationLabel(
           label: engine.hasPendingModuleCompletion
@@ -227,7 +310,7 @@ final class CourseJourneyScreen extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: DvxSpacing.sm),
+        SizedBox(height: spacing.sm),
         if (target != null) Text('Próxima missão: ${target.lesson.title}'),
       ] else
         Text(
@@ -235,7 +318,7 @@ final class CourseJourneyScreen extends StatelessWidget {
               ? 'Curso concluído! Abra um módulo para praticar novamente.'
               : 'Nenhum exercício pendente disponível. Você pode explorar os módulos e refazer atividades concluídas.',
         ),
-      const SizedBox(height: DvxSpacing.lg),
+      SizedBox(height: spacing.lg),
       for (final (index, module) in engine.course.modules.indexed)
         CourseNavigationTile(
           autofocus:
@@ -247,76 +330,85 @@ final class CourseJourneyScreen extends StatelessWidget {
               '${module.lessons.where((lesson) => !engine.isOptionalLesson(lesson)).length} missões · Abrir módulo',
           onPressed: () => engine.openModule(module),
         ),
+      SizedBox(height: spacing.md),
+      KeyboardNavigationLabel(
+        label: 'Rever introdução do curso',
+        child: OutlinedButton.icon(
+          onPressed: () {
+            setState(() => _courseIntroductionComplete = false);
+            engine.openCourse();
+          },
+          icon: const Icon(Icons.replay),
+          label: const Text('Rever introdução'),
+        ),
+      ),
     ];
   }
 
-  List<Widget> _narrationControls() => [
-    if (engine.canReplayNarration) ...[
-      Wrap(
-        spacing: DvxSpacing.sm,
-        children: [
-          KeyboardNavigationLabel(
-            label: 'Ouvir apresentação',
-            child: OutlinedButton.icon(
-              onPressed: engine.replayNarration,
-              icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('Ouvir apresentação'),
-            ),
-          ),
-          KeyboardNavigationLabel(
-            label: 'Parar áudio',
-            child: TextButton(
-              onPressed: engine.stopNarration,
-              child: const Text('Parar áudio'),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: DvxSpacing.md),
-    ],
-  ];
+  Widget _narrationControls({List<ContentAudioCue>? cues}) {
+    final configuration = cues == null
+        ? null
+        : CourseAudioConfiguration(start: cues);
+    final canReplay = configuration == null
+        ? engine.canReplayNarration
+        : engine.courseAudio.hasCues(configuration, CourseAudioEvent.start);
 
-  List<Widget> _module() => [
-    if (engine.scene != null) ...[
-      Text(engine.scene!.text),
-      const SizedBox(height: DvxSpacing.md),
-    ],
-    if (engine.isModuleReadyForCompletion) ...[
-      KeyboardNavigationLabel(
-        label: 'Concluir módulo',
-        child: FilledButton(
-          autofocus: true,
-          onPressed: () => engine.openModuleCompletion(engine.module!),
-          child: const Text('Concluir módulo'),
+    Future<void> replay() => configuration == null
+        ? engine.replayNarration()
+        : engine.courseAudio.play(configuration, CourseAudioEvent.start);
+
+    return DvxNarrationControls(
+      canReplay: canReplay,
+      onReplay: () => unawaited(replay()),
+      onStop: () => unawaited(engine.stopNarration()),
+    );
+  }
+
+  List<Widget> _module(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
+    return [
+      if (engine.scene != null) ...[
+        Text(engine.scene!.text),
+        SizedBox(height: spacing.md),
+      ],
+      if (engine.isModuleReadyForCompletion) ...[
+        KeyboardNavigationLabel(
+          label: 'Concluir módulo',
+          child: FilledButton(
+            autofocus: true,
+            onPressed: () => engine.openModuleCompletion(engine.module!),
+            child: const Text('Concluir módulo'),
+          ),
         ),
-      ),
-      const SizedBox(height: DvxSpacing.md),
-    ],
-    for (final (index, lesson) in engine.module!.lessons.indexed)
-      CourseNavigationTile(
-        autofocus:
-            !engine.isModuleReadyForCompletion &&
-            engine.isLessonUnlocked(lesson) &&
-            index == 0,
-        title: lesson.title,
-        description: !engine.isLessonUnlocked(lesson)
-            ? 'Bloqueada · Conclua a missão anterior para continuar.'
-            : engine.completedIn(lesson) == lesson.exercises.length
-            ? 'Concluída · Praticar novamente'
-            : engine.isOptionalLesson(lesson)
-            ? 'Opcional · Jogar quando quiser'
-            : engine.completedIn(lesson) > 0
-            ? 'Em andamento · Continuar missão'
-            : 'Disponível · Começar missão',
-        earnedStars: engine.earnedStarsFor(lesson),
-        completed: engine.isLessonCompleted(lesson),
-        onPressed: engine.isLessonUnlocked(lesson)
-            ? () => engine.openLesson(engine.module!, lesson)
-            : null,
-      ),
-  ];
+        SizedBox(height: spacing.md),
+      ],
+      for (final (index, lesson) in engine.module!.lessons.indexed)
+        CourseNavigationTile(
+          autofocus:
+              !engine.isModuleReadyForCompletion &&
+              engine.isLessonUnlocked(lesson) &&
+              index == 0,
+          title: lesson.title,
+          description: !engine.isLessonUnlocked(lesson)
+              ? 'Bloqueada · Conclua a missão anterior para continuar.'
+              : engine.completedIn(lesson) == lesson.exercises.length
+              ? 'Concluída · Praticar novamente'
+              : engine.isOptionalLesson(lesson)
+              ? 'Opcional · Jogar quando quiser'
+              : engine.completedIn(lesson) > 0
+              ? 'Em andamento · Continuar missão'
+              : 'Disponível · Começar missão',
+          earnedStars: engine.earnedStarsFor(lesson),
+          completed: engine.isLessonCompleted(lesson),
+          onPressed: engine.isLessonUnlocked(lesson)
+              ? () => engine.openLesson(engine.module!, lesson)
+              : null,
+        ),
+    ];
+  }
 
-  Widget? _missionFooter() {
+  Widget? _missionFooter(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final lesson = engine.lesson!;
     final pending = engine.pendingIn(lesson);
     final completed = engine.completedIn(lesson);
@@ -338,9 +430,9 @@ final class CourseJourneyScreen extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: DvxSpacing.lg,
-          vertical: DvxSpacing.sm,
+        padding: EdgeInsets.symmetric(
+          horizontal: spacing.lg,
+          vertical: spacing.sm,
         ),
         child: Center(
           heightFactor: 1,
@@ -362,7 +454,8 @@ final class CourseJourneyScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _lesson() {
+  List<Widget> _lesson(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
     final lesson = engine.lesson!;
     final completed = engine.completedIn(lesson);
     final pending = engine.pendingIn(lesson);
@@ -372,13 +465,13 @@ final class CourseJourneyScreen extends StatelessWidget {
     );
     return [
       Text('${lesson.exercises.length} exercícios nesta missão'),
-      const SizedBox(height: DvxSpacing.sm),
+      SizedBox(height: spacing.sm),
       if (completed > 0) ...[
         DvxProgressIndicator(
           completed: completed,
           total: lesson.exercises.length,
         ),
-        const SizedBox(height: DvxSpacing.md),
+        SizedBox(height: spacing.md),
       ],
       if (pending == null)
         Text(
@@ -386,7 +479,7 @@ final class CourseJourneyScreen extends StatelessWidget {
               ? 'Missão concluída! Você pode praticar novamente.'
               : 'Conclua a missão anterior para liberar esta atividade.',
         ),
-      const SizedBox(height: DvxSpacing.md),
+      SizedBox(height: spacing.md),
       ExpansionTile(
         key: PageStorageKey('mission-exercises-${lesson.id}'),
         title: const Text('Exercícios da missão'),
@@ -455,6 +548,7 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
   Widget build(BuildContext context) {
     final engine = widget.engine;
     final error = _error ?? engine.moduleCompletionError;
+    final spacing = context.courseTheme.spacing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -465,12 +559,12 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
         ),
         for (final reward in engine.moduleRewardLabels)
           Padding(
-            padding: const EdgeInsets.only(bottom: DvxSpacing.sm),
+            padding: EdgeInsets.only(bottom: spacing.sm),
             child: Text(reward),
           ),
         if (error != null) ...[
           Semantics(liveRegion: true, child: Text(error)),
-          const SizedBox(height: DvxSpacing.md),
+          SizedBox(height: spacing.md),
         ],
         KeyboardNavigationLabel(
           label: 'Voltar ao módulo',
@@ -480,7 +574,7 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
             child: Text(_saving ? 'Salvando...' : 'Voltar ao módulo'),
           ),
         ),
-        const SizedBox(height: DvxSpacing.sm),
+        SizedBox(height: spacing.sm),
         KeyboardNavigationLabel(
           label: 'Ouvir cerimônia novamente',
           child: OutlinedButton.icon(

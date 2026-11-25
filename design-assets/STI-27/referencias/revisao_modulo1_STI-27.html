@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisão do Módulo 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: coluna de leitura; primeiro o veredito, depois só o que pede decisão, depois a conferência completa. Paleta Vinho Estelar. */
+:root{
+  --bg:#FFF4F7; --card:#FFFFFF; --fg:#2B0B1E; --muted:#6B4A5B; --line:#EBD3DC; --wine:#4A1634;
+  --gold:#8A5A00; --goldbg:#FFF1CC; --ok:#0E6B3A; --okbg:#DDF3E4; --q:#7A2E00; --qbg:#FFE8D6;
+  --f-display:"Fredoka",system-ui,sans-serif; --f-body:"Open Sans",system-ui,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#2B0B1E; --card:#3A1029; --fg:#FFF6EC; --muted:#E2C3D1; --line:#5C2442; --wine:#FFC9DD;
+  --gold:#FFC42E; --goldbg:#4A3608; --ok:#7ED69A; --okbg:#14361F; --q:#FFB98A; --qbg:#4A2410; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#2B0B1E; --card:#3A1029; --fg:#FFF6EC; --muted:#E2C3D1; --line:#5C2442; --wine:#FFC9DD;
+  --gold:#FFC42E; --goldbg:#4A3608; --ok:#7ED69A; --okbg:#14361F; --q:#FFB98A; --qbg:#4A2410; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16.5px;line-height:1.6;margin:0;
+  padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+.eyebrow{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.1;margin:4px 0 8px;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:23px;margin:0 0 6px;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted)}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.vc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.vc b{display:block;font-family:var(--f-display);font-size:28px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.vc span{font-size:14.5px;color:var(--muted)}
+.vc.ok b{color:var(--ok)} .vc.q b{color:var(--q)}
+.q-list{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.qitem{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--q);border-radius:10px;padding:14px 16px}
+.qitem h3{font-size:16.5px;margin:0 0 4px;font-weight:700}
+.qitem p{font-size:15.5px}
+blockquote{margin:8px 0;padding:8px 12px;background:var(--qbg);border-radius:8px;font-size:15.5px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.tag.ok{background:var(--okbg);color:var(--ok)} .tag.q{background:var(--qbg);color:var(--q)}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--card)}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{display:inline-block;height:10px;background:var(--gold);border-radius:4px;vertical-align:middle;margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips span{font-family:var(--f-mono);font-size:12.5px;background:var(--okbg);color:var(--ok);padding:2px 8px;border-radius:6px}
+.note{font-size:14px;color:var(--muted)}
+</style>
+
+</head><body><div class="wrap">
+<header>
+  <div class="eyebrow">Digitavox Crianças · STI-27 · conferência de 17/10/2026</div>
+  <h1>Revisão do Módulo 1</h1>
+  <p class="lead">Comparei o conteúdo que está dentro do app com o seu storyboard de 10/07/2026, missão por missão. Você não precisa abrir o código: aqui está tudo traduzido. O app está praticamente igual ao storyboard. Só 5 pontos pedem a sua decisão.</p>
+</header>
+
+<section aria-labelledby="h-decisoes">
+  <h2 id="h-decisoes">Decisões da revisão (17/10/2026)</h2>
+  <p class="lead">Conferência pedagógica feita por Claudia. São sugestões de ajuste e estão abertas a conversa com a equipe.</p>
+  <div class="tw"><table>
+    <thead><tr><th scope="col">Ponto</th><th scope="col">Decisão</th><th scope="col">O que muda no app</th></tr></thead>
+    <tbody>
+      <tr><td>1. Fala <code>module1-overview</code> (Stella)</td><td><span class="tag ok">aprovada</span></td><td>Nada</td></tr>
+      <tr><td>2. Fala <code>zero1-ajuda</code> (F1 com 11 teclas)</td><td><span class="tag q">sugestão</span></td><td>Dividir em duas partes: primeiro as teclas do storyboard (F1, F2, F3, F4, F7 e Esc); ao apertar F1 de novo, a criança ouve as demais (F5, F6, F8, F9 e Tab). A equipe pode propor outra solução</td></tr>
+      <tr><td>3. Fala <code>zero1-ajuda-erros</code></td><td><span class="tag ok">aprovada com ajuste</span></td><td>Trocar "pressione F1" por "tecle F1": <b>Vamos com calma. Continue sem apagar. Se precisar de ajuda, tecle F1.</b></td></tr>
+      <tr><td>4. Missão 1.0 sem espaço</td><td><span class="tag ok">mantida</span></td><td>Nada: "fjfj…" sem espaço, porque o polegar só entra na 1.1</td></tr>
+      <tr><td>5. Tamanho das missões</td><td><span class="tag ok">mantido até o teste</span></td><td>Nada agora; ajustar repetições depois do teste com crianças, como prevê o storyboard</td></tr>
+      <tr><td>6. G, J, K e Ç em palavras</td><td><span class="tag q">acréscimo</span></td><td>Na Corrida de Energia, acrescentar um código-bônus depois das palavras: <span class="mono">gfg jkj lçl</span> · soletrado · 1 repetição · 5 s por letra · média 85%. Cada tecla menos praticada aparece entre duas vizinhas</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-res">
+  <h2 id="h-res">Resultado em uma olhada</h2>
+  <div class="verdict">
+    <div class="vc ok"><b>9 de 9</b><span>missões com palavras, repetições, tempos e médias iguais ao storyboard</span></div>
+    <div class="vc ok"><b>25 de 25</b><span>falas do storyboard copiadas palavra por palavra</span></div>
+    <div class="vc ok"><b>8 de 8</b><span>regras gerais iguais (teclas, vocabulário, estrelas, erros, cerimônia)</span></div>
+    <div class="vc q"><b>5</b><span>pontos para você decidir, abaixo</span></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-dec">
+  <h2 id="h-dec">O que você precisa decidir</h2>
+  <p class="lead">O programador acrescentou 3 falas que não estão no storyboard. E há 2 pontos que o storyboard não definia.</p>
+  <div class="q-list">
+    <div class="qitem">
+      <h3>1. Fala nova da Stella: resumo do módulo</h3>
+      <p>Aparece na tela de escolha do módulo, antes das missões. Nome no app: <code>module1-overview</code>.</p>
+      <blockquote>Reative a nave-escola Aurora usando a linha base do teclado.</blockquote>
+      <p>Aprovar como está, reescrever ou tirar?</p>
+    </div>
+    <div class="qitem">
+      <h3>2. Fala nova do ZERO-1: a ajuda (F1)</h3>
+      <p>Toca quando a criança aperta F1. Nome no app: <code>zero1-ajuda</code>. O storyboard só previa F1, F2, F3, F4, F7 e ESC. O app acrescentou <b>F5, F6, F8, F9 e Tab</b>.</p>
+      <blockquote>F1 abre ou fecha a ajuda. F2 fala a próxima letra e o dedo. F3 soletra o restante. F4 fala o restante. F5 repete a apresentação da missão. F6 repete as instruções. F7 repete o exercício. F8 fala a hora. F9 abre o diário de bordo. Escape cancela a prática e volta à missão. Tab acessa os controles.</blockquote>
+      <p>São 11 teclas numa fala só, longa para guardar de ouvido. Manter assim, encurtar (por exemplo, só as teclas que a criança mais usa) ou dividir em duas partes?</p>
+    </div>
+    <div class="qitem">
+      <h3>3. Fala nova do ZERO-1: três erros seguidos</h3>
+      <p>Toca quando a criança erra 3 vezes seguidas. Nome no app: <code>zero1-ajuda-erros</code>. O storyboard previa a fala, mas não tinha o texto.</p>
+      <blockquote>Vamos com calma. Continue sem apagar. Se precisar de ajuda, pressione F1.</blockquote>
+      <p>Nas outras falas, o ZERO-1 diz "tecle F1", e aqui diz "pressione F1". Uniformizar para "tecle"?</p>
+    </div>
+    <div class="qitem">
+      <h3>4. Missão 1.0: espaço entre as repetições</h3>
+      <p>Na missão 1.0, o app pede <span class="mono">fjfjfjfj…</span> grudado, sem espaço. Da missão 1.1 em diante, cada repetição é separada por espaço. O storyboard não dizia nada sobre a 1.0. Fica sem espaço (a criança ainda não aprendeu o polegar) ou com espaço desde o início?</p>
+    </div>
+    <div class="qitem">
+      <h3>5. Tamanho das missões (meta de 5 a 10 minutos)</h3>
+      <p>Só o teste com crianças vai mostrar a duração real. Contando as teclas que cada missão pede, a carga varia bastante: a 1.3 e a 1.6 pedem cerca de 6 vezes mais teclas que a 1.0 (veja a coluna "Teclas" na tabela). Manter assim até o teste, como diz a regra de calibração do storyboard, ou reduzir repetições já?</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-mis">
+  <h2 id="h-mis">Missão por missão</h2>
+  <p class="lead">Todas as linhas estão iguais ao storyboard. "Teclas" é quantas teclas a criança aperta para completar a missão uma vez, sem erros.</p>
+  <div class="tw"><table>
+    <thead><tr><th scope="col">Missão</th><th scope="col">O que a criança digita</th><th scope="col">Soletra</th><th scope="col">Repet.</th><th scope="col">Seg./letra</th><th scope="col">Média</th><th scope="col">Teclas</th><th scope="col">Storyboard</th></tr></thead>
+    <tbody>
+      <tr><td>1.0 O despertar da Aurora</td><td class="mono">fj · jf</td><td>sim</td><td class="n">10</td><td class="n">15</td><td class="n">70%</td><td class="n"><span class="bar" style="width:8px"></span>40</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.1 Asa esquerda</td><td class="mono">asdfg · gfdsa</td><td>sim</td><td class="n">12</td><td class="n">12</td><td class="n">85%</td><td class="n"><span class="bar" style="width:29px"></span>144</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.2 Asa direita</td><td class="mono">hjklç · çlkjh</td><td>sim</td><td class="n">12</td><td class="n">12</td><td class="n">85%</td><td class="n"><span class="bar" style="width:29px"></span>144</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.3 Sincronização das asas</td><td class="mono">asdfg hjklç · gfdsa çlkjh (8x) · fgf jhj (6x)</td><td>sim</td><td class="n">8 e 6</td><td class="n">12</td><td class="n">85%</td><td class="n"><span class="bar" style="width:48px"></span>240</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.4 Palavras de energia I</td><td class="mono">a as · da das</td><td>não</td><td class="n">8</td><td class="n">10</td><td class="n">90%</td><td class="n"><span class="bar" style="width:19px"></span>96</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.5 Palavras de energia II</td><td class="mono">ah · fala · sala · asas</td><td>não</td><td class="n">8</td><td class="n">10</td><td class="n">90%</td><td class="n"><span class="bar" style="width:29px"></span>144</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.6 Mensagem para a base</td><td class="mono">a sala · as asas · a fala · da sala · das asas</td><td>não</td><td class="n">6</td><td class="n">10</td><td class="n">90%</td><td class="n"><span class="bar" style="width:47px"></span>234</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>1.7 Prova do Cadete</td><td class="mono">asdfg çlkjh (soletra) · a fala · as asas da sala</td><td>1º sim, outros não</td><td class="n">5</td><td class="n">8</td><td class="n">90%</td><td class="n"><span class="bar" style="width:35px"></span>175</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Corrida de Energia (opcional)</td><td class="mono">a as da das ah fala sala asas</td><td>não</td><td class="n">1</td><td class="n">5</td><td class="n">85%</td><td class="n"><span class="bar" style="width:6px"></span>29</td><td><span class="tag ok">igual</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Na Prova do Cadete, o storyboard previa dividir a missão em duas (8a e 8b) caso o app não aceitasse soletração diferente em cada exercício. O app aceita, então a Prova ficou numa missão só, como você queria.</p>
+</section>
+
+<section aria-labelledby="h-reg">
+  <h2 id="h-reg">Regras gerais</h2>
+  <div class="tw"><table>
+    <thead><tr><th scope="col">Regra</th><th scope="col">No app</th><th scope="col">Storyboard</th></tr></thead>
+    <tbody>
+      <tr><td>Teclas permitidas</td><td>A S D F G H J K L Ç e espaço</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Vocabulário</td><td>a, da, as, das, ah, sala, fala, asas</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Estrelas</td><td>1 estrela com a média · 2 com 95% · 3 com 100%</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Erros</td><td>bipe, segue sem apagar; 3 erros seguidos oferecem ajuda</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Ordem das missões</td><td>cada missão só abre depois da anterior</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Cerimônia da decolagem</td><td>depois da Prova; dá o distintivo Cadete de Bronze e os aliens Blib-Blub, Zorp e Nebulon</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Sons da cerimônia</td><td>decolagem, Stella, os 3 aliens, fanfarra, Stella</td><td><span class="tag ok">igual</span></td></tr>
+      <tr><td>Diário de bordo</td><td>ZERO-1 abre com "Relatório de voo do ZERO-1"</td><td><span class="tag ok">igual</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-fal">
+  <h2 id="h-fal">Falas iguais ao storyboard</h2>
+  <p class="lead">Estas 25 falas estão no app palavra por palavra como você escreveu. Não precisa reler.</p>
+  <div class="chips" aria-label="Lista das 25 falas conferidas">
+    <span>C0 Stella</span><span>C0 ZERO-1</span><span>C1 Stella</span><span>C1 ZERO-1</span><span>C2 Stella</span><span>C2 ZERO-1</span><span>C3 Stella</span><span>C3 ZERO-1</span><span>C4 Stella</span><span>C4 ZERO-1</span><span>C5 Stella</span><span>C5 ZERO-1</span><span>C6 Stella</span><span>C6 ZERO-1</span><span>C7 Stella</span><span>C7 ZERO-1</span><span>C8 Stella</span><span>C8 ZERO-1</span><span>C9 Stella (parte 1)</span><span>C9 Stella (parte 2)</span><span>C10 Stella</span><span>1 estrela</span><span>2 estrelas</span><span>3 estrelas</span><span>Diário (ZERO-1)</span>
+  </div>
+  <p class="note" style="margin-top:10px">Isto também responde à dúvida das 28 falas do app contra as 25 do roteiro do ElevenLabs: as 3 a mais são as falas novas dos pontos 1, 2 e 3.</p>
+</section>
+
+<p class="note">Fonte: storyboard de 10/07/2026 (Storyboard_Modulo1_Exploradores_Espaciais_2026-07-10.docx) e o arquivo de conteúdo do app (exploradores_espaciais.json, versão 8130b85, ramo feature/modulo-1).</p>
+</div>
+
+</body></html>

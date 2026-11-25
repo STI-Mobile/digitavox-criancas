@@ -198,6 +198,33 @@ void main() {
   );
 
   test(
+    'going back from a module does not replay the course introduction',
+    () async {
+      await engine.start();
+      await pumpEventQueue();
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/welcome.wav',
+      );
+
+      engine.openModule(engine.course.modules.first);
+      await pumpEventQueue();
+      expect(
+        (audioGuidance.playedCues.last as SpeechCue).audioAsset,
+        'assets/audio/demo/preparation.wav',
+      );
+      final cueCountBeforeBack = audioGuidance.playedCues.length;
+
+      engine.back();
+      await pumpEventQueue();
+
+      expect(engine.stage, JourneyStage.course);
+      expect(audioGuidance.playedCues, hasLength(cueCountBeforeBack));
+      expect(audioGuidance.events.last, 'cancel');
+    },
+  );
+
+  test(
     'rapid navigation cancels stale audio and does not award progress',
     () async {
       _startPending(engine);
