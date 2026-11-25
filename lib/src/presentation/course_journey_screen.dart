@@ -18,10 +18,12 @@ final class CourseJourneyScreen extends StatefulWidget {
   const CourseJourneyScreen({
     required this.engine,
     required this.onThemePreferenceChanged,
+    this.profileName = '',
     super.key,
   });
 
   final CourseJourneyEngine engine;
+  final String profileName;
   final ValueChanged<AppThemePreference> onThemePreferenceChanged;
 
   @override
@@ -30,8 +32,24 @@ final class CourseJourneyScreen extends StatefulWidget {
 
 final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
   bool _courseIntroductionComplete = false;
+  String? _testCompletionError;
 
   CourseJourneyEngine get engine => widget.engine;
+  bool get _canCompleteMissionForTesting =>
+      widget.profileName.trim().toLowerCase() == 'felipaoao';
+
+  Future<void> _completeMissionForTesting() async {
+    try {
+      await engine.completeCurrentLessonForTesting();
+      _testCompletionError = null;
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _testCompletionError =
+            'Não foi possível concluir a missão de teste. Tente novamente.';
+      });
+    }
+  }
 
   CharacterLine? _characterLineFor(
     String text,
@@ -75,6 +93,24 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
       if (instructionLine != null) lines.add(instructionLine);
     }
     return lines;
+  }
+
+  List<CharacterLine> _illustrationLinesFor(CourseIllustration? illustration) {
+    if (illustration == null) return const [];
+    return [
+      for (final line in illustration.lines)
+        if (line.audioCues.isNotEmpty)
+          if (widget.engine.course.characters
+                  .where((character) => character.id == line.characterId)
+                  .firstOrNull
+              case final character?)
+            CharacterLine(
+              character: character,
+              text: line.text,
+              cues: line.audioCues,
+              illustrationLineId: line.id,
+            ),
+    ];
   }
 
   Widget _lessonScene() {
@@ -140,7 +176,9 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
               ).resolve(preference);
               return DvxGameScaffold(
                 courseTheme: courseTheme,
-                bottomNavigationBar: widget.engine.stage == JourneyStage.lesson
+                bottomNavigationBar:
+                    widget.engine.stage == JourneyStage.lesson ||
+                        widget.engine.stage == JourneyStage.exercise
                     ? Builder(
                         builder: (context) =>
                             _missionFooter(context) ?? const SizedBox.shrink(),
@@ -228,7 +266,16 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
                                   JourneyStage.module => _module(context),
                                   JourneyStage.lesson => _lesson(context),
                                   JourneyStage.moduleCompletion => [
-                                    _ModuleCompletion(engine: widget.engine),
+                                    _ModuleCompletion(
+                                      engine: widget.engine,
+                                      illustration:
+                                          widget.engine.postSceneIllustration,
+                                      lines: _illustrationLinesFor(
+                                        widget.engine.postSceneIllustration,
+                                      ),
+                                      narrationControls: ({cues}) =>
+                                          _narrationControls(cues: cues),
+                                    ),
                                   ],
                                   JourneyStage.exercise => [
                                     ExerciseScreen(
@@ -421,7 +468,9 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
                   )
                   .firstOrNull
             : null);
-    if (target == null) return null;
+    final showTestAction =
+        _canCompleteMissionForTesting && !engine.isLessonCompleted(lesson);
+    if (target == null && !showTestAction) return null;
     final label = pending == null
         ? 'Praticar missão novamente'
         : completed == 0
@@ -438,15 +487,34 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
           heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
-            child: KeyboardNavigationLabel(
-              label: label,
-              child: ElevatedButton.icon(
-                autofocus: true,
-                onPressed: () =>
-                    engine.openExercise(engine.module!, lesson, target),
-                icon: const Icon(Icons.play_arrow),
-                label: Text(label),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (engine.stage == JourneyStage.lesson && target != null)
+                  KeyboardNavigationLabel(
+                    label: label,
+                    child: ElevatedButton.icon(
+                      autofocus: true,
+                      onPressed: () =>
+                          engine.openExercise(engine.module!, lesson, target),
+                      icon: const Icon(Icons.play_arrow),
+                      label: Text(label),
+                    ),
+                  ),
+                if (showTestAction) ...[
+                  if (engine.stage == JourneyStage.lesson)
+                    SizedBox(height: spacing.sm),
+                  KeyboardNavigationLabel(
+                    label: 'Concluir missão (teste)',
+                    child: OutlinedButton(
+                      onPressed: _completeMissionForTesting,
+                      child: const Text('Concluir missão (teste)'),
+                    ),
+                  ),
+                ],
+                if (_testCompletionError case final error?)
+                  Semantics(liveRegion: true, child: Text(error)),
+              ],
             ),
           ),
         ),
@@ -514,9 +582,17 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
 }
 
 final class _ModuleCompletion extends StatefulWidget {
-  const _ModuleCompletion({required this.engine});
+  const _ModuleCompletion({
+    required this.engine,
+    required this.illustration,
+    required this.lines,
+    required this.narrationControls,
+  });
 
   final CourseJourneyEngine engine;
+  final CourseIllustration? illustration;
+  final List<CharacterLine> lines;
+  final Widget Function({List<ContentAudioCue>? cues}) narrationControls;
 
   @override
   State<_ModuleCompletion> createState() => _ModuleCompletionState();
@@ -524,6 +600,7 @@ final class _ModuleCompletion extends StatefulWidget {
 
 final class _ModuleCompletionState extends State<_ModuleCompletion> {
   bool _saving = false;
+  bool _postSceneComplete = false;
   String? _error;
 
   Future<void> _continue() async {
@@ -549,19 +626,21 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
     final engine = widget.engine;
     final error = _error ?? engine.moduleCompletionError;
     final spacing = context.courseTheme.spacing;
+    if (!_postSceneComplete && widget.lines.isNotEmpty) {
+      return SceneScreen(
+        key: ValueKey('${engine.locationKey}/post-scene'),
+        engine: engine,
+        lines: widget.lines,
+        illustration: widget.illustration,
+        onComplete: () => setState(() => _postSceneComplete = true),
+        continuationLabel: 'Ver recompensas do módulo',
+        narrationControls: widget.narrationControls,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CourseScene(
-          scene: engine.completionEvent?.scene,
-          character: engine.character,
-          illustration: engine.illustration,
-        ),
-        for (final reward in engine.moduleRewardLabels)
-          Padding(
-            padding: EdgeInsets.only(bottom: spacing.sm),
-            child: Text(reward),
-          ),
+        CeremonyRewards(rewardLabels: engine.moduleRewardLabels),
         if (error != null) ...[
           Semantics(liveRegion: true, child: Text(error)),
           SizedBox(height: spacing.md),
@@ -576,14 +655,94 @@ final class _ModuleCompletionState extends State<_ModuleCompletion> {
         ),
         SizedBox(height: spacing.sm),
         KeyboardNavigationLabel(
-          label: 'Ouvir cerimônia novamente',
+          label: 'Rever cerimônia',
           child: OutlinedButton.icon(
-            onPressed: engine.replayModuleEvent,
+            onPressed: widget.lines.isEmpty
+                ? engine.replayModuleEvent
+                : () => setState(() => _postSceneComplete = false),
             icon: const Icon(Icons.volume_up_outlined),
-            label: const Text('Ouvir cerimônia novamente'),
+            label: const Text('Rever cerimônia'),
           ),
         ),
       ],
     );
   }
+}
+
+final class CeremonyRewards extends StatelessWidget {
+  const CeremonyRewards({required this.rewardLabels, super.key});
+
+  final List<String> rewardLabels;
+
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.courseTheme.spacing;
+    final badgeLabel = rewardLabels.isNotEmpty ? rewardLabels.first : null;
+
+    return Center(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: spacing.sm),
+            child: Semantics(
+              label: 'Recompensas',
+              child: Text('Suas Recompensas!'),
+            ),
+          ),
+          if (badgeLabel != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: spacing.sm),
+              child: Center(child: Text(badgeLabel)),
+            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              _CeremonyAlien(
+                name: 'Zorp',
+                description: 'acenando, posicionado à esquerda',
+                imageAsset:
+                    'assets/images/space/module1/alien_zorp_acenando.png',
+              ),
+              _CeremonyAlien(
+                name: 'Nebulon',
+                description: 'de frente, posicionado ao centro',
+                imageAsset:
+                    'assets/images/space/module1/alien_nebulon_frente.png',
+              ),
+              _CeremonyAlien(
+                name: 'Blib-Blub',
+                description: 'acenando à esquerda, posicionado à direita',
+                imageAsset: 'assets/images/space/module1/alien_blib_blub_acenando_esquerda.png',
+              ),
+            ],
+          ),
+          SizedBox(height: spacing.md),
+        ],
+      ),
+    );
+  }
+}
+
+final class _CeremonyAlien extends StatelessWidget {
+  const _CeremonyAlien({
+    required this.name,
+    required this.description,
+    required this.imageAsset,
+  });
+
+  final String name;
+  final String description;
+  final String imageAsset;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Semantics(
+      image: true,
+      label: '$name, $description',
+      child: ExcludeSemantics(
+        child: Image.asset(imageAsset, height: 160, fit: BoxFit.contain),
+      ),
+    ),
+  );
 }

@@ -60,11 +60,14 @@
         {
           "id": "modulo-1-nave-adormecida",
           "title": "Módulo 1 · A Nave Adormecida",
-          "scene": {
+          "leadingScene": {
             "narrationCueIds": [
               "module1-overview"
             ],
             "characterId": "stella"
+          },
+          "postScene": {
+            "illustrationId": "scene-c9-launch"
           },
           "lessons": [
             {
@@ -633,20 +636,7 @@
               "blib-blub",
               "zorp",
               "nebulon"
-            ],
-            "scene": {
-              "narrationCueIds": [
-                "sfx-decolagem",
-                "m1c9-stella-a",
-                "alien-blib-blub",
-                "alien-zorp",
-                "alien-nebulon",
-                "sfx-fanfarra",
-                "m1c9-stella-b"
-              ],
-              "characterId": "stella",
-              "illustrationId": "scene-c9-launch"
-            }
+            ]
           }
         }
       ],
@@ -921,31 +911,36 @@
               "id": "line-f1",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f1_decolagem.jpg",
-              "imageDescription": "Aurora decola do hangar com os propulsores acesos."
+              "imageDescription": "Aurora decola do hangar com os propulsores acesos.",
+              "audioCueIds": ["sfx-decolagem", "m1c9-stella-a"]
             },
             {
               "id": "line-f2",
               "characterId": "blib-blub",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f2_blib_blub.jpg",
-              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora."
+              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora.",
+              "audioCueIds": ["alien-blib-blub"]
             },
             {
               "id": "line-f3",
               "characterId": "zorp",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f3_zorp.jpg",
-              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora."
+              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora.",
+              "audioCueIds": ["alien-zorp"]
             },
             {
               "id": "line-f4",
               "characterId": "nebulon",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f4_nebulon.jpg",
-              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora."
+              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora.",
+              "audioCueIds": ["alien-nebulon"]
             },
             {
               "id": "line-f5",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f5_stella_distintivo.jpg",
-              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora."
+              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora.",
+              "audioCueIds": ["sfx-fanfarra", "m1c9-stella-b"]
             }
           ]
         },

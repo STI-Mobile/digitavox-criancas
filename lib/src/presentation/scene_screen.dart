@@ -13,11 +13,16 @@ final class CharacterLine {
     required this.character,
     required this.text,
     required this.cues,
+    this.illustrationLineId,
   });
 
   final CourseCharacter character;
   final String text;
   final List<ContentAudioCue> cues;
+  final String? illustrationLineId;
+
+  bool get hasSpeech =>
+      cues.any((cue) => cue.type == ContentAudioCueType.speech);
 }
 
 final class SceneScreen extends StatefulWidget {
@@ -84,7 +89,12 @@ final class _SceneScreenState extends State<SceneScreen> {
     final line = _currentLine;
     final illustration = widget.illustration;
     final illustrationLine = illustration?.lines
-        .where((item) => item.characterId == line.character.id)
+        .where(
+          (item) =>
+              item.id == line.illustrationLineId ||
+              (line.illustrationLineId == null &&
+                  item.characterId == line.character.id),
+        )
         .firstOrNull;
     final imageAsset = illustrationLine?.imageAsset ?? illustration?.imageAsset;
     final imageDescription =
@@ -121,7 +131,9 @@ final class _SceneScreenState extends State<SceneScreen> {
             Semantics(
               container: true,
               liveRegion: true,
-              label: '${line.character.name} diz: ${line.text}',
+              label: line.hasSpeech
+                  ? '${line.character.name} diz: ${line.text}'
+                  : '${line.character.name}. ${line.text}',
               child: ExcludeSemantics(
                 child: DvxGameCard(
                   child: Column(
@@ -144,7 +156,8 @@ final class _SceneScreenState extends State<SceneScreen> {
             SizedBox(height: spacing.lg),
             KeyboardNavigationLabel(
               label: hasFollowingLine
-                  ? 'Continuar para a fala de '
+                  ? 'Continuar para '
+                        '${widget.lines[_lineIndex + 1].hasSpeech ? 'a fala de ' : 'a cena de '}'
                         '${widget.lines[_lineIndex + 1].character.name}'
                   : widget.continuationLabel,
               child: FilledButton(

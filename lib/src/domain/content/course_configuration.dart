@@ -124,6 +124,7 @@ final class CourseIllustrationLine {
     required this.characterId,
     required this.imageAsset,
     required this.imageDescription,
+    this.audioCues = const [],
   });
 
   factory CourseIllustrationLine.fromJson(Map<String, Object?> json) {
@@ -134,6 +135,7 @@ final class CourseIllustrationLine {
       characterId: _requiredString(json, 'characterId'),
       imageAsset: imageAsset,
       imageDescription: _requiredString(json, 'imageDescription'),
+      audioCues: _optionalCueObjects(json, 'audioCues'),
     );
   }
 
@@ -141,6 +143,19 @@ final class CourseIllustrationLine {
   final String characterId;
   final String imageAsset;
   final String imageDescription;
+  final List<ContentAudioCue> audioCues;
+
+  bool get hasSpeech =>
+      audioCues.any((cue) => cue.type == ContentAudioCueType.speech);
+
+  String get text {
+    final speech = audioCues
+        .where((cue) => cue.type == ContentAudioCueType.speech)
+        .map((cue) => cue.text)
+        .whereType<String>()
+        .join('\n\n');
+    return speech.isEmpty ? imageDescription : speech;
+  }
 }
 
 enum RewardKind { alien, badge }
@@ -171,8 +186,6 @@ final class ContentEvent {
     required this.title,
     required this.prerequisiteLessonId,
     this.rewardIds = const [],
-    this.scene,
-    this.audioGuidance,
   });
 
   factory ContentEvent.fromJson(Map<String, Object?> json) => ContentEvent(
@@ -180,16 +193,12 @@ final class ContentEvent {
     title: _requiredString(json, 'title'),
     prerequisiteLessonId: _requiredString(json, 'prerequisiteLessonId'),
     rewardIds: _optionalTextList(json, 'rewardIds'),
-    scene: _scene(json),
-    audioGuidance: _courseAudioConfiguration(json),
   );
 
   final String id;
   final String title;
   final String prerequisiteLessonId;
   final List<String> rewardIds;
-  final ContentScene? scene;
-  final CourseAudioConfiguration? audioGuidance;
 }
 
 T _enumValue<T extends Enum>(List<T> values, Object? value, String field) {
@@ -350,6 +359,7 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
           'characterId',
           'imageAsset',
           'imageDescription',
+          'audioCueIds',
         }, 'linha de ilustração');
         _requireFields(line, {
           'id',
@@ -518,8 +528,8 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     if (raw is! Map<String, Object?>) {
       throw const CourseContentFormatException('postScene deve ser um objeto.');
     }
-    _requireKeys(raw, {'illustrationId'}, 'cena pós-missão');
-    _requireFields(raw, {'illustrationId'}, 'cena pós-missão');
+    _requireKeys(raw, {'illustrationId'}, 'pós-cena');
+    _requireFields(raw, {'illustrationId'}, 'pós-cena');
     final illustration = _requiredString(raw, 'illustrationId');
     if (!illustrationIds.contains(illustration)) {
       throw CourseContentFormatException(
@@ -527,6 +537,35 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
       );
     }
     return {'illustrationId': illustration};
+  }
+
+  Map<String, Object?> illustration(Map<String, Object?> raw) => {
+    ...raw,
+    if (raw['lines'] != null)
+      'lines': [
+        for (final line in _requiredObjectList(raw, 'lines'))
+          {
+            ...line,
+            'audioCues': line.containsKey('audioCueIds')
+                ? resolve(line['audioCueIds'], 'audioCueIds')
+                : <Map<String, Object?>>[],
+          },
+      ],
+  };
+
+  for (final rawIllustration in illustrations) {
+    for (final line in _optionalObjects(rawIllustration, 'lines')) {
+      if (!line.containsKey('audioCueIds')) continue;
+      final characterId = _requiredString(line, 'characterId');
+      for (final cue in resolve(line['audioCueIds'], 'audioCueIds')) {
+        if (cue['type'] == 'speech' && cue['speaker'] != characterId) {
+          throw CourseContentFormatException(
+            'A fala ${cue['id']} não pertence ao personagem $characterId '
+            'da linha de ilustração.',
+          );
+        }
+      }
+    }
   }
 
   final rawPractice = _optionalObject(json, 'practice')!;
@@ -658,7 +697,8 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
       'title',
       'allowedKeys',
       'vocabulary',
-      'scene',
+      'leadingScene',
+      'postScene',
       'audioGuidance',
       'lessons',
       'completionEvent',
@@ -861,7 +901,6 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
         'title',
         'prerequisiteLessonId',
         'rewardIds',
-        'scene',
         'audioGuidance',
       }, 'evento de conclusão');
       _requireFields(event, {
@@ -869,7 +908,6 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
         'title',
         'prerequisiteLessonId',
         'rewardIds',
-        'scene',
       }, 'evento de conclusão');
       final id = _requiredString(event, 'id');
       if (eventById.containsKey(id)) {
@@ -972,6 +1010,10 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     ...expandNode(json),
     'practice': practice,
     'rewards': rewardConfiguration,
+    'illustrations': [
+      for (final rawIllustration in illustrations)
+        illustration(rawIllustration),
+    ],
     'modules': [
       for (final module in modules)
         {

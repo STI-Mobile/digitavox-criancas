@@ -23,7 +23,7 @@ O catálogo de Exploradores usa schema 4 e mantém `isDemo: false`, conforme a f
 | Curso | `practice.excessiveErrorsThreshold`, `caseSensitive`, `keyFingers`, `shortcuts`, `helpCueIds`, `excessiveErrorsCueIds` | Avaliação e ajuda da sessão; comandos e narração |
 | Curso | `rewards.twoStarAccuracy`, `threeStarAccuracy`, `announcementCueIds`, `diaryCueIds` | Limites inclusivos, cerimônia de estrelas e abertura do relatório |
 | Curso | `audioResources`, `characters`, `illustrations`, `rewardDefinitions`, `theme` | Recursos canônicos, identidade de quem fala, imagens de cenas, conquistas e identidade visual conhecida |
-| Módulo | `allowedKeys`, `vocabulary`, `lessons`, `completionEvent` | Validação do corpus, sequência, conclusão e desbloqueios |
+| Módulo | `allowedKeys`, `vocabulary`, `lessons`, `leadingScene`, `postScene`, `completionEvent` | Validação do corpus, sequência, apresentação, pós-cena, conclusão e desbloqueios |
 | Missão | `accuracy`, `secChar`, `prerequisiteLessonIds`, `prerequisiteEventId`, `optional`, `legacyLessonIds`, `leadingScene`, `postScene` | Aprovação, tempo padrão, liberação, bônus, compatibilidade de progresso, apresentação e ilustração após a conclusão |
 | Atividade | `expectedInput`, `minimumRepetitions`, `spellOut`, `repetitionSeparator`, `trailingSeparator`, `timePerCharacterSeconds`, `timeLimitSeconds`, `prompt` | Fluxo de entrada, leitura, repetições e limite de prática |
 
@@ -66,6 +66,8 @@ A cena da introdução não é herdada pela prática. A atividade recebe somente
 
 No schema 4, `leadingScene` contém a apresentação da missão, e `postScene` opcionalmente referencia uma ilustração do catálogo pelo seu ID. A tela de conclusão mostra a imagem dessa referência para qualquer missão que a declare; não há personagem ou missão codificados especialmente. Missões sem `postScene` não exibem ilustração adicional.
 
+Linhas de ilustração podem declarar `audioCueIds`; cada referência é resolvida pelo catálogo canônico e deve pertencer ao personagem da linha quando for uma fala. O `postScene` do módulo aponta à ilustração que organiza a cerimônia. Cada linha aparece em uma tela separada; os cues associados à linha são reproduzidos juntos, e o texto acessível vem das falas canônicas ou, para efeitos não verbais, da descrição da imagem. Na cerimônia do Módulo 1, Stella apresenta a decolagem, cada alienígena aparece com seu próprio efeito sonoro e Stella encerra concedendo o distintivo de Cadete de Bronze.
+
 ## Dinâmica de prática e tempo
 
 Schema 4 admite capacidades executáveis `key`, `keySequence`, `word` e `phrase`; todas exigem entrada imprimível não vazia. `key` exige exatamente um caractere. Os identificadores legados `timed`, `repetition` e `challenge` continuam reconhecidos nos schemas 2/3, mas sem executor; no schema 4 são rejeitados. Tempo e repetição configuram os quatro tipos executáveis, sem precisar de tipos especiais.
@@ -106,7 +108,7 @@ Pré-requisitos são referências de lições aprovadas ou de evento concluído.
 
 O módulo contém oito missões obrigatórias: 1.0 a 1.7. A Prova do Cadete reúne três exercícios, com `spellOut` próprio: código soletrado e duas mensagens completas. Assim, ganha estrelas uma única vez, por missão.
 
-`completionEvent` é um `ContentEvent`, com ID, título, `prerequisiteLessonId`, `rewardIds` e cena. A cerimônia da decolagem depende da aprovação da Prova e não tem digitação, média, repetição nem estrelas próprias. Ao entrar em `JourneyStage.moduleCompletion`, a concessão do evento e das recompensas é registrada uma única vez antes da narração. A reprodução inicial não se repete automaticamente após o evento salvo; a criança pode pedir **Ouvir cerimônia novamente**, sem conceder outra recompensa. Fala/sons que falhem não removem conquistas nem impedem continuar.
+`completionEvent` é um `ContentEvent`, com ID, título, `prerequisiteLessonId` e `rewardIds`; ele representa somente progressão e recompensas. A pós-cena é declarada separadamente no módulo. A cerimônia da decolagem depende da aprovação da Prova e não tem digitação, média, repetição nem estrelas próprias. Ao entrar em `JourneyStage.moduleCompletion`, a concessão do evento e das recompensas é registrada uma única vez antes da pós-cena. Cada linha da ilustração é apresentada separadamente; a criança avança entre as falas/efeitos e pode repeti-los sem conceder outra recompensa. Fala/sons que falhem não removem conquistas nem impedem continuar.
 
 A Corrida de Energia declara `optional: true` e `prerequisiteEventId: "m1-decolagem"`. É repetível e não entra na aprovação ou na contagem de missões obrigatórias. Não existem Poeira Estelar nem loja de upgrades nesta configuração.
 

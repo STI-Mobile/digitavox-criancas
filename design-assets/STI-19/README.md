@@ -48,11 +48,11 @@ Origem: [STI-19](https://linear.app/acme-mobo/issue/STI-19/produzir-efeitos-sono
 | `sfx-banco-on` | `m1-4-palavras-i` · `completed` | SFX narrativo | 1,2 s | síntese própria |
 | `sfx-banco-completo` | `m1-5-palavras-ii` · `completed` | SFX narrativo | 1,9 s | síntese própria |
 | `sfx-transmissao` | `m1-6-mensagem` · `completed` | SFX narrativo | 2,0 s | ElevenLabs Sound Effects |
-| `sfx-decolagem` | `completionEvent.scene` · cue 1 | SFX de evento | 4,0 s | ElevenLabs Sound Effects |
-| `alien-blib-blub` | `completionEvent.scene` · cue 3 | vocalização não verbal | 2,0 s | ElevenLabs Sound Effects |
-| `alien-zorp` | `completionEvent.scene` · cue 4 | vocalização não verbal | 2,0 s | ElevenLabs Sound Effects |
-| `alien-nebulon` | `completionEvent.scene` · cue 5 | vocalização não verbal | 2,5 s | ElevenLabs Sound Effects |
-| `sfx-fanfarra` | `completionEvent.scene` · cue 6 | SFX de conquista | 2,8 s | síntese própria |
+| `sfx-decolagem` | `scene-c9-launch` · linha 1 | SFX de evento | 4,0 s | ElevenLabs Sound Effects |
+| `alien-blib-blub` | `scene-c9-launch` · linha 2 | vocalização não verbal | 2,0 s | ElevenLabs Sound Effects |
+| `alien-zorp` | `scene-c9-launch` · linha 3 | vocalização não verbal | 2,0 s | ElevenLabs Sound Effects |
+| `alien-nebulon` | `scene-c9-launch` · linha 4 | vocalização não verbal | 2,5 s | ElevenLabs Sound Effects |
+| `sfx-fanfarra` | `scene-c9-launch` · linha 5 | SFX de conquista | 2,8 s | síntese própria |
 | `sfx-tecla-incorreta` | `audioGuidance.incorrectInput` | SFX funcional de erro | 0,3 s | síntese própria |
 
 ### Especificação técnica

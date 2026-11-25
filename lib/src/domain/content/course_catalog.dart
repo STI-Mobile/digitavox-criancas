@@ -452,7 +452,8 @@ final class CourseModule {
     required this.title,
     required this.lessons,
     this.audioGuidance,
-    this.scene,
+    this.leadingScene,
+    this.postScene,
     this.allowedKeys = const [],
     this.vocabulary = const [],
     this.completionEvent,
@@ -471,7 +472,12 @@ final class CourseModule {
       title: _requiredString(json, 'title'),
       lessons: lessons,
       audioGuidance: _courseAudioConfiguration(json),
-      scene: _scene(json),
+      leadingScene: json.containsKey('leadingScene')
+          ? ContentScene.fromJson(_optionalObject(json, 'leadingScene')!)
+          : _scene(json),
+      postScene: json.containsKey('postScene')
+          ? ContentPostScene.fromJson(_optionalObject(json, 'postScene')!)
+          : null,
       allowedKeys: _optionalTextList(json, 'allowedKeys', allowSpace: true),
       vocabulary: _optionalTextList(json, 'vocabulary'),
       completionEvent: json['completionEvent'] == null
@@ -484,7 +490,9 @@ final class CourseModule {
   final String title;
   final List<Lesson> lessons;
   final CourseAudioConfiguration? audioGuidance;
-  final ContentScene? scene;
+  final ContentScene? leadingScene;
+  final ContentPostScene? postScene;
+  ContentScene? get scene => leadingScene;
   final List<String> allowedKeys;
   final List<String> vocabulary;
   final ContentEvent? completionEvent;
@@ -538,7 +546,7 @@ final class Course {
     final scenes = <ContentScene?>[
       scene,
       for (final module in modules) ...[
-        module.scene,
+        module.leadingScene,
         for (final lesson in module.lessons) ...[
           lesson.leadingScene,
           for (final exercise in lesson.exercises) exercise.scene,
@@ -567,6 +575,14 @@ final class Course {
       if (illustrationId != null && !illustrationIds.contains(illustrationId)) {
         throw CourseContentFormatException(
           'Ilustração pós-missão desconhecida: $illustrationId.',
+        );
+      }
+    }
+    for (final module in modules) {
+      final illustrationId = module.postScene?.illustrationId;
+      if (illustrationId != null && !illustrationIds.contains(illustrationId)) {
+        throw CourseContentFormatException(
+          'Ilustração pós-cena desconhecida: $illustrationId.',
         );
       }
     }
