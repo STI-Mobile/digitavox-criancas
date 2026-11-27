@@ -8,7 +8,7 @@ Conteúdo define o que narrar e os eventos pedagógicos. `CourseJourneyEngine` d
 
 ## Conteúdo e texto canônico
 
-Schemas 2/3 preservam cues embutidos em `audioGuidance` e cenas textuais. Schema 4 declara recursos em `Course.audioResources` e usa listas de IDs nos eventos. Cada fala exige texto canônico; cenas referenciam apresentação narrativa e instrução técnica. O parser resolve os mesmos textos para tela e narração, antes de expor conteúdo ao engine.
+Schemas 2/3 preservam cues embutidos em `audioGuidance` e cenas textuais. Schema 5 declara recursos em `Course.audioResources` e usa linhas ordenadas com `characterId` e `audioCueIds`; cada fala exige texto canônico e mantém personagem, texto e áudio juntos. O parser resolve a sequência antes de expor conteúdo ao engine. Cenas não diferenciam narrativa de instrução.
 
 No Módulo 1, Stella apresenta/celebra; ZERO-1 instrui, oferece ajuda e abre o relatório. `speaker` referencia um personagem, mas não comprova a gravação ou a identidade sonora final. Ilustrações de cenas pertencem a `illustrations`, separadas dos personagens.
 
@@ -56,7 +56,7 @@ Ao concluir uma missão aprovada, o engine executa o efeito `lesson.audioGuidanc
 
 `completionEvent` do módulo fornece a cerimônia após aprovação da Prova. Seu evento/recompensas são persistidos de modo idempotente antes da narração inicial. Reabrir uma etapa já concedida não toca novamente por iniciativa do app; **Ouvir cerimônia novamente** é uma reprodução explícita sem novo desbloqueio. Uma interrupção de áudio não cria exercício artificial nem pune a criança.
 
-O catálogo declara as falas e os recursos de decolagem, aliens e fanfarra. Enquanto esses recursos estiverem pendentes, as cinco gravações listadas acima e as falas de fallback ficam disponíveis; não descrever a sequência sonora completa como produzida ou validada.
+`postScene.lines` declara, em ordem, as falas e os recursos de decolagem, aliens e fanfarra; as linhas da ilustração fornecem somente as imagens e descrições. Enquanto esses recursos estiverem pendentes, as cinco gravações listadas acima e as falas de fallback ficam disponíveis; não descrever a sequência sonora completa como produzida ou validada.
 
 ## Cancelamento e lifecycle
 
