@@ -6,7 +6,7 @@ import '../../support/journey_fixture.dart';
 void main() {
   test('parses the documented scenes and characters at every level', () {
     final course = CourseCatalogDocument.fromJson(journeyJson()).courses.single;
-    expect(course.scene!.characterId, 'aurora');
+    expect(course.scene!.lines.single.characterId, 'aurora');
     expect(course.characters.length, 2);
     expect(
       course.modules.first.scene!.audioGuidance!.start.single.asset,
@@ -14,7 +14,7 @@ void main() {
     );
     final lesson = course.modules.first.lessons.first;
     expect(lesson.scene!.text, 'Encontre as marcas das teclas F e J.');
-    expect(lesson.exercises.last.scene!.characterId, 'explorer');
+    expect(lesson.exercises.last.scene!.lines.single.characterId, 'explorer');
   });
 
   test('rejects dangling character references at any hierarchy level', () {
