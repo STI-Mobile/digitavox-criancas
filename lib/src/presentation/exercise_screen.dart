@@ -81,9 +81,7 @@ final class _ExerciseScreenState extends State<ExerciseScreen> {
     await _viewModel.handleShortcut(
       shortcut,
       lessonPresentation: widget.engine.lesson?.scene?.text,
-      lessonInstruction:
-          widget.engine.lesson?.scene?.instruction ??
-          _viewModel.exercise.prompt,
+      lessonInstruction: _viewModel.exercise.prompt,
     );
     if (!mounted) return;
     if (shortcut != ExerciseShortcut.help) {

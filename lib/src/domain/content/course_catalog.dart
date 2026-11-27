@@ -202,48 +202,118 @@ final class CourseAudioConfiguration {
       );
 }
 
-/// Optional narrative attached to a node of the course hierarchy.
+/// Ordered, character-associated content attached to a course node.
 final class ContentScene {
   const ContentScene({
-    required this.text,
+    required this.lines,
     this.audioGuidance,
-    this.characterId,
     this.illustrationId,
-    this.instruction = '',
-    this.narrationCues = const [],
-    this.instructionCues = const [],
   });
 
   factory ContentScene.fromJson(Map<String, Object?> json) {
+    final lines = json.containsKey('lines')
+        ? _optionalObjects(
+            json,
+            'lines',
+          ).map(ContentSceneLine.fromJson).toList(growable: false)
+        : _legacySceneLines(json);
     return ContentScene(
-      text: _requiredString(json, 'text'),
+      lines: List.unmodifiable(lines),
       audioGuidance: _courseAudioConfiguration(json),
-      characterId: json.containsKey('characterId')
-          ? _requiredString(json, 'characterId')
-          : null,
       illustrationId: _optionalString(json, 'illustrationId'),
-      instruction: json['instruction'] as String? ?? '',
-      narrationCues: _optionalCueObjects(json, 'narrationCues'),
-      instructionCues: _optionalCueObjects(json, 'instructionCues'),
     );
   }
 
-  final String text;
+  final List<ContentSceneLine> lines;
   final CourseAudioConfiguration? audioGuidance;
-  final String? characterId;
   final String? illustrationId;
-  final String instruction;
-  final List<ContentAudioCue> narrationCues;
-  final List<ContentAudioCue> instructionCues;
+
+  String get text => lines
+      .map((line) => line.text)
+      .where((text) => text.isNotEmpty)
+      .join('\n\n');
+}
+
+final class ContentSceneLine {
+  const ContentSceneLine({
+    required this.characterId,
+    required this.audioCues,
+    this.fallbackText,
+  });
+
+  factory ContentSceneLine.fromJson(Map<String, Object?> json) =>
+      ContentSceneLine(
+        characterId: _requiredString(json, 'characterId'),
+        audioCues: _optionalCueObjects(json, 'audioCues'),
+      );
+
+  final String? characterId;
+  final List<ContentAudioCue> audioCues;
+  final String? fallbackText;
+
+  String get text {
+    if (fallbackText != null) return fallbackText!;
+    final speech = audioCues
+        .where((cue) => cue.type == ContentAudioCueType.speech)
+        .map((cue) => cue.text)
+        .whereType<String>()
+        .join('\n\n');
+    return speech;
+  }
+
+  bool get hasSpeech =>
+      audioCues.any((cue) => cue.type == ContentAudioCueType.speech);
 }
 
 final class ContentPostScene {
-  const ContentPostScene({required this.illustrationId});
+  const ContentPostScene({required this.illustrationId, this.lines = const []});
 
   factory ContentPostScene.fromJson(Map<String, Object?> json) =>
-      ContentPostScene(illustrationId: _requiredString(json, 'illustrationId'));
+      ContentPostScene(
+        illustrationId: _requiredString(json, 'illustrationId'),
+        lines: List.unmodifiable(
+          _optionalObjects(json, 'lines').map(ContentSceneLine.fromJson),
+        ),
+      );
 
   final String illustrationId;
+  final List<ContentSceneLine> lines;
+}
+
+List<ContentSceneLine> _legacySceneLines(Map<String, Object?> json) {
+  final characterId = json.containsKey('characterId')
+      ? _requiredString(json, 'characterId')
+      : null;
+  final audioGuidance = _courseAudioConfiguration(json);
+  final narrationCues = _optionalCueObjects(json, 'narrationCues');
+  final instructionCues = _optionalCueObjects(json, 'instructionCues');
+  final legacyText = _requiredString(json, 'text');
+  final instruction = json['instruction'] as String? ?? '';
+  return [
+    ContentSceneLine(
+      characterId:
+          characterId ??
+          narrationCues
+              .map((cue) => cue.speaker)
+              .whereType<String>()
+              .firstOrNull,
+      audioCues: narrationCues.isNotEmpty
+          ? narrationCues
+          : audioGuidance?.start ?? const [],
+      fallbackText: legacyText,
+    ),
+    if (instruction.isNotEmpty)
+      ContentSceneLine(
+        characterId:
+            characterId ??
+            instructionCues
+                .map((cue) => cue.speaker)
+                .whereType<String>()
+                .firstOrNull,
+        audioCues: instructionCues,
+        fallbackText: instruction,
+      ),
+  ];
 }
 
 final class CourseCharacter {
@@ -443,7 +513,6 @@ final class Lesson {
   final String? prerequisiteEventId;
   final List<String> legacyLessonIds;
   ContentScene? get scene => leadingScene;
-  String get instruction => leadingScene?.instruction ?? '';
 }
 
 final class CourseModule {
@@ -554,9 +623,23 @@ final class Course {
       ],
     ];
     for (final scene in scenes) {
-      final id = scene?.characterId;
-      if (id != null && !characterIds.contains(id)) {
-        throw CourseContentFormatException('Personagem desconhecido: $id.');
+      for (final line in scene?.lines ?? const <ContentSceneLine>[]) {
+        final id = line.characterId;
+        if (id != null && !characterIds.contains(id)) {
+          throw CourseContentFormatException('Personagem desconhecido: $id.');
+        }
+      }
+    }
+    for (final postScene in [
+      for (final module in modules) module.postScene,
+      for (final lesson in modules.expand((module) => module.lessons))
+        lesson.postScene,
+    ]) {
+      for (final line in postScene?.lines ?? const <ContentSceneLine>[]) {
+        final id = line.characterId;
+        if (id != null && !characterIds.contains(id)) {
+          throw CourseContentFormatException('Personagem desconhecido: $id.');
+        }
       }
     }
     final illustrations = _optionalObjects(
@@ -641,20 +724,25 @@ final class CourseCatalogDocument {
 
   factory CourseCatalogDocument.fromJson(Map<String, Object?> json) {
     final schemaVersion = json['schemaVersion'];
-    if (schemaVersion != 2 && schemaVersion != 3 && schemaVersion != 4) {
+    if (schemaVersion != 2 &&
+        schemaVersion != 3 &&
+        schemaVersion != 4 &&
+        schemaVersion != 5) {
       throw CourseContentFormatException(
         'Versão de schema não suportada: $schemaVersion.',
       );
     }
 
-    if (schemaVersion == 4) {
+    if (schemaVersion == 4 || schemaVersion == 5) {
       _requireKeys(json, {'schemaVersion', 'courses'}, 'catálogo');
     }
     final courses = _requiredObjectList(json, 'courses')
         .map(
-          (course) => Course.fromJson(
-            schemaVersion == 4 ? _prepareSchema4Course(course) : course,
-          ),
+          (course) => Course.fromJson(switch (schemaVersion) {
+            4 => _prepareSchema5Course(_upgradeSchema4Course(course)),
+            5 => _prepareSchema5Course(course),
+            _ => course,
+          }),
         )
         .toList(growable: false);
     _requireNonEmpty(courses, 'O catálogo precisa ter ao menos um curso.');

@@ -25,7 +25,7 @@ void main() {
     final json = jsonDecode(
       File('assets/content/exploradores_espaciais.json').readAsStringSync(),
     ) as Map<String, Object?>;
-    expect(json['schemaVersion'], 4);
+    expect(json['schemaVersion'], 5);
     if (observePendingEffects) {
       // Give the recording adapter synthetic paths so silent pending effects
       // become observable. No media file is loaded or claimed to be packaged.
@@ -222,7 +222,7 @@ void main() {
     expect(savedCourse.unlockedRewardIds, event.rewardIds.toSet());
     expect(savedCourse.unlockedRewardIds, hasLength(4));
     expect(engine.isLessonUnlocked(race), isTrue);
-    final ceremonyCueIds = engine.postSceneIllustration!.lines
+    final ceremonyCueIds = engine.module!.postScene!.lines
         .expand((line) => line.audioCues)
         .map((cue) => cue.id)
         .toList();

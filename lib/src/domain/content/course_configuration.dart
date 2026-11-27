@@ -124,7 +124,6 @@ final class CourseIllustrationLine {
     required this.characterId,
     required this.imageAsset,
     required this.imageDescription,
-    this.audioCues = const [],
   });
 
   factory CourseIllustrationLine.fromJson(Map<String, Object?> json) {
@@ -135,7 +134,6 @@ final class CourseIllustrationLine {
       characterId: _requiredString(json, 'characterId'),
       imageAsset: imageAsset,
       imageDescription: _requiredString(json, 'imageDescription'),
-      audioCues: _optionalCueObjects(json, 'audioCues'),
     );
   }
 
@@ -143,19 +141,6 @@ final class CourseIllustrationLine {
   final String characterId;
   final String imageAsset;
   final String imageDescription;
-  final List<ContentAudioCue> audioCues;
-
-  bool get hasSpeech =>
-      audioCues.any((cue) => cue.type == ContentAudioCueType.speech);
-
-  String get text {
-    final speech = audioCues
-        .where((cue) => cue.type == ContentAudioCueType.speech)
-        .map((cue) => cue.text)
-        .whereType<String>()
-        .join('\n\n');
-    return speech.isEmpty ? imageDescription : speech;
-  }
 }
 
 enum RewardKind { alien, badge }
@@ -286,7 +271,133 @@ void _requireFields(
 
 /// Resolves references once, before widgets or the journey can see the catalog.
 /// Only known, concrete capabilities are accepted; no executable JSON rules.
-Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
+Map<String, Object?> _upgradeSchema4Course(Map<String, Object?> json) {
+  final resources = {
+    for (final cue in _requiredObjectList(json, 'audioResources'))
+      _requiredString(cue, 'id'): cue,
+  };
+  final illustrations = {
+    for (final illustration in _optionalObjects(json, 'illustrations'))
+      _requiredString(illustration, 'id'): illustration,
+  };
+
+  String sceneCharacter(List<String> cueIds, Object? fallback) {
+    for (final id in cueIds) {
+      final speaker = resources[id]?['speaker'];
+      if (speaker is String && speaker.trim().isNotEmpty) return speaker;
+    }
+    if (fallback is String && fallback.trim().isNotEmpty) return fallback;
+    throw const CourseContentFormatException(
+      'Linha de cena legada exige um personagem identificável.',
+    );
+  }
+
+  Map<String, Object?>? scene(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map<String, Object?>) {
+      throw const CourseContentFormatException('scene deve ser um objeto.');
+    }
+    if (raw.containsKey('lines')) return raw;
+    _requireKeys(raw, {
+      'narrationCueIds',
+      'instructionCueIds',
+      'characterId',
+      'illustrationId',
+    }, 'cena');
+    final narrationIds = _optionalTextList(raw, 'narrationCueIds');
+    if (narrationIds.isEmpty) {
+      throw const CourseContentFormatException(
+        'Cena exige narrativa canônica em narrationCueIds.',
+      );
+    }
+    final instructionIds = _optionalTextList(raw, 'instructionCueIds');
+    return {
+      'illustrationId': ?raw['illustrationId'],
+      'lines': [
+        {
+          'characterId': sceneCharacter(narrationIds, raw['characterId']),
+          'audioCueIds': narrationIds,
+        },
+        if (instructionIds.isNotEmpty)
+          {
+            'characterId': sceneCharacter(instructionIds, raw['characterId']),
+            'audioCueIds': instructionIds,
+          },
+      ],
+    };
+  }
+
+  Map<String, Object?>? postScene(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! Map<String, Object?>) {
+      throw const CourseContentFormatException('postScene deve ser um objeto.');
+    }
+    if (raw.containsKey('lines')) return raw;
+    final illustration = illustrations[_requiredString(raw, 'illustrationId')];
+    if (illustration == null) return raw;
+    final lines = <Map<String, Object?>>[];
+    for (final line in _optionalObjects(illustration, 'lines')) {
+      if (!line.containsKey('audioCueIds')) continue;
+      final cueIds = _optionalTextList(line, 'audioCueIds');
+      if (cueIds.isEmpty) continue;
+      lines.add({
+        'characterId': _requiredString(line, 'characterId'),
+        'audioCueIds': cueIds,
+      });
+    }
+    return {...raw, if (lines.isNotEmpty) 'lines': lines};
+  }
+
+  Map<String, Object?> normalizeExercise(Map<String, Object?> exercise) => {
+    ...exercise,
+    if (exercise.containsKey('scene')) 'scene': scene(exercise['scene']),
+  };
+
+  Map<String, Object?> normalizeLesson(Map<String, Object?> lesson) => {
+    ...lesson,
+    if (lesson.containsKey('leadingScene'))
+      'leadingScene': scene(lesson['leadingScene']),
+    if (lesson.containsKey('postScene'))
+      'postScene': postScene(lesson['postScene']),
+    'exercises': [
+      for (final exercise in _requiredObjectList(lesson, 'exercises'))
+        normalizeExercise(exercise),
+    ],
+  };
+
+  return {
+    ...json,
+    if (json.containsKey('scene')) 'scene': scene(json['scene']),
+    'modules': [
+      for (final module in _requiredObjectList(json, 'modules'))
+        {
+          ...module,
+          if (module.containsKey('leadingScene'))
+            'leadingScene': scene(module['leadingScene']),
+          if (module.containsKey('postScene'))
+            'postScene': postScene(module['postScene']),
+          'lessons': [
+            for (final lesson in _requiredObjectList(module, 'lessons'))
+              normalizeLesson(lesson),
+          ],
+        },
+    ],
+    if (json.containsKey('illustrations'))
+      'illustrations': [
+        for (final illustration in _optionalObjects(json, 'illustrations'))
+          {
+            ...illustration,
+            if (illustration.containsKey('lines'))
+              'lines': [
+                for (final line in _requiredObjectList(illustration, 'lines'))
+                  Map<String, Object?>.from(line)..remove('audioCueIds'),
+              ],
+          },
+      ],
+  };
+}
+
+Map<String, Object?> _prepareSchema5Course(Map<String, Object?> json) {
   _requireKeys(json, {
     'id',
     'title',
@@ -359,7 +470,6 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
           'characterId',
           'imageAsset',
           'imageDescription',
-          'audioCueIds',
         }, 'linha de ilustração');
         _requireFields(line, {
           'id',
@@ -410,7 +520,7 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     final cue = ContentAudioCue.fromJson(resource);
     if (cue.type == ContentAudioCueType.speech && cue.text == null) {
       throw const CourseContentFormatException(
-        'Toda fala do schema 4 exige texto canônico acessível.',
+        'Toda fala do schema 5 exige texto canônico acessível.',
       );
     }
     if (cue.speaker != null && !characterIds.contains(cue.speaker)) {
@@ -444,6 +554,46 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     ];
   }
 
+  Map<String, Object?> resolveSceneLine(
+    Map<String, Object?> line,
+    String field,
+  ) {
+    _requireKeys(line, {'characterId', 'audioCueIds'}, field);
+    _requireFields(line, {'characterId', 'audioCueIds'}, field);
+    final characterId = _requiredString(line, 'characterId');
+    if (!characterIds.contains(characterId)) {
+      throw CourseContentFormatException(
+        'Personagem desconhecido em $field: $characterId.',
+      );
+    }
+    final cueIds = _optionalTextList(line, 'audioCueIds');
+    final cues = resolve(cueIds, '$field.audioCueIds');
+    for (final cue in cues) {
+      if (cue['type'] == 'speech' && cue['speaker'] != characterId) {
+        throw CourseContentFormatException(
+          'A fala ${cue['id']} não pertence ao personagem $characterId '
+          'da linha de $field.',
+        );
+      }
+    }
+    return {'characterId': characterId, 'audioCues': cues};
+  }
+
+  List<Map<String, Object?>> sceneLines(Object? raw, String field) {
+    if (raw is! List<Object?> || raw.isEmpty) {
+      throw CourseContentFormatException('$field exige ao menos uma linha.');
+    }
+    return [
+      for (final item in raw)
+        if (item case final Map<String, Object?> line)
+          resolveSceneLine(line, field)
+        else
+          throw CourseContentFormatException(
+            'Todas as linhas de $field devem ser objetos.',
+          ),
+    ];
+  }
+
   Map<String, Object?>? audio(Object? raw) {
     if (raw == null) return null;
     if (raw is! Map<String, Object?>) {
@@ -467,58 +617,34 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     if (raw is! Map<String, Object?>) {
       throw const CourseContentFormatException('scene deve ser um objeto.');
     }
-    _requireKeys(raw, {
-      'narrationCueIds',
-      'instructionCueIds',
-      'characterId',
-      'illustrationId',
-    }, 'cena');
-    if (!raw.containsKey('narrationCueIds')) {
-      throw const CourseContentFormatException(
-        'Cena exige narrativa canônica em narrationCueIds.',
-      );
-    }
-    final narration = resolve(raw['narrationCueIds'], 'narrationCueIds');
-    final instructions = raw.containsKey('instructionCueIds')
-        ? resolve(
-            raw['instructionCueIds'],
-            'instructionCueIds',
-            speechOnly: true,
-          )
-        : <Map<String, Object?>>[];
-    final texts = narration
+    _requireKeys(raw, {'lines', 'illustrationId'}, 'cena');
+    _requireFields(raw, {'lines'}, 'cena');
+    final lines = sceneLines(raw['lines'], 'cena.lines');
+    final texts = lines
+        .expand((line) => line['audioCues'] as List<Map<String, Object?>>)
         .where((cue) => cue['type'] == 'speech')
         .map((cue) => cue['text'] as String?)
         .whereType<String>()
         .join('\n\n');
     if (texts.trim().isEmpty) {
       throw const CourseContentFormatException(
-        'Narrativa exige texto acessível, mesmo quando há áudio gravado.',
+        'Cena exige ao menos uma fala com texto acessível.',
       );
     }
-    final character = _optionalString(raw, 'characterId');
     final illustration = _optionalString(raw, 'illustrationId');
-    if (character != null && !characterIds.contains(character)) {
-      throw CourseContentFormatException(
-        'Personagem desconhecido: $character.',
-      );
-    }
     if (illustration != null && !illustrationIds.contains(illustration)) {
       throw CourseContentFormatException(
         'Ilustração desconhecida: $illustration.',
       );
     }
     return {
-      'text': texts,
-      'instruction': instructions
-          .map((cue) => cue['text'] as String)
-          .join('\n\n'),
-      'characterId': ?character,
       'illustrationId': ?illustration,
-      'narrationCues': narration,
-      'instructionCues': instructions,
+      'lines': lines,
       'audioGuidance': {
-        'start': [...narration, ...instructions],
+        'start': [
+          for (final line in lines)
+            ...line['audioCues'] as List<Map<String, Object?>>,
+        ],
       },
     };
   }
@@ -528,7 +654,7 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
     if (raw is! Map<String, Object?>) {
       throw const CourseContentFormatException('postScene deve ser um objeto.');
     }
-    _requireKeys(raw, {'illustrationId'}, 'pós-cena');
+    _requireKeys(raw, {'illustrationId', 'lines'}, 'pós-cena');
     _requireFields(raw, {'illustrationId'}, 'pós-cena');
     final illustration = _requiredString(raw, 'illustrationId');
     if (!illustrationIds.contains(illustration)) {
@@ -536,37 +662,14 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
         'Ilustração pós-missão desconhecida: $illustration.',
       );
     }
-    return {'illustrationId': illustration};
+    return {
+      'illustrationId': illustration,
+      if (raw.containsKey('lines'))
+        'lines': sceneLines(raw['lines'], 'pós-cena.lines'),
+    };
   }
 
-  Map<String, Object?> illustration(Map<String, Object?> raw) => {
-    ...raw,
-    if (raw['lines'] != null)
-      'lines': [
-        for (final line in _requiredObjectList(raw, 'lines'))
-          {
-            ...line,
-            'audioCues': line.containsKey('audioCueIds')
-                ? resolve(line['audioCueIds'], 'audioCueIds')
-                : <Map<String, Object?>>[],
-          },
-      ],
-  };
-
-  for (final rawIllustration in illustrations) {
-    for (final line in _optionalObjects(rawIllustration, 'lines')) {
-      if (!line.containsKey('audioCueIds')) continue;
-      final characterId = _requiredString(line, 'characterId');
-      for (final cue in resolve(line['audioCueIds'], 'audioCueIds')) {
-        if (cue['type'] == 'speech' && cue['speaker'] != characterId) {
-          throw CourseContentFormatException(
-            'A fala ${cue['id']} não pertence ao personagem $characterId '
-            'da linha de ilustração.',
-          );
-        }
-      }
-    }
-  }
+  Map<String, Object?> illustration(Map<String, Object?> raw) => raw;
 
   final rawPractice = _optionalObject(json, 'practice')!;
   _requireKeys(rawPractice, {
@@ -780,7 +883,7 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
       lessonById[lessonId] = lesson;
       if (lesson['accuracy'] is! int || lesson['secChar'] is! int) {
         throw const CourseContentFormatException(
-          'accuracy e secChar devem ser inteiros no schema 4.',
+          'accuracy e secChar devem ser inteiros no schema 5.',
         );
       }
       _optionalPercentage(lesson, 'accuracy', defaultValue: 0);
@@ -829,14 +932,14 @@ Map<String, Object?> _prepareSchema4Course(Map<String, Object?> json) {
           'phrase',
         }.contains(exercise['type'])) {
           throw const CourseContentFormatException(
-            'Tipo de exercício sem capacidade executável no schema 4.',
+            'Tipo de exercício sem capacidade executável no schema 5.',
           );
         }
         for (final field in ['minimumRepetitions', 'timeLimitSeconds']) {
           if (exercise.containsKey(field) &&
               (exercise[field] is! int || (exercise[field]! as int) < 1)) {
             throw CourseContentFormatException(
-              '$field exige inteiro positivo no schema 4.',
+              '$field exige inteiro positivo no schema 5.',
             );
           }
         }

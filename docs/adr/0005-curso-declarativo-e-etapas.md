@@ -20,7 +20,7 @@ O catálogo passa a declarar prática, dedos/atalhos conhecidos, limites de estr
 
 Separar os padrões visuais:
 
-- **Apresentação:** narrativa de Stella, orientação técnica de ZERO-1, ilustração local e ação de começar/continuar.
+- **Apresentação:** falas ordenadas dos personagens, ilustração local e ação de começar/continuar.
 - **Prática:** contexto compacto da missão/atividade, instrução, alvo, repetição, feedback discreto, ajuda e pausa. A ilustração e o texto longo da apresentação não são herdados.
 - **Resultado:** conclusão da atividade ou missão, conquista e ação seguinte. Estatísticas completas ficam no Diário de bordo.
 - **Conclusão de módulo:** cerimônia própria e recompensas identificadas, sem exercício artificial para confirmar áudio.
@@ -37,7 +37,7 @@ A Prova do Cadete é uma missão com três exercícios. `spellOut` por exercíci
 
 ### Texto, cenas e áudio
 
-Uma fala canônica vive em `audioResources`. Cenas referenciam narrativas/instruções; o parser resolve o texto visível e a intenção sonora da mesma fonte. Personagens que falam e ilustrações de cena são coleções distintas.
+Uma fala canônica vive em `audioResources`. Cenas declaram linhas ordenadas por personagem, cada uma com referências de áudio; o parser resolve texto visível e intenção sonora da mesma fonte. O formato não separa cenas em narrativa e instrução. Personagens que falam e ilustrações de cena são coleções distintas. `postScene.lines` mantém falas e efeitos da cerimônia na mesma estrutura, enquanto linhas de ilustração fornecem somente imagens e descrições.
 
 Somente feedback `correctInput`/`incorrectInput` é herdado dos ancestrais. `start` e `completed` são locais à etapa: introdução de missão não toca a cada atividade e efeito de missão não toca a cada exercício. Ajuda, estrelas e abertura do diário usam referências canônicas. Números, eco de tecla e consulta do restante são fala dinâmica gerada a partir do estado real.
 

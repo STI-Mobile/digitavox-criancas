@@ -47,19 +47,16 @@ final class CourseJourneyEngine extends ChangeNotifier {
     final currentScene = course.scene;
     if (course.isDemo ||
         currentScene == null ||
-        currentScene.text.trim().isEmpty ||
-        currentScene.instruction.trim().isEmpty) {
+        currentScene.lines.length < 2 ||
+        currentScene.lines.any((line) => !line.hasSpeech)) {
       return false;
     }
 
-    bool hasKnownSpeaker(List<ContentAudioCue> cues) => cues.any(
-      (cue) =>
-          cue.type == ContentAudioCueType.speech &&
-          course.characters.any((character) => character.id == cue.speaker),
+    return currentScene.lines.every(
+      (line) => course.characters.any(
+        (character) => character.id == line.characterId,
+      ),
     );
-
-    return hasKnownSpeaker(currentScene.narrationCues) &&
-        hasKnownSpeaker(currentScene.instructionCues);
   }
 
   CourseModule? get module => _module;
@@ -158,10 +155,10 @@ final class CourseJourneyEngine extends ChangeNotifier {
   CourseCharacter? get character {
     if (_stage == JourneyStage.exercise) return null;
     final id =
-        scene?.characterId ??
-        _lesson?.leadingScene?.characterId ??
-        _module?.leadingScene?.characterId ??
-        course.scene?.characterId;
+        scene?.lines.firstOrNull?.characterId ??
+        _lesson?.leadingScene?.lines.firstOrNull?.characterId ??
+        _module?.leadingScene?.lines.firstOrNull?.characterId ??
+        course.scene?.lines.firstOrNull?.characterId;
     return course.characters.where((item) => item.id == id).firstOrNull;
   }
 
@@ -586,9 +583,7 @@ final class CourseJourneyEngine extends ChangeNotifier {
 
   Future<void> replayModuleEvent() {
     final lineCues =
-        postSceneIllustration?.lines
-            .expand((line) => line.audioCues)
-            .toList() ??
+        _module?.postScene?.lines.expand((line) => line.audioCues).toList() ??
         const <ContentAudioCue>[];
     if (lineCues.isEmpty) return replayNarration();
     return courseAudio.play(

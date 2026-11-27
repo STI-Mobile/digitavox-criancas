@@ -451,6 +451,7 @@ void main() {
         FocusManager.instance.primaryFocus?.debugLabel,
         'entrada do exercício',
       );
+      await tester.pump(const Duration(seconds: 2));
       expect(tester.takeException(), isNull);
     },
   );

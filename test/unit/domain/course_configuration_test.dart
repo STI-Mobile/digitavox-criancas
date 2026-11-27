@@ -5,7 +5,7 @@ import 'package:digitavox_criancas/src/domain/content/course_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('schema 4 maps all available story scenes to their image frames', () {
+  test('schema 5 maps all available story scenes to their image frames', () {
     final course = _parse();
     final lineCounts = {
       for (final illustration in course.illustrations)
@@ -46,7 +46,7 @@ void main() {
     }
   });
 
-  test('schema 4 accepts and validates illustration lines', () {
+  test('schema 5 accepts and validates illustration lines', () {
     final course = _parse();
     final openingIllustration = course.illustrations.firstWhere(
       (illustration) => illustration.id == 'scene-c0',
@@ -66,10 +66,7 @@ void main() {
       openingIllustration.lines.first.imageDescription,
     );
     final moduleCompletion = course.modules.single;
-    final postScene = course.illustrations.singleWhere(
-      (illustration) =>
-          illustration.id == moduleCompletion.postScene!.illustrationId,
-    );
+    final postScene = moduleCompletion.postScene!;
     expect(postScene.lines.map((line) => line.characterId), [
       'stella',
       'blib-blub',
@@ -105,7 +102,7 @@ void main() {
     line['characterId'] = 'unknown';
     expect(() => _parse(json), throwsA(isA<CourseContentFormatException>()));
   });
-  group('schema 4 do Módulo 1', () {
+  group('schema 5 do Módulo 1', () {
     test(
       'interpreta oito missões obrigatórias, bônus e cerimônia separada',
       () {
@@ -223,7 +220,15 @@ void main() {
         'scene-c1',
       );
       expect(
-        course.modules.single.lessons.first.leadingScene!.characterId,
+        course
+            .modules
+            .single
+            .lessons
+            .first
+            .leadingScene!
+            .lines
+            .first
+            .characterId,
         'stella',
       );
       expect(
@@ -239,32 +244,28 @@ void main() {
       expect(course.modules.single.lessons.first.exercises.first.scene, isNull);
     });
 
-    test(
-      'texto canônico resolve narrativa e áudio sem cópias independentes',
-      () {
-        final json = _document();
-        final courseJson = _course(json);
-        final resources = (courseJson['audioResources']! as List)
-            .cast<Map<String, Object?>>();
-        final firstSpeech = resources.firstWhere(
-          (cue) => cue['id'] == 'm1c1-stella',
-        );
-        firstSpeech['text'] = 'Texto revisto da apresentação.';
-        final scene = CourseCatalogDocument.fromJson(json)
-            .courses
-            .single
-            .modules
-            .single
-            .lessons
-            .first
-            .leadingScene!;
-        expect(scene.text, 'Texto revisto da apresentação.');
-        expect(scene.narrationCues.single.text, scene.text);
-        expect(scene.audioGuidance!.start.first.text, scene.text);
-        expect(scene.instructionCues.single.speaker, 'zero1');
-        expect(scene.instruction, contains('Indicador esquerdo... no F'));
-      },
-    );
+    test('linhas de cena resolvem fala e áudio sem cópias independentes', () {
+      final json = _document();
+      final courseJson = _course(json);
+      final resources = (courseJson['audioResources']! as List)
+          .cast<Map<String, Object?>>();
+      final firstSpeech = resources.firstWhere(
+        (cue) => cue['id'] == 'm1c1-stella',
+      );
+      firstSpeech['text'] = 'Texto revisto da apresentação.';
+      final scene = CourseCatalogDocument.fromJson(json)
+          .courses
+          .single
+          .modules
+          .single
+          .lessons
+          .first
+          .leadingScene!;
+      expect(scene.lines.first.text, 'Texto revisto da apresentação.');
+      expect(scene.audioGuidance!.start.first.text, scene.lines.first.text);
+      expect(scene.lines.last.characterId, 'zero1');
+      expect(scene.text, contains('Indicador esquerdo... no F'));
+    });
 
     test(
       'mídia pronta aponta para asset e as demais mantêm fallback explícito',
@@ -473,9 +474,18 @@ void main() {
       'campo de exercício desconhecido': (json) =>
           _exercise(json)['soletraexer'] = true,
       'recurso de áudio desconhecido': (json) =>
-          (_lesson(json)['leadingScene']! as Map)['narrationCueIds'] = [
+          (((_lesson(json)['leadingScene']! as Map)['lines']! as List).first
+              as Map<String, Object?>)['audioCueIds'] = [
             'missing',
           ],
+      'speaker incompatível com personagem da linha': (json) =>
+          (((_lesson(json)['leadingScene']! as Map)['lines']! as List).first
+                  as Map<String, Object?>)['characterId'] =
+              'zero1',
+      'linha sem referências de áudio': (json) =>
+          (((_lesson(json)['leadingScene']! as Map)['lines']! as List).first
+                  as Map<String, Object?>)['audioCueIds'] =
+              <String>[],
       'voz desconhecida': (json) =>
           (_course(json)['audioResources']! as List).first['speaker'] =
               'missing',
@@ -485,14 +495,8 @@ void main() {
           (_module(json)['completionEvent']! as Map)['rewardIds'] = ['missing'],
       'pós-cena de conclusão desconhecida': (json) =>
           (_module(json)['postScene']! as Map)['illustrationId'] = 'missing',
-      'cue de linha de ilustração desconhecido': (json) =>
-          (((_course(json)['illustrations']! as List)
-                          .cast<Map<String, Object?>>()
-                          .firstWhere(
-                            (item) => item['id'] == 'scene-c9-launch',
-                          )['lines']!
-                      as List)
-                  .first
+      'cue de linha de pós-cena desconhecido': (json) =>
+          (((_module(json)['postScene']! as Map)['lines']! as List).first
               as Map<String, Object?>)['audioCueIds'] = [
             'missing',
           ],

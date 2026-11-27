@@ -31,7 +31,7 @@ Preferências pessoais de tema, progresso, estado de pausa, tecnologia de TTS, c
 
 ## Texto canônico, personagens e ilustrações
 
-No schema 4, uma fala é declarada uma única vez em `audioResources`. Sua referência serve tanto à narração quanto ao texto acessível. `scene.narrationCueIds` identifica a apresentação narrativa; `instructionCueIds` identifica a orientação técnica. O parser resolve `ContentScene.text`, `instruction`, `narrationCues`, `instructionCues` e a sequência local `audioGuidance.start`. Não existe uma segunda cópia de `scene.text` no JSON 4.
+No schema 5, uma fala é declarada uma única vez em `audioResources`. Cenas usam `lines` ordenadas, cada uma com `characterId` e `audioCueIds`; cada fala, efeito ou música da linha é resolvido na ordem declarada. A distinção entre narração e instrução não existe no conteúdo: cada fala mantém seu personagem e texto acessível na mesma linha. `audioGuidance.start` da cena é derivado da sequência completa de cues.
 
 Fragmentos de declaração:
 
@@ -49,24 +49,37 @@ Fragmentos de declaração:
 ```json
 {
   "leadingScene": {
-    "narrationCueIds": ["m1c1-stella"],
-    "instructionCueIds": ["m1c1-zero1"],
-    "characterId": "stella",
+    "lines": [
+      {
+        "characterId": "stella",
+        "audioCueIds": ["m1c1-stella"]
+      },
+      {
+        "characterId": "zero1",
+        "audioCueIds": ["m1c1-zero1"]
+      }
+    ],
     "illustrationId": "scene-c1"
   },
   "postScene": {
-    "illustrationId": "post-scene-c1"
+    "illustrationId": "post-scene-c1",
+    "lines": [
+      {
+        "characterId": "stella",
+        "audioCueIds": ["sfx-decolagem", "m1c9-stella-a"]
+      }
+    ]
   }
 }
 ```
 
-Os fragmentos ilustram a estrutura; a fala completa e aprovada está no catálogo. No módulo, Stella apresenta a história e celebra; ZERO-1 dá instruções, ajuda e relatório. `speaker` deve identificar um personagem definido no curso. `characters` identifica personagens; `illustrations` identifica imagens de cenas. Uma ilustração pode declarar `lines` com ID, personagem e imagem para cada quadro de fala; cada personagem precisa existir em `characters`, e os IDs das linhas são únicos dentro da ilustração. Quando `lines` está presente sem imagem principal, a primeira linha fornece a imagem e a descrição padrão para telas que exibem uma única ilustração. Uma imagem da asa energizada ou do console não se torna um personagem que fala.
+Os fragmentos ilustram a estrutura; as falas completas estão no catálogo. `speaker` e `characterId` devem identificar o mesmo personagem do curso. `characters` identifica personagens; `illustrations` identifica imagens de cenas. Uma ilustração pode declarar `lines` com ID, personagem e imagem para cada quadro; cada personagem precisa existir em `characters`, e os IDs das linhas são únicos dentro da ilustração. Quando `lines` está presente sem imagem principal, a primeira linha fornece a imagem e a descrição padrão para telas que exibem uma única ilustração. Uma imagem da asa energizada ou do console não se torna um personagem que fala.
 
-A cena da introdução não é herdada pela prática. A atividade recebe somente sua própria instrução; a leitura inicial usa a entrada inteira ou a soletração conforme `spellOut`. Ilustrações de cena são resolvidas pela referência local e não reaparecem como retrato do ancestral durante a digitação.
+A cena da introdução não é herdada pela prática. A atividade recebe somente sua própria instrução; a leitura inicial usa a entrada inteira ou, com `spellOut: true`, fala cada caractere pelo nome da tecla em português (por exemplo, “efe, jota” ou “cê-cedilha”) em vez de enviar letras isoladas ao TTS. Ilustrações de cena são resolvidas pela referência local e não reaparecem como retrato do ancestral durante a digitação.
 
 No schema 4, `leadingScene` contém a apresentação da missão, e `postScene` opcionalmente referencia uma ilustração do catálogo pelo seu ID. A tela de conclusão mostra a imagem dessa referência para qualquer missão que a declare; não há personagem ou missão codificados especialmente. Missões sem `postScene` não exibem ilustração adicional.
 
-Linhas de ilustração podem declarar `audioCueIds`; cada referência é resolvida pelo catálogo canônico e deve pertencer ao personagem da linha quando for uma fala. O `postScene` do módulo aponta à ilustração que organiza a cerimônia. Cada linha aparece em uma tela separada; os cues associados à linha são reproduzidos juntos, e o texto acessível vem das falas canônicas ou, para efeitos não verbais, da descrição da imagem. Na cerimônia do Módulo 1, Stella apresenta a decolagem, cada alienígena aparece com seu próprio efeito sonoro e Stella encerra concedendo o distintivo de Cadete de Bronze.
+`postScene.lines` associa a sequência de falas e efeitos à ilustração da conclusão; as linhas visuais da ilustração continuam contendo somente imagens e descrições. Cada linha de cena aparece em uma tela separada, seus cues são reproduzidos juntos e o texto acessível vem das falas canônicas ou, para efeitos não verbais, da descrição correspondente da imagem. Na cerimônia do Módulo 1, Stella apresenta a decolagem com seu efeito, cada alienígena aparece com seu próprio som e Stella encerra com a fanfarra ao conceder o distintivo de Cadete de Bronze.
 
 ## Dinâmica de prática e tempo
 

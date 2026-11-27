@@ -662,30 +662,36 @@
     "scene4": {
       "type": "object",
       "properties": {
-        "narrationCueIds": {
+        "lines": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/text"
+            "$ref": "#/$defs/sceneLine4"
           },
           "minItems": 1
-        },
-        "instructionCueIds": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          },
-          "minItems": 1
-        },
-        "characterId": {
-          "$ref": "#/$defs/text"
         },
         "illustrationId": {
           "$ref": "#/$defs/text"
         }
       },
-      "required": [
-        "narrationCueIds"
-      ],
+      "required": ["lines"],
+      "additionalProperties": false
+    },
+    "sceneLine4": {
+      "type": "object",
+      "properties": {
+        "characterId": {
+          "$ref": "#/$defs/text"
+        },
+        "audioCueIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["characterId", "audioCueIds"],
       "additionalProperties": false
     },
     "illustrationScene4": {
@@ -693,6 +699,13 @@
       "properties": {
         "illustrationId": {
           "$ref": "#/$defs/text"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sceneLine4"
+          },
+          "minItems": 1
         }
       },
       "required": [
@@ -809,14 +822,6 @@
         },
         "imageDescription": {
           "$ref": "#/$defs/text"
-        },
-        "audioCueIds": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          },
-          "minItems": 1,
-          "uniqueItems": true
         }
       },
       "required": [

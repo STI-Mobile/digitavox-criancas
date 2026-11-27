@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "courses": [
     {
       "id": "exploradores-espaciais",
@@ -46,27 +46,72 @@
         }
       ],
       "scene": {
-        "narrationCueIds": [
-          "m1c0-stella",
-          "musica-tema"
-        ],
-        "characterId": "stella",
-        "instructionCueIds": [
-          "m1c0-zero1"
-        ],
-        "illustrationId": "scene-c0"
+        "illustrationId": "scene-c0",
+        "lines": [
+          {
+            "characterId": "stella",
+            "audioCueIds": [
+              "m1c0-stella",
+              "musica-tema"
+            ]
+          },
+          {
+            "characterId": "zero1",
+            "audioCueIds": [
+              "m1c0-zero1"
+            ]
+          }
+        ]
       },
       "modules": [
         {
           "id": "modulo-1-nave-adormecida",
           "title": "Módulo 1 · A Nave Adormecida",
           "leadingScene": {
-            "narrationCueIds": [
-              "module1-overview"
-            ],
-            "characterId": "stella"
+            "lines": [
+              {
+                "characterId": "stella",
+                "audioCueIds": [
+                  "module1-overview"
+                ]
+              }
+            ]
           },
           "postScene": {
+            "lines": [
+              {
+                "characterId": "stella",
+                "audioCueIds": [
+                  "sfx-decolagem",
+                  "m1c9-stella-a"
+                ]
+              },
+              {
+                "characterId": "blib-blub",
+                "audioCueIds": [
+                  "alien-blib-blub"
+                ]
+              },
+              {
+                "characterId": "zorp",
+                "audioCueIds": [
+                  "alien-zorp"
+                ]
+              },
+              {
+                "characterId": "nebulon",
+                "audioCueIds": [
+                  "alien-nebulon"
+                ]
+              },
+              {
+                "characterId": "stella",
+                "audioCueIds": [
+                  "sfx-fanfarra",
+                  "m1c9-stella-b"
+                ]
+              }
+            ],
             "illustrationId": "scene-c9-launch"
           },
           "lessons": [
@@ -76,14 +121,21 @@
               "accuracy": 70,
               "secChar": 15,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c1-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c1-zero1"
-                ],
-                "illustrationId": "scene-c1"
+                "illustrationId": "scene-c1",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c1-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c1-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c1"
@@ -93,7 +145,7 @@
                   "id": "m1c1-fj",
                   "title": "F J",
                   "type": "keySequence",
-                  "prompt": "Digite F e J.",
+                  "prompt": "Digite f e j.",
                   "expectedInput": "fj",
                   "minimumRepetitions": 10,
                   "spellOut": true,
@@ -104,7 +156,7 @@
                   "id": "m1c1-jf",
                   "title": "J F",
                   "type": "keySequence",
-                  "prompt": "Digite J e F.",
+                  "prompt": "Digite j e f.",
                   "expectedInput": "jf",
                   "minimumRepetitions": 10,
                   "spellOut": true,
@@ -126,14 +178,21 @@
               "accuracy": 85,
               "secChar": 12,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c2-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c2-zero1"
-                ],
-                "illustrationId": "scene-c2"
+                "illustrationId": "scene-c2",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c2-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c2-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c2"
@@ -178,14 +237,21 @@
               "accuracy": 85,
               "secChar": 12,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c3-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c3-zero1"
-                ],
-                "illustrationId": "scene-c3"
+                "illustrationId": "scene-c3",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c3-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c3-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c3"
@@ -230,14 +296,21 @@
               "accuracy": 85,
               "secChar": 12,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c4-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c4-zero1"
-                ],
-                "illustrationId": "scene-c4"
+                "illustrationId": "scene-c4",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c4-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c4-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c4"
@@ -293,14 +366,21 @@
               "accuracy": 90,
               "secChar": 10,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c5-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c5-zero1"
-                ],
-                "illustrationId": "scene-c5"
+                "illustrationId": "scene-c5",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c5-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c5-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c5"
@@ -345,14 +425,21 @@
               "accuracy": 90,
               "secChar": 10,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c6-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c6-zero1"
-                ],
-                "illustrationId": "scene-c6"
+                "illustrationId": "scene-c6",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c6-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c6-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c6"
@@ -419,14 +506,21 @@
               "accuracy": 90,
               "secChar": 10,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c7-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c7-zero1"
-                ],
-                "illustrationId": "scene-c7"
+                "illustrationId": "scene-c7",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c7-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c7-zero1"
+                    ]
+                  }
+                ]
               },
               "postScene": {
                 "illustrationId": "post-scene-c7"
@@ -504,14 +598,21 @@
               "accuracy": 90,
               "secChar": 8,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c8-stella"
-                ],
-                "characterId": "stella",
-                "instructionCueIds": [
-                  "m1c8-zero1"
-                ],
-                "illustrationId": "scene-c8"
+                "illustrationId": "scene-c8",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c8-stella"
+                    ]
+                  },
+                  {
+                    "characterId": "zero1",
+                    "audioCueIds": [
+                      "m1c8-zero1"
+                    ]
+                  }
+                ]
               },
               "exercises": [
                 {
@@ -563,12 +664,16 @@
               "accuracy": 85,
               "secChar": 5,
               "leadingScene": {
-                "narrationCueIds": [
-                  "m1c10-stella",
-                  "musica-corrida"
-                ],
-                "characterId": "stella",
-                "illustrationId": "scene-c10"
+                "illustrationId": "scene-c10",
+                "lines": [
+                  {
+                    "characterId": "stella",
+                    "audioCueIds": [
+                      "m1c10-stella",
+                      "musica-corrida"
+                    ]
+                  }
+                ]
               },
               "exercises": [
                 {
@@ -644,33 +749,33 @@
         {
           "id": "scene-c0",
           "title": "Aurora em emergência",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c0_f1_stella.jpg",
               "imageDescription": "Apresentação Stella."
             },
             {
-              "id":"line-f2",
+              "id": "line-f2",
               "characterId": "zero1",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c0_f2_zero1.jpg",
               "imageDescription": "Apresentação Zero-1."
             }
           ]
-          },
+        },
         {
           "id": "scene-c1",
           "title": "Sensores F e J",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c1_f1_stella.jpg",
               "imageDescription": "Stella apresentando a aurora."
             },
             {
-              "id":"line-f2",
+              "id": "line-f2",
               "characterId": "zero1",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c1_f2_zero1.jpg",
               "imageDescription": "Console destacando as marcas táteis das teclas F e J."
@@ -680,9 +785,9 @@
         {
           "id": "post-scene-c1",
           "title": "Aurora despertando",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/aurora.png",
               "imageDescription": "Aurora ligada"
@@ -712,9 +817,9 @@
         {
           "id": "post-scene-c2",
           "title": "Asa esquerda ligada",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c2_asa_esquerda.png",
               "imageDescription": "Asa esquerda da Aurora energizada."
@@ -744,9 +849,9 @@
         {
           "id": "post-scene-c3",
           "title": "Asa direita ligada ",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c3_asa_direita.png",
               "imageDescription": "Aurora ligada"
@@ -776,9 +881,9 @@
         {
           "id": "post-scene-c4",
           "title": "Sincronização completa",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c4_sincronizacao.png",
               "imageDescription": "Asas da Aurora sincronizadas"
@@ -808,9 +913,9 @@
         {
           "id": "post-scene-c5",
           "title": "Banco de palavras I",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c5_palavras_energia_1.png",
               "imageDescription": "Banco inicial de palavras de energia."
@@ -840,9 +945,9 @@
         {
           "id": "post-scene-c6",
           "title": "Banco de palavras II",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c6_palavras_energia_2.png",
               "imageDescription": "Palavras de energia"
@@ -872,9 +977,9 @@
         {
           "id": "post-scene-c7",
           "title": "Aurora despertando",
-          "lines":[
+          "lines": [
             {
-              "id":"line-f1",
+              "id": "line-f1",
               "characterId": "aurora",
               "imageAsset": "assets/images/space/module1/c7_mensagem_base.png",
               "imageDescription": "Aurora transmitindo mensagem para a base."
@@ -911,36 +1016,31 @@
               "id": "line-f1",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f1_decolagem.jpg",
-              "imageDescription": "Aurora decola do hangar com os propulsores acesos.",
-              "audioCueIds": ["sfx-decolagem", "m1c9-stella-a"]
+              "imageDescription": "Aurora decola do hangar com os propulsores acesos."
             },
             {
               "id": "line-f2",
               "characterId": "blib-blub",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f2_blib_blub.jpg",
-              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora.",
-              "audioCueIds": ["alien-blib-blub"]
+              "imageDescription": "Blib-Blub aparece ao lado de uma caixa no hangar da Aurora."
             },
             {
               "id": "line-f3",
               "characterId": "zorp",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f3_zorp.jpg",
-              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora.",
-              "audioCueIds": ["alien-zorp"]
+              "imageDescription": "Zorp aparece ao lado de uma caixa no hangar da Aurora."
             },
             {
               "id": "line-f4",
               "characterId": "nebulon",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f4_nebulon.jpg",
-              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora.",
-              "audioCueIds": ["alien-nebulon"]
+              "imageDescription": "Nebulon aparece ao lado de uma caixa no hangar da Aurora."
             },
             {
               "id": "line-f5",
               "characterId": "stella",
               "imageAsset": "assets/images/space/module1/cenas-16x9/c9_f5_stella_distintivo.jpg",
-              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora.",
-              "audioCueIds": ["sfx-fanfarra", "m1c9-stella-b"]
+              "imageDescription": "Stella concede o distintivo de Cadete de Bronze na ponte da Aurora."
             }
           ]
         },
@@ -1084,7 +1184,7 @@
           "type": "speech",
           "text": "Uma tempestade solar varreu a galáxia... e espalhou quinze aliens amigáveis para longe de casa. A Academia Galáctica lançou a Operação Grande Resgate! E toda comunicação espacial passa pelo console de navegação... o teclado! Você chegou à Academia no dia em que a tempestade desligou a nossa nave-escola... a Aurora. Eu sou a Comandante Stella. E preciso de um par de mãos novas. Bem-vindo a bordo, cadete!",
           "speaker": "stella",
-          "asset":"assets/audio/demo/stella/m1c0-stella.wav",
+          "asset": "assets/audio/demo/stella/m1c0-stella.wav",
           "fallback": "text"
         },
         {
@@ -1092,7 +1192,7 @@
           "type": "speech",
           "text": "Bip! Zero Um na escuta, computador de bordo da Aurora! Digite as teclas... com toques suaves e precisos. Sem força... e sem deixar a tecla pressionada. Se eu apitar... foi tecla errada. Siga em frente! Não tente apagar. E, se precisar de ajuda, tecle... F1. Para eu soletrar o que falta, tecle... F3. E para repetir o exercício, tecle... F7.",
           "speaker": "zero1",
-          "asset":"assets/audio/demo/zero1/m1c0-zero1.wav",
+          "asset": "assets/audio/demo/zero1/m1c0-zero1.wav",
           "fallback": "text"
         },
         {
@@ -1332,7 +1432,7 @@
           "type": "speech",
           "text": "Missão cumprida, cadete. Uma estrela no seu histórico de voo.",
           "speaker": "stella",
-          "asset":"assets/audio/demo/stella/stella-1estrela.wav",
+          "asset": "assets/audio/demo/stella/stella-1estrela.wav",
           "fallback": "text"
         },
         {
@@ -1372,7 +1472,7 @@
           "type": "speech",
           "text": "Bip... bip?! Ops... meus parafusos tremeram! Calma, circuitos... calma. Vamos com calma. Continue sem apagar. Se precisar de ajuda... tecle... F1. Bip-bop!",
           "speaker": "zero1",
-          "asset":"assets/audio/demo/zero1/zero1-ajuda-erros.wav",
+          "asset": "assets/audio/demo/zero1/zero1-ajuda-erros.wav",
           "fallback": "text"
         },
         {
