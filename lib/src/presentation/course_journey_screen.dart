@@ -55,6 +55,7 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     String text,
     List<ContentAudioCue> cues, {
     String? fallbackCharacterId,
+    String? illustrationLineId,
   }) {
     final speechCues = cues
         .where((cue) => cue.type == ContentAudioCueType.speech)
@@ -68,55 +69,87 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
         .firstOrNull;
     if (character == null) return null;
 
-    return CharacterLine(character: character, text: text, cues: speechCues);
+    return CharacterLine(
+      character: character,
+      text: text,
+      cues: cues,
+      illustrationLineId: illustrationLineId,
+    );
   }
 
-  List<CharacterLine> _characterLinesFor(ContentScene? scene) {
+  List<CharacterLine> _characterLinesFor(
+    ContentScene? scene, {
+    CourseIllustration? illustration,
+  }) {
     if (scene == null) return const [];
-    final narrationCues = scene.narrationCues.isNotEmpty
-        ? scene.narrationCues
-        : scene.audioGuidance?.start ?? const <ContentAudioCue>[];
-    final firstLine = _characterLineFor(
-      scene.text,
-      narrationCues,
-      fallbackCharacterId: scene.characterId ?? engine.character?.id,
-    );
-    if (firstLine == null) return const [];
-
-    final lines = <CharacterLine>[firstLine];
-    if (scene.instruction.isNotEmpty) {
-      final instructionLine = _characterLineFor(
-        scene.instruction,
-        scene.instructionCues,
-        fallbackCharacterId: firstLine.character.id,
+    final lines = <CharacterLine>[];
+    for (var index = 0; index < scene.lines.length; index++) {
+      final sceneLine = scene.lines[index];
+      final illustrationLine = _illustrationLineFor(
+        illustration,
+        index,
+        sceneLine.characterId,
       );
-      if (instructionLine != null) lines.add(instructionLine);
+      final line = _characterLineFor(
+        sceneLine.text.isEmpty
+            ? illustrationLine?.imageDescription ?? ''
+            : sceneLine.text,
+        sceneLine.audioCues,
+        fallbackCharacterId: sceneLine.characterId ?? engine.character?.id,
+        illustrationLineId: illustrationLine?.id,
+      );
+      if (line != null) lines.add(line);
     }
     return lines;
   }
 
-  List<CharacterLine> _illustrationLinesFor(CourseIllustration? illustration) {
-    if (illustration == null) return const [];
-    return [
-      for (final line in illustration.lines)
-        if (line.audioCues.isNotEmpty)
-          if (widget.engine.course.characters
-                  .where((character) => character.id == line.characterId)
-                  .firstOrNull
-              case final character?)
-            CharacterLine(
-              character: character,
-              text: line.text,
-              cues: line.audioCues,
-              illustrationLineId: line.id,
-            ),
-    ];
+  CourseIllustrationLine? _illustrationLineFor(
+    CourseIllustration? illustration,
+    int index,
+    String? characterId,
+  ) {
+    if (illustration == null) return null;
+    if (index < illustration.lines.length &&
+        illustration.lines[index].characterId == characterId) {
+      return illustration.lines[index];
+    }
+    return illustration.lines
+        .where((line) => line.characterId == characterId)
+        .firstOrNull;
+  }
+
+  List<CharacterLine> _postSceneCharacterLinesFor(
+    ContentPostScene? postScene,
+    CourseIllustration? illustration,
+  ) {
+    if (postScene == null) return const [];
+    final lines = <CharacterLine>[];
+    for (var index = 0; index < postScene.lines.length; index++) {
+      final sceneLine = postScene.lines[index];
+      final illustrationLine = _illustrationLineFor(
+        illustration,
+        index,
+        sceneLine.characterId,
+      );
+      final line = _characterLineFor(
+        sceneLine.text.isEmpty
+            ? illustrationLine?.imageDescription ??
+                  illustration?.imageDescription ??
+                  ''
+            : sceneLine.text,
+        sceneLine.audioCues,
+        fallbackCharacterId: sceneLine.characterId,
+        illustrationLineId: illustrationLine?.id,
+      );
+      if (line != null) lines.add(line);
+    }
+    return lines;
   }
 
   Widget _lessonScene() {
     final scene = engine.scene;
     if (scene == null) return const SizedBox.shrink();
-    final lines = _characterLinesFor(scene);
+    final lines = _characterLinesFor(scene, illustration: engine.illustration);
     if (lines.isEmpty) {
       return CourseScene(
         scene: scene,
@@ -270,7 +303,8 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
                                       engine: widget.engine,
                                       illustration:
                                           widget.engine.postSceneIllustration,
-                                      lines: _illustrationLinesFor(
+                                      lines: _postSceneCharacterLinesFor(
+                                        widget.engine.module?.postScene,
                                         widget.engine.postSceneIllustration,
                                       ),
                                       narrationControls: ({cues}) =>
@@ -305,16 +339,15 @@ final class _CourseJourneyScreenState extends State<CourseJourneyScreen> {
     final engine = widget.engine;
     if (!_courseIntroductionComplete && engine.hasCharacterIntroduction) {
       final scene = engine.scene!;
-      final firstLine = _characterLineFor(scene.text, scene.narrationCues);
-      final secondLine = _characterLineFor(
-        scene.instruction,
-        scene.instructionCues,
+      final lines = _characterLinesFor(
+        scene,
+        illustration: engine.illustration,
       );
-      if (firstLine != null && secondLine != null) {
+      if (lines.length > 1) {
         return [
           SceneScreen(
             engine: engine,
-            lines: [firstLine, secondLine],
+            lines: lines,
             illustration: engine.illustration,
             onComplete: () =>
                 setState(() => _courseIntroductionComplete = true),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../domain/content/course_catalog.dart';
-import 'design_system/components/dvx_game_components.dart';
 import 'design_system/course_theme/course_theme.dart';
 
 /// Narrative and illustration belong to the mission briefing, never practice.
@@ -51,29 +50,7 @@ final class CourseScene extends StatelessWidget {
           ),
           SizedBox(height: spacing.md),
         ],
-        if (scene != null) ...[
-          Text(scene.text),
-          SizedBox(height: spacing.md),
-          if (scene.instruction.isNotEmpty) ...[
-            DvxGameCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      'Como praticar',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  SizedBox(height: spacing.sm),
-                  Text(scene.instruction),
-                ],
-              ),
-            ),
-            SizedBox(height: spacing.md),
-          ],
-        ],
+        if (scene != null) ...[Text(scene.text), SizedBox(height: spacing.md)],
       ],
     );
   }
